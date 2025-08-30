@@ -1,7 +1,7 @@
 #include "6502.hpp"
 #include <stdio.h>
 #include <string.h>
-
+#include <SDL2/SDL.h>
 
 // using AddrFn = uint16_t (*)(cpu6502&, uint16_t);
 // using ExecFn = void (*)(cpu6502&, uint16_t);
@@ -27,6 +27,15 @@ cpu6502::cpu6502()
     {
         ftab[i] = Inst(&X::LoadACC, &X::InstrUnimp);
     }
+
+    ftab[0x69] = Inst(&X::LoadIMM,  &X::InstrADC);
+    ftab[0x65] = Inst(&X::LoadZPG,  &X::InstrADC);
+    ftab[0x75] = Inst(&X::LoadZPGX, &X::InstrADC);
+    ftab[0x6D] = Inst(&X::LoadABS,  &X::InstrADC);
+    ftab[0x7D] = Inst(&X::LoadABSX, &X::InstrADC);
+    ftab[0x79] = Inst(&X::LoadABSY, &X::InstrADC);
+    ftab[0x61] = Inst(&X::LoadINDX, &X::InstrADC);
+    ftab[0x71] = Inst(&X::LoadINDY, &X::InstrADC);
 
 
     ftab[0x18] = Inst(&X::LoadIMP, &X::InstrCLC);
@@ -101,13 +110,32 @@ cpu6502::cpu6502()
     ftab[0x48] = Inst(&X::LoadIMP, &X::InstrPHA);
     ftab[0x28] = Inst(&X::LoadIMP, &X::InstrPLP);
 
+
+    ftab[0xE9] = Inst(&X::LoadIMM,  &X::InstrSBC);
+    ftab[0xE5] = Inst(&X::LoadZPG,  &X::InstrSBC);
+    ftab[0xF5] = Inst(&X::LoadZPGX, &X::InstrSBC);
+    ftab[0xED] = Inst(&X::LoadABS,  &X::InstrSBC);
+    ftab[0xFD] = Inst(&X::LoadABSX, &X::InstrSBC);
+    ftab[0xF9] = Inst(&X::LoadABSY, &X::InstrSBC);
+    ftab[0xE1] = Inst(&X::LoadINDX, &X::InstrSBC);
+    ftab[0xF1] = Inst(&X::LoadINDY, &X::InstrSBC);
+
+
+    ftab[0x85] = Inst(&X::LoadZPG,  &X::InstrSTA);
+    ftab[0x95] = Inst(&X::LoadZPGX, &X::InstrSTA);
+    ftab[0x8D] = Inst(&X::LoadABS,  &X::InstrSTA);
+    ftab[0x9D] = Inst(&X::LoadABSX, &X::InstrSTA);
+    ftab[0x99] = Inst(&X::LoadABSY, &X::InstrSTA);
+    ftab[0x81] = Inst(&X::LoadINDX, &X::InstrSTA);
+    ftab[0x91] = Inst(&X::LoadINDY, &X::InstrSTA);
+
 }
 
-void cpu6502::LoadProgram( uint8_t *program, uint16_t offset, uint16_t size )
+void cpu6502::LoadROM( uint8_t *rom )
 {
-    if ((size_t)offset + (size_t)size < 65535)
+    for (size_t i=0; i<65535; i++)
     {
-        memcpy(mMem+offset, program, size);
+        mBus[i] = rom[i];
     }
 }
 
@@ -118,15 +146,32 @@ void cpu6502::WriteResetVector( uint16_t addr )
 
 void cpu6502::Run()
 {
-    PC = read16(0xFFFC); // mMem[0xFFFC];
+    PC = read16(0xFFFC);
 
-    printf("PC=0x%02x\n", PC);
+    printf("PC:  0x%02x\n", PC);
 
     while (!mInvalidOp)
     {
         mCurrOp = read08(PC++);
-        printf("opcode=0x%02x\n", mCurrOp);
+        printf("op:  0x%02X\n", mCurrOp);
+
         ftab[mCurrOp].exec(*this);
+        if (mInvalidOp)
+        {
+            break;
+        }
+
+        printf("AC:  0x%02X\n", AC);
+        printf("SSR: ");
+
+        for (int i=7; i>=0; i--)
+        {
+            printf((SSR_byte & (1<<i)) ? "1" : "0");
+        }
+        printf("\n");
+        printf("   : NVB DIZC\n");
+        printf("\n");
+
     }
 
     printf("Invalid opcode (0x%02X)\n", mCurrOp);

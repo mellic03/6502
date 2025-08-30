@@ -28,8 +28,12 @@ int main( int argc, char **argv )
     size_t size = stream.tellg();
     stream.seekg(0, std::ifstream::beg);
     
+    printf("size=%lu\n", size);
+    uint8_t *rom = new uint8_t[size];
+    stream.read((char*)rom, size);
+
     cpu6502 cpu;
-    stream.read((char*)(cpu.mMem), size);
+    cpu.LoadROM(rom);
     cpu.Run();
 
     return 0;

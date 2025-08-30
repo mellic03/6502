@@ -1,3 +1,3 @@
 #!/bin/bash
 
-g++ ./*.cpp -o cpu
+g++ --std=c++20 ./main.cpp ./6502*.cpp -o cpu
