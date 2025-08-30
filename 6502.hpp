@@ -119,9 +119,7 @@ public:
         //         uint8_t hi;
         //     };
         // } U = { *((uint16_t*)mMem + addr) };
-
         // return (U.hi << 8) + U.lo;
-
         uint16_t lo = (uint16_t)(mMem[addr+0]); 
         uint16_t hi = (uint16_t)(mMem[addr+1]);
         return (hi<<8) + lo;
@@ -174,7 +172,6 @@ public:
     uint16_t LoadZPGY();
 
     void InstrUnimp( uint16_t );
-
     void InstrADC( uint16_t );
     void InstrAND( uint16_t );
     void InstrASL( uint16_t );

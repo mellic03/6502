@@ -24,7 +24,6 @@ int main( int argc, char **argv )
         return 1;
     }
 
-
     stream.seekg(0, std::ifstream::end);
     size_t size = stream.tellg();
     stream.seekg(0, std::ifstream::beg);
