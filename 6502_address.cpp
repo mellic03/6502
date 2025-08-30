@@ -42,15 +42,16 @@ uint16_t cpu6502::LoadIMM()
 
 uint16_t cpu6502::LoadIMP()
 {
-    return mMem[PC];
+    PC += 1;
+    return 0;
 }
 
 uint16_t cpu6502::LoadIND()
 {
     uint16_t addr = _read16();
-    uint8_t  lo = mMem[addr+0];
-    uint8_t  hi = mMem[addr+1];
-    return mMem[((uint16_t)hi << 8) + (uint16_t)lo];
+    uint16_t lo = mMem[addr+0];
+    uint16_t hi = mMem[addr+1];
+    return mMem[(hi<<8) + lo];
 }
 
 uint16_t cpu6502::LoadINDX()
@@ -84,10 +85,10 @@ uint16_t cpu6502::LoadREL()
 
 uint16_t cpu6502::LoadZPG()
 {
-    uint8_t lo = mMem[PC];
-    uint8_t hi = 0x00;
+    uint16_t lo = mMem[PC];
+    uint16_t hi = 0x00;
     PC += 1;
-    return mMem[((uint16_t)hi << 8) + (uint16_t)lo];
+    return mMem[(hi<<8) + lo];
 }
 
 uint16_t cpu6502::LoadZPGX()

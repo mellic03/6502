@@ -5,13 +5,6 @@
 #include <stdint.h>
 
 
-struct cpu6502AddrSpace
-{
-    uint8_t *txt, *stk, *ram;
-    cpu6502AddrSpace( uint8_t *text, uint8_t *stack, uint8_t *data )
-    :   txt(text), stk(stack), ram(data) {  }
-};
-
 struct cpu6502RegisterPC
 {
     uint8_t lo;
@@ -33,7 +26,7 @@ struct cpu6502RegisterSSR
     uint8_t D :1;
 
     /** unused */
-    uint8_t 💩 :1;
+    uint8_t _ :1;
 
     /** break */
     uint8_t B :1;
@@ -45,7 +38,7 @@ struct cpu6502RegisterSSR
     uint8_t N :1;
 
     cpu6502RegisterSSR()
-    :   C(0), Z(0), I(1), D(0), 💩(0), B(0), V(0), N(0) {  };
+    :   C(0), Z(0), I(1), D(0), _(0), B(0), V(0), N(0) {  };
 };
 
 
@@ -53,11 +46,17 @@ struct cpu6502
 {
 private:
     uint16_t _read16();
-
-public:
     static constexpr uint16_t PAGE_ZERO  = 0*256;
     static constexpr uint16_t PAGE_STACK = 1*256;
     static constexpr uint16_t PAGE_PROG  = 2*256;
+
+    struct {
+        bool BranchOnCarry = false;
+    } mState;
+    
+
+public:
+    static constexpr uint16_t PAGE_SIZE  = 256;
 
     typedef uint16_t (cpu6502::*GetAddrFn)();
     typedef void (cpu6502::*ExecFn)(uint16_t);
@@ -76,11 +75,11 @@ public:
             (cpu.*fE)(addr);
         }
     };
-    Inst ftab[256];
 
+    Inst     ftab[256];
     uint8_t  mInvalidOp;
     uint8_t  mCurrOp;
-    uint8_t  mMem[65535];
+    uint8_t *mMem = new uint8_t[65535];
 
     uint8_t  AC;
     uint8_t  XR;
@@ -101,7 +100,8 @@ public:
     };
 
     cpu6502();
-    void LoadProgram( uint8_t *program, uint16_t size );
+    void LoadProgram( uint8_t *program, uint16_t offset, uint16_t size );
+    void WriteResetVector( uint16_t addr );
     void Run();
 
 
@@ -112,11 +112,28 @@ public:
 
     uint16_t read16( uint16_t addr )
     {
-        uint16_t lo = (uint16_t)mMem[addr+0]; 
-        uint16_t hi = (uint16_t)mMem[addr+1];
+        // union {
+        //     uint16_t u16;
+        //     struct {
+        //         uint8_t lo;
+        //         uint8_t hi;
+        //     };
+        // } U = { *((uint16_t*)mMem + addr) };
+
+        // return (U.hi << 8) + U.lo;
+
+        uint16_t lo = (uint16_t)(mMem[addr+0]); 
+        uint16_t hi = (uint16_t)(mMem[addr+1]);
         return (hi<<8) + lo;
     }
 
+    void write16( uint16_t addr, uint16_t value )
+    {
+        uint16_t lo = value & 0x00FF;
+        uint16_t hi = value >> 8;
+        mMem[addr+0] = lo;
+        mMem[addr+1] = hi;
+    }
 
     void push08( uint8_t byte )
     {
@@ -156,32 +173,40 @@ public:
     uint16_t LoadZPGX();
     uint16_t LoadZPGY();
 
-    void InstrADC( uint16_t src );
-    void InstrAND( uint16_t src );
-    void InstrASL( uint16_t src );
+    void InstrUnimp( uint16_t );
 
-    void InstrBCC( uint16_t src );
-    void InstrBCS( uint16_t src );
-    void InstrBEQ( uint16_t src );
-    void InstrBIT( uint16_t src );
-    void InstrBNI( uint16_t src );
-    void InstrBNE( uint16_t src );
-    void InstrBPL( uint16_t src );
-    void InstrBRK( uint16_t src );
-    void InstrBVC( uint16_t src );
-    void InstrBVS( uint16_t src );
-
-    void InstrCMP( uint16_t src );
-    void InstrEOR( uint16_t src );
-
-    void InstrJMP( uint16_t src );
-    void InstrJSR( uint16_t src );
-
-    void InstrLDA( uint16_t src );
-    void InstrLDX( uint16_t src );
-    void InstrLDY( uint16_t src );
-    void InstrORA( uint16_t src );
-    void InstrSBC( uint16_t src );
-    void InstrSTA( uint16_t src );
+    void InstrADC( uint16_t );
+    void InstrAND( uint16_t );
+    void InstrASL( uint16_t );
+    void InstrBCC( uint16_t );
+    void InstrBCS( uint16_t );
+    void InstrBEQ( uint16_t );
+    void InstrBIT( uint16_t );
+    void InstrBMI( uint16_t );
+    void InstrBNE( uint16_t );
+    void InstrBPL( uint16_t );
+    void InstrBRK( uint16_t );
+    void InstrBVC( uint16_t );
+    void InstrBVS( uint16_t );
+    void InstrCLC( uint16_t );
+    void InstrCLD( uint16_t );
+    void InstrCLI( uint16_t );
+    void InstrCLV( uint16_t );
+    void InstrCMP( uint16_t );
+    void InstrCPX( uint16_t );
+    void InstrCPY( uint16_t );
+    void InstrEOR( uint16_t );
+    void InstrJMP( uint16_t );
+    void InstrJSR( uint16_t );
+    void InstrLDA( uint16_t );
+    void InstrLDX( uint16_t );
+    void InstrLDY( uint16_t );
+    void InstrORA( uint16_t );
+    void InstrPHA( uint16_t );
+    void InstrPHP( uint16_t );
+    void InstrPLA( uint16_t );
+    void InstrPLP( uint16_t );
+    void InstrSBC( uint16_t );
+    void InstrSTA( uint16_t );
 
 };
