@@ -30,7 +30,7 @@ void cpu6502::Tick()
     // A:00 X:00 Y:00 P:24 SP:FD PPU:  0, 30 CYC:10
 
     printf(
-        "\t\t\tA:%02X  X:%02X  Y:%02X  P:%02X  SP:%02X  PPU:   0,30 CYC:%lu\n",
+        "\tA:%02X  X:%02X  Y:%02X  P:%02X  SP:%02X  PPU:   0,30 CYC:%lu\n",
         AC, XR, YR, SSR_byte, SP, mCycles
     );
 
