@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include "6502/6502.hpp"
+#include "nes/ines.hpp"
 
 namespace emu { extern int entry(uint8_t*); }
 
@@ -33,8 +34,15 @@ int main( int argc, char **argv )
     uint8_t *rom = new uint8_t[size];
     stream.read((char*)rom, size);
 
-    int res = emu::entry(rom);
+    auto *H = (INESHeader*)rom;
+    printf("signature   %s\n", H->signature);
+    printf("prgRomSize  0x%02X\n", H->prgRomSize);
+    printf("chrRomSize  0x%02X\n", H->chrRomSize);
+    printf("flags6      %s\n", H->flags6);
 
-    return res;
+    
+    // int res = emu::entry(rom);
+
+    return 0;
 }
 
