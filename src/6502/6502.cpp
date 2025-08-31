@@ -9,7 +9,7 @@ void cpu6502::LoadROM( uint8_t *rom )
     for (size_t i=0; i<65535; i++)
         wtbus(i, rom[i]);
     PC = rdbus16(0xFFFC);
-    printf("PC:  0x%02x\n\n", PC);
+    // printf("PC:  0x%02x\n\n", PC);
 }
 
 
@@ -22,7 +22,10 @@ void cpu6502::Tick()
 
     // printf("[6502]\n");
 
+    uint16_t mCurrPC = PC;
     mCurrOp = _adv08();
+    printf("0x%04X\t0x%02X\n", mCurrPC, mCurrOp);
+
     mFtab[mCurrOp](*this);
 
     if (mInvalidOp)
@@ -31,14 +34,14 @@ void cpu6502::Tick()
         return;
     }
 
-    printf("op:  0x%02X\n", mCurrOp);
-    printf("AC:  0x%02X\n", AC);
-    printf("SSR: ");
-    for (int i=7; i>=0; i--)
-        printf((SSR_byte & (1<<i)) ? "1" : "0");
-    printf("\n");
-    printf("   : NVB DIZC\n");
-    printf("\n");
+    // printf("op:  0x%02X\n", mCurrOp);
+    // printf("AC:  0x%02X\n", AC);
+    // printf("SSR: ");
+    // for (int i=7; i>=0; i--)
+    //     printf((SSR_byte & (1<<i)) ? "1" : "0");
+    // printf("\n");
+    // printf("   : NVB DIZC\n");
+    // printf("\n");
 }
 
 

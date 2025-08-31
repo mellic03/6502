@@ -7,7 +7,10 @@
 #include <stdint.h>
 
 #include "6502/6502.hpp"
-#include "ppu/ppu.hpp"
+#include "nes/ppu.hpp"
+#include "nes/ines.hpp"
+#include "nes/mapper.hpp"
+
 
 namespace emu { int entry(uint8_t*); }
 
@@ -117,11 +120,37 @@ int emu::entry( uint8_t *rom )
     DataBusPPU  ppu_bus;
 
     auto cpu = BusAttachment6502(&cpu_bus);
-    cpu.LoadROM(rom);
+    // cpu.LoadROM(rom);
     cpu.Listen(hwtimer);
 
     auto ppu = BusAttachmentPPU(&ppu_bus);
     ppu.Listen(hwtimer);
+
+
+
+    // bool iNESFormat=false;
+    // if (rom[0]=='N' && rom[1]=='E' && rom[2]=='S' && rom[3]==0x1A)
+    //         iNESFormat=true;
+
+    // bool NES20Format=false;
+    // if (iNESFormat==true && (rom[7]&0x0C)==0x08)
+    //         NES20Format=true;
+
+    // printf("%d %d\n", iNESFormat, NES20Format);
+    // return 0;
+
+    INESHeader H = *(INESHeader*)rom;
+    printf("signature   %s\n",     H.signature);
+    printf("prgRomSize  %u\n", 16384 * H.prgRomSize);
+    printf("chrRomSize  %u\n", 8192 * H.chrRomSize);
+    printf("flags6      %u\n",     H.flags6);
+    printf("flags7      %u\n",     H.flags7);
+    printf("flags8      %u\n",     H.flags8);
+    printf("flags9      %u\n",     H.flags9);
+    printf("flags10     %u\n",     H.flags10);
+    (MapperNROM()).MapROM(&cpu_bus, rom);
+    cpu.PC = 0xC000;
+
 
     Display D;
     D.init(256, 240, 4);
@@ -129,7 +158,8 @@ int emu::entry( uint8_t *rom )
     uint64_t tcurr = SDL_GetTicks64();
     uint64_t tprev = tcurr;
 
-    while (true) // (!cpu.mInvalidOp)
+
+    while (!cpu.mInvalidOp)
     {
         D.beginFrame();
 

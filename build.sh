@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# g++ --std=c++20 -lSDL2 main.cpp emu.cpp 6502/*.cpp system/*.cpp -o cpu
+mkdir -p ./build
 
-shopt -s globstar
-g++ --std=c++20 -g -lSDL2 **/*.cpp -o cpu
-
+cd ./build
+cmake ..
+make -j6
+mv ./nesemu ../nesemu

@@ -110,6 +110,9 @@ private:
 
         return addr;
     }
+public:
+    BusInterface6502( iDataBus *bus )
+    :   BusInterface(bus) {  }
 };
 
 

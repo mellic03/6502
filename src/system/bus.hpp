@@ -54,8 +54,7 @@ class BusAttachment
 public:
     BusInterfaceType mBus;
 
-    BusAttachment( iDataBus *bus )
-    :   mBus(bus) {  };
+    BusAttachment( iDataBus *bus ): mBus(bus) {  };
 
     uint8_t  rdbus   ( uint16_t a ) { return mBus.rdbus(a);   }
     uint16_t rdbus16 ( uint16_t a ) { return mBus.rdbus16(a); }

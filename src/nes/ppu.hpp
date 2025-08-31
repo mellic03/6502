@@ -9,24 +9,19 @@ class DataBusPPU: public iDataBus
 {
 private:
 public:
-    struct MMapPPU
-    {
+    struct MMapPPU {
         uint8_t vrom[0x2000]; // 0x0000 -> 0x2000
         uint8_t vram[0x1F00]; // 0x2000 -> 0x3F00
         uint8_t data[0x0100]; // 0x3F00 -> 0x4000
-    } *mMap;
+    };
 
-    DataBusPPU()
-    :   iDataBus(new MMapPPU())
-    {
-        mMap = (MMapPPU*)mMem;
-    }
+    DataBusPPU(): iDataBus(new uint8_t[0x4000]) {  }
 };
 
-struct PPURegisters
-{
+// struct PPURegisters
+// {
 
-};
+// };
 
 class BusInterfacePPU: public BusInterface
 {
@@ -36,10 +31,13 @@ private:
         return addr % 0x4000;
     }
 
-    uint8_t rdpalette( uint16_t addr )
-    {
+public:
+    BusInterfacePPU( iDataBus *bus ): BusInterface(bus) {  }
 
-    }
+    // uint8_t rdpalette( uint16_t addr )
+    // {
+
+    // }
 };
 
 
@@ -47,11 +45,11 @@ private:
 class BusAttachmentPPU: public BusAttachment<BusInterfacePPU>, public SignalListener
 {
 private:
-    struct MMapPPU {
-        uint8_t PtrnTab[0x2000]; // 0x0000 -> 0x2000
-        uint8_t NameTab[0x1F00]; // 0x2000 -> 0x3F00
-        uint8_t Colours[0x0100]; // 0x3F00 -> 0x4000
-    } *mMap;
+    // struct MMapPPU {
+    //     uint8_t PtrnTab[0x2000]; // 0x0000 -> 0x2000
+    //     uint8_t NameTab[0x1F00]; // 0x2000 -> 0x3F00
+    //     uint8_t Colours[0x0100]; // 0x3F00 -> 0x4000
+    // } *mMap;
 
 public:
     BusAttachmentPPU( iDataBus* );

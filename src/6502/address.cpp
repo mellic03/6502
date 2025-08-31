@@ -21,6 +21,8 @@ uint8_t *cpu6502::LoadACC()
 uint8_t *cpu6502::LoadABS()
 {
     uint16_t addr = _adv16();
+    // uint16_t addr = rdbus16(PC);
+    // PC += 2;
     return &mBus[addr];
 }
 

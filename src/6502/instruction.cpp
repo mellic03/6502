@@ -130,17 +130,17 @@ void cpu6502::InstrAND( uint8_t *src )
 
 void cpu6502::InstrBCC( uint8_t *src )
 {
-    if (SSR.C == 0) PC = *src;
+    if (SSR.C == 0) PC = *(uint16_t*)src;
 }
 
 void cpu6502::InstrBCS( uint8_t *src )
 {
-    if (SSR.C == 1) PC = *src;
+    if (SSR.C == 1) PC = *(uint16_t*)src;
 }
 
 void cpu6502::InstrBEQ( uint8_t *src )
 {
-    if (SSR.Z == 1) PC = *src;
+    if (SSR.Z == 1) PC = *(uint16_t*)src;
 }
 
 void cpu6502::InstrBIT( uint8_t *src )
@@ -150,17 +150,17 @@ void cpu6502::InstrBIT( uint8_t *src )
 
 void cpu6502::InstrBMI( uint8_t *src )
 {
-    if (SSR.N == 1) PC = *src;
+    if (SSR.N == 1) PC = *(uint16_t*)src;
 }
 
 void cpu6502::InstrBNE( uint8_t *src )
 {
-    if (SSR.Z == 0) PC = *src;
+    if (SSR.Z == 0) PC = *(uint16_t*)src;
 }
 
 void cpu6502::InstrBPL( uint8_t *src )
 {
-    if (SSR.N == 0) PC = *src;
+    if (SSR.N == 0) PC = *(uint16_t*)src;
 }
 
 void cpu6502::InstrBRK( uint8_t *src )
@@ -172,12 +172,12 @@ void cpu6502::InstrBRK( uint8_t *src )
 
 void cpu6502::InstrBVC( uint8_t *src )
 {
-    if (SSR.V == 0) PC = *src;
+    if (SSR.V == 0) PC = *(uint16_t*)src;
 }
 
 void cpu6502::InstrBVS( uint8_t *src )
 {
-    if (SSR.V == 1) PC = *src;
+    if (SSR.V == 1) PC = *(uint16_t*)src;
 }
 
 void cpu6502::InstrCLC( uint8_t *src )
@@ -237,17 +237,18 @@ void cpu6502::InstrEOR( uint8_t *src )
 {
 
 }
-
+#include <stdio.h>
 
 void cpu6502::InstrJMP( uint8_t *src )
 {
-    PC = *src;
+    PC = *(uint16_t*)src;
+    printf("JMP 0x%04X\n", PC);
 }
 
 void cpu6502::InstrJSR( uint8_t *src )
 {
     push16(PC+2);
-    PC = *src;
+    PC = *(uint16_t*)src;
 }
 
 void cpu6502::InstrLDA( uint8_t *src )
