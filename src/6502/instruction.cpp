@@ -145,7 +145,13 @@ void cpu6502::InstrBEQ( uint8_t *src )
 
 void cpu6502::InstrBIT( uint8_t *src )
 {
+    union {
+        uint8_t byte;
+        cpu6502RegisterSSR ssr;
+    } U = { *src };
 
+    SSR.N = U.ssr.N;
+    SSR.V = U.ssr.V;
 }
 
 void cpu6502::InstrBMI( uint8_t *src )
@@ -235,14 +241,13 @@ void cpu6502::InstrCPY( uint8_t *src )
 
 void cpu6502::InstrEOR( uint8_t *src )
 {
-
+    AC ^= *src;
+    _setssr<0b10000010>(AC);
 }
-#include <stdio.h>
 
 void cpu6502::InstrJMP( uint8_t *src )
 {
     PC = *(uint16_t*)src;
-    printf("JMP 0x%04X\n", PC);
 }
 
 void cpu6502::InstrJSR( uint8_t *src )
@@ -267,6 +272,11 @@ void cpu6502::InstrLDY( uint8_t *src )
     XR = *src;
 }
 
+void cpu6502::InstrNOP( uint8_t* )
+{
+
+}
+
 void cpu6502::InstrORA( uint8_t *src )
 {
     AC |= *src;
@@ -274,13 +284,13 @@ void cpu6502::InstrORA( uint8_t *src )
     SSR.Z = (!AC) ? 1 : 0;
 }
 
-void cpu6502::InstrPHA( uint8_t *src )
+void cpu6502::InstrPHA( uint8_t* )
 {
     mBus[SP++] = AC;
     // push08(AC);
 }
 
-void cpu6502::InstrPHP( uint8_t *src )
+void cpu6502::InstrPHP( uint8_t* )
 {
     union {
         cpu6502RegisterSSR ssr;
@@ -292,13 +302,13 @@ void cpu6502::InstrPHP( uint8_t *src )
     push08(U.byte);
 }
 
-void cpu6502::InstrPLA( uint8_t *src )
+void cpu6502::InstrPLA( uint8_t* )
 {
     AC = mBus[--SP];
     // AC = pop08();
 }
 
-void cpu6502::InstrPLP( uint8_t *src )
+void cpu6502::InstrPLP( uint8_t* )
 {
     union {
         uint8_t byte;
@@ -310,6 +320,21 @@ void cpu6502::InstrPLP( uint8_t *src )
     SSR = U.ssr;
 }
 
+void cpu6502::InstrRTI( uint8_t* )
+{
+    auto tmp = SSR;
+    InstrPLP(nullptr);
+    SSR.B = tmp.B;
+    SSR._ = tmp._;
+
+    PC = pop16();
+}
+
+void cpu6502::InstrRTS( uint8_t* )
+{
+    PC = pop16() + 1;
+}
+
 void cpu6502::InstrSBC( uint8_t *x )
 {
     uint8_t onecomp = ~uint8_t(*x);
@@ -317,7 +342,22 @@ void cpu6502::InstrSBC( uint8_t *x )
     InstrADC(&twocomp);
 }
 
+void cpu6502::InstrSEC( uint8_t* )
+{
+    SSR.C = 1;
+}
+
 void cpu6502::InstrSTA( uint8_t *x )
+{
+    *x = AC;
+}
+
+void cpu6502::InstrSTX( uint8_t *x )
+{
+    *x = AC;
+}
+
+void cpu6502::InstrSTY( uint8_t *x )
 {
     *x = AC;
 }

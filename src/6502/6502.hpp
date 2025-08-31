@@ -6,13 +6,6 @@
 #include "../system/clock.hpp"
 
 
-
-struct cpu6502RegisterPC
-{
-    uint8_t lo;
-    uint8_t hi;
-};
-
 struct cpu6502RegisterSSR
 {
     /** carry; */
@@ -42,7 +35,6 @@ struct cpu6502RegisterSSR
     cpu6502RegisterSSR()
     :   C(0), Z(0), I(1), D(0), _(0), B(0), V(0), N(0) {  };
 } __attribute__((packed));
-
 
 
 
@@ -122,6 +114,7 @@ struct cpu6502: public BusAttachment<BusInterface6502>, public SignalListener
 public:
     uint8_t  mInvalidOp;
     uint8_t  mCurrOp;
+    size_t   mCycles;
 
     uint8_t  AC;
     uint8_t  XR;
@@ -158,13 +151,20 @@ private:
 
     struct Inst
     {
+        const char *label;
         ExecFn    fE;
         GetAddrFn fA;
         int       nCycles;
 
-        Inst( ExecFn fe, GetAddrFn fa, int ncyc ): fE(fe), fA(fa), nCycles(ncyc) {  }
-        Inst(): Inst(nullptr, nullptr, 1) {  }
-        void operator()( cpu6502 &cpu ) { (cpu.*fE)((cpu.*fA)()); }
+        Inst( const char *str, ExecFn fe, GetAddrFn fa, int ncyc )
+        :   label(str), fE(fe), fA(fa), nCycles(ncyc) {  }
+
+        Inst(): Inst("", nullptr, nullptr, 1) {  }
+    
+        void operator()( cpu6502 &cpu )
+        {
+            (cpu.*fE)((cpu.*fA)());
+        }
     };
 
     Inst mFtab[256];
@@ -225,12 +225,18 @@ private:
     void InstrLDA( uint8_t* );
     void InstrLDX( uint8_t* );
     void InstrLDY( uint8_t* );
+    void InstrNOP( uint8_t* );
     void InstrORA( uint8_t* );
     void InstrPHA( uint8_t* );
     void InstrPHP( uint8_t* );
     void InstrPLA( uint8_t* );
     void InstrPLP( uint8_t* );
+    void InstrRTI( uint8_t* );
+    void InstrRTS( uint8_t* );
     void InstrSBC( uint8_t* );
+    void InstrSEC( uint8_t* );
     void InstrSTA( uint8_t* );
+    void InstrSTX( uint8_t* );
+    void InstrSTY( uint8_t* );
 
 };
