@@ -8,7 +8,6 @@ void SignalEmitter::update( uint64_t dt_msecs )
     // 4 Hz =  250 ms
     // static constexpr size_t HZ = 1'790'000;
     // static constexpr size_t NS = 1'000'000'000 / HZ;
-
     mNsecs += 1000000*dt_msecs;
 
     if (mNsecs < mPeriod)
@@ -34,9 +33,7 @@ void SignalListener::Listen( SignalEmitter &emitter )
 
 void SignalListener::_tick()
 {
-    mCycleCount += 1;
-
-    if (mCycleCount >= mCycleRatio)
+    if ((++mCycleCount) >= mDivisor)
     {
         this->Tick();
         mCycleCount = 0;

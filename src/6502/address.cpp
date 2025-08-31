@@ -49,13 +49,12 @@ uint8_t *cpu6502::LoadABSY()
 
 uint8_t *cpu6502::LoadIMM()
 {
-    uint16_t addr = PC++;
-    return &mBus[addr];
+    uint8_t *ptr = &mBus[PC++];
+    return ptr;
 }
 
 uint8_t *cpu6502::LoadIMP()
 {
-    // PC += 1;
     return 0;
 }
 

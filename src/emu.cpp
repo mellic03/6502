@@ -28,12 +28,14 @@ public:
     int mWidth;
     int mHeight;
     int mScale;
+    bool mRunning;
 
     void init( int w, int h, int scale )
     {
         mWidth  = w;
         mHeight = h;
         mScale  = scale;
+        mRunning = true;
 
         SDL_Init(SDL_INIT_VIDEO);
 
@@ -113,41 +115,19 @@ public:
 int emu::entry( uint8_t *rom )
 {
     using BusAttachment6502 = cpu6502;
-
-    // SignalEmitter    hwtimer(1'790'000);
-    SignalEmitter     hwtimer(50);
+    
+    // SignalEmitter     hwtimer(50);
+    SignalEmitter     hwtimer(1'790'000);
     DataBus6502       bus6502;
     DataBusPPU        busPPU;
     BusAttachment6502 cpu(&bus6502);
     BusAttachmentPPU  ppu(&busPPU);
-
     cpu.Listen(hwtimer);
     ppu.Listen(hwtimer);
 
-
-    // bool iNESFormat=false;
-    // if (rom[0]=='N' && rom[1]=='E' && rom[2]=='S' && rom[3]==0x1A)
-    //         iNESFormat=true;
-
-    // bool NES20Format=false;
-    // if (iNESFormat==true && (rom[7]&0x0C)==0x08)
-    //         NES20Format=true;
-
-    // printf("%d %d\n", iNESFormat, NES20Format);
-    // return 0;
-
-    INESHeader H = *(INESHeader*)rom;
-    printf("signature   %s\n",     H.signature);
-    printf("prgRomSize  %u\n", 16384 * H.prgRomSize);
-    printf("chrRomSize  %u\n", 8192 * H.chrRomSize);
-    printf("flags6      %u\n",     H.flags6);
-    printf("flags7      %u\n",     H.flags7);
-    printf("flags8      %u\n",     H.flags8);
-    printf("flags9      %u\n",     H.flags9);
-    printf("flags10     %u\n",     H.flags10);
     (MapperNROM()).MapROM(&bus6502, rom);
     cpu.PC = 0xC000;
-
+    // return 0;
 
     Display D;
     D.init(256, 240, 4);
@@ -155,15 +135,14 @@ int emu::entry( uint8_t *rom )
     uint64_t tcurr = SDL_GetTicks64();
     uint64_t tprev = tcurr;
 
-    while (!cpu.mInvalidOp)
+    // while (!cpu.mInvalidOp)
+    for (int i=0; i<64&&!cpu.mInvalidOp; i++)
     {
         D.beginFrame();
 
         tprev = tcurr;
         tcurr = SDL_GetTicks64();
         hwtimer.update(tcurr - tprev);
-
-        // cpu.Tick();
         memcpy(D.mSurface->pixels, &(cpu.mBus[0]), 1024*32);
 
         D.endFrame();

@@ -30,13 +30,13 @@ class SignalListener
 {
 private:
     friend class SignalEmitter;
-    const uint16_t mCycleRatio;
-    uint16_t mCycleCount;
+    const size_t mDivisor;
+    size_t mCycleCount;
     void _tick();
 
 public:
-    SignalListener( uint16_t cycleRatio )
-    :   mCycleRatio(cycleRatio), mCycleCount(0) {  };
+    SignalListener( uint16_t divisor )
+    :   mDivisor(divisor), mCycleCount(0) {  };
     void Listen( SignalEmitter& );
     virtual void Tick() = 0;
 };

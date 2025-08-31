@@ -269,7 +269,7 @@ void cpu6502::InstrLDX( uint8_t *src )
 
 void cpu6502::InstrLDY( uint8_t *src )
 {
-    XR = *src;
+    YR = *src;
 }
 
 void cpu6502::InstrNOP( uint8_t* )
@@ -280,14 +280,15 @@ void cpu6502::InstrNOP( uint8_t* )
 void cpu6502::InstrORA( uint8_t *src )
 {
     AC |= *src;
-    SSR.N = (AC) ? 1 : 0;
-    SSR.Z = (!AC) ? 1 : 0;
+    _setssr<0b10000010>(AC);
+    // SSR.N = ( AC) ? 1 : 0;
+    // SSR.Z = (!AC) ? 1 : 0;
 }
 
 void cpu6502::InstrPHA( uint8_t* )
 {
-    mBus[SP++] = AC;
-    // push08(AC);
+    // mBus[SP++] = AC;
+    push08(AC);
 }
 
 void cpu6502::InstrPHP( uint8_t* )
@@ -304,8 +305,8 @@ void cpu6502::InstrPHP( uint8_t* )
 
 void cpu6502::InstrPLA( uint8_t* )
 {
-    AC = mBus[--SP];
-    // AC = pop08();
+    // AC = mBus[--SP];
+    AC = pop08();
 }
 
 void cpu6502::InstrPLP( uint8_t* )
@@ -354,12 +355,12 @@ void cpu6502::InstrSTA( uint8_t *x )
 
 void cpu6502::InstrSTX( uint8_t *x )
 {
-    *x = AC;
+    *x = XR;
 }
 
 void cpu6502::InstrSTY( uint8_t *x )
 {
-    *x = AC;
+    *x = YR;
 }
 
 

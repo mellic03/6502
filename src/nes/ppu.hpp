@@ -60,6 +60,21 @@ public:
         uint8_t OAMDMA; 
     };
 
+    struct AttrTable
+    {
+        uint8_t data[64];
+    };
+    
+    union NameTable
+    {
+        uint8_t data[1024];
+        
+        struct {
+            uint8_t dat0[1024-64];
+            uint8_t attr[64];
+        };
+    };
+
 private:
     mmio_t *mmio;
 
@@ -93,20 +108,6 @@ public:
     $2800 at the bottom left, and $2C00 at the bottom right. 
 */
 
-struct AttrTable
-{
-    uint8_t data[64];
-};
-
-union NameTable
-{
-    uint8_t data[1024];
-
-    struct {
-        uint8_t dat0[1024-64];
-        uint8_t attr[64];
-    };
-};
 
 
 //        2xx0    2xx1    2xx2    2xx3    2xx4    2xx5    2xx6    2xx7

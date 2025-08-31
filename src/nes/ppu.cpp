@@ -5,7 +5,7 @@
 
 BusAttachmentPPU::BusAttachmentPPU( iDataBus *bus )
 :   BusAttachment(bus),
-    SignalListener(2)
+    SignalListener(12)
 {
     // mMap = (MMapPPU*)(&mBus[0]);
     // mMap->PtrnTab
