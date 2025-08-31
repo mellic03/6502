@@ -275,7 +275,8 @@ void cpu6502::InstrORA( uint8_t *src )
 
 void cpu6502::InstrPHA( uint8_t *src )
 {
-    push08(AC);
+    mBus[SP++] = AC;
+    // push08(AC);
 }
 
 void cpu6502::InstrPHP( uint8_t *src )
@@ -292,7 +293,8 @@ void cpu6502::InstrPHP( uint8_t *src )
 
 void cpu6502::InstrPLA( uint8_t *src )
 {
-    AC = pop08();
+    AC = mBus[--SP];
+    // AC = pop08();
 }
 
 void cpu6502::InstrPLP( uint8_t *src )

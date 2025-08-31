@@ -6,7 +6,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "6502.hpp"
+#include "6502/6502.hpp"
+
+namespace emu { extern int entry(uint8_t*); }
 
 
 int main( int argc, char **argv )
@@ -28,14 +30,11 @@ int main( int argc, char **argv )
     size_t size = stream.tellg();
     stream.seekg(0, std::ifstream::beg);
     
-    printf("size=%lu\n", size);
     uint8_t *rom = new uint8_t[size];
     stream.read((char*)rom, size);
 
-    cpu6502 cpu;
-    cpu.LoadROM(rom);
-    cpu.Run();
+    int res = emu::entry(rom);
 
-    return 0;
+    return res;
 }
 
