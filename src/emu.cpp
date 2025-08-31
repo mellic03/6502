@@ -10,6 +10,7 @@
 #include "nes/ppu.hpp"
 #include "nes/ines.hpp"
 #include "nes/mapper.hpp"
+// #include "nes/nes.hpp"
 
 
 namespace emu { int entry(uint8_t*); }
@@ -113,19 +114,15 @@ int emu::entry( uint8_t *rom )
 {
     using BusAttachment6502 = cpu6502;
 
-    // SignalEmitter hwtimer(1'790'000);
-    SignalEmitter hwtimer(50);
+    // SignalEmitter    hwtimer(1'790'000);
+    SignalEmitter     hwtimer(50);
+    DataBus6502       bus6502;
+    DataBusPPU        busPPU;
+    BusAttachment6502 cpu(&bus6502);
+    BusAttachmentPPU  ppu(&busPPU);
 
-    DataBus6502 cpu_bus;
-    DataBusPPU  ppu_bus;
-
-    auto cpu = BusAttachment6502(&cpu_bus);
-    // cpu.LoadROM(rom);
     cpu.Listen(hwtimer);
-
-    auto ppu = BusAttachmentPPU(&ppu_bus);
     ppu.Listen(hwtimer);
-
 
 
     // bool iNESFormat=false;
@@ -148,7 +145,7 @@ int emu::entry( uint8_t *rom )
     printf("flags8      %u\n",     H.flags8);
     printf("flags9      %u\n",     H.flags9);
     printf("flags10     %u\n",     H.flags10);
-    (MapperNROM()).MapROM(&cpu_bus, rom);
+    (MapperNROM()).MapROM(&bus6502, rom);
     cpu.PC = 0xC000;
 
 
@@ -157,7 +154,6 @@ int emu::entry( uint8_t *rom )
 
     uint64_t tcurr = SDL_GetTicks64();
     uint64_t tprev = tcurr;
-
 
     while (!cpu.mInvalidOp)
     {

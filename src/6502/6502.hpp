@@ -74,7 +74,6 @@ struct MMap6502
 };
 
 
-
 class DataBus6502: public iDataBus
 {
 private:
