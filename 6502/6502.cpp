@@ -15,6 +15,11 @@ void cpu6502::LoadROM( uint8_t *rom )
 
 void cpu6502::Tick()
 {
+    if (mInvalidOp)
+    {
+        return;
+    }
+
     // printf("[6502]\n");
 
     mCurrOp = _adv08();

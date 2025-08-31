@@ -104,6 +104,7 @@ public:
 };
 
 
+// https://bugzmanov.github.io/nes_ebook/chapter_7.html
 
 int emu::entry( uint8_t *rom )
 {
