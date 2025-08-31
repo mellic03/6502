@@ -115,11 +115,11 @@ int emu::entry( uint8_t *rom )
     DataBus6502 cpu_bus;
     DataBusPPU  ppu_bus;
 
-    BusAttachment6502 cpu(&cpu_bus);
-    BusAttachmentPPU  ppu(&ppu_bus);
-
+    auto cpu = BusAttachment6502(&cpu_bus);
     cpu.LoadROM(rom);
     cpu.Listen(hwtimer);
+
+    auto ppu = BusAttachmentPPU(&ppu_bus);
     ppu.Listen(hwtimer);
 
     Display D;
