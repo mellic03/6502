@@ -178,8 +178,8 @@ private:
     template <uint8_t mask>
     void _setssr( uint16_t res );
 
-    uint8_t  _adv08();
-    uint16_t _adv16();
+    uint8_t  fetch8();
+    uint16_t fetch16();
     // -----------------------------------------------------------------------------------------
 
     void     push08( uint8_t );

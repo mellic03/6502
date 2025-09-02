@@ -1,107 +1,58 @@
 #include "6502.hpp"
 
+// Helpers
+uint8_t  cpu6502::fetch8()  { return mBus.read(PC++); }
+uint16_t cpu6502::fetch16() { uint16_t lo = fetch8(); uint16_t hi = fetch8(); return (hi<<8) | lo; }
 
-uint8_t cpu6502::_adv08()
+// --- Addressing modes ---
+
+uint8_t* cpu6502::LoadACC()  { return &AC; }
+
+uint8_t* cpu6502::LoadIMM()  { return &mBus[PC++]; }
+
+// Absolute
+uint8_t* cpu6502::LoadABS()
 {
-    return mBus.read(PC++);
+    uint16_t addr = fetch16();
+    return &mBus[addr];
+}
+uint8_t* cpu6502::LoadABSX() {
+    uint16_t base = fetch16();
+    return &mBus[(base + XR) & 0xFFFF];
+}
+uint8_t* cpu6502::LoadABSY() {
+    uint16_t base = fetch16();
+    return &mBus[(base + YR) & 0xFFFF];
 }
 
-uint16_t cpu6502::_adv16()
-{
-    uint16_t lo = mBus.read(PC++);
-    uint16_t hi = mBus.read(PC++);
-    return (hi << 8) | lo;
+// Zero page (wrap at 0x00FF)
+uint8_t* cpu6502::LoadZPG()  { return &mBus[fetch8()]; }
+uint8_t* cpu6502::LoadZPGX() { return &mBus[(uint8_t)(fetch8() + XR)]; }
+uint8_t* cpu6502::LoadZPGY() { return &mBus[(uint8_t)(fetch8() + YR)]; }
+
+// Relative (return ptr to the signed offset byte)
+uint8_t* cpu6502::LoadREL()  { return &mBus[PC++]; }
+
+// (addr) — used by JMP only; emulate the 6502 page-wrap bug
+uint8_t* cpu6502::LoadIND() {
+    uint16_t ptr = fetch16();
+    uint16_t lo_addr = ptr;
+    uint16_t hi_addr = (ptr & 0xFF00) | ((ptr + 1) & 0x00FF); // 6502 bug
+    uint16_t addr = (mBus.read(hi_addr) << 8) | mBus.read(lo_addr);
+    return &mBus[addr];
 }
 
-uint8_t *cpu6502::LoadACC()
-{
-    return &AC;
+// (zp,X)
+uint8_t* cpu6502::LoadINDX() {
+    uint8_t zp = fetch8();
+    uint8_t p  = (uint8_t)(zp + XR);
+    uint16_t addr = (mBus.read((uint8_t)(p + 1)) << 8) | mBus.read(p);
+    return &mBus[addr];
 }
 
-
-uint8_t *cpu6502::LoadABS()
-{
-    PC += 2;
-    return &mBus[PC-2];
+// (zp),Y
+uint8_t* cpu6502::LoadINDY() {
+    uint8_t zp = fetch8();
+    uint16_t base = (mBus.read((uint8_t)(zp + 1)) << 8) | mBus.read(zp);
+    return &mBus[(base + YR) & 0xFFFF];
 }
-
-uint8_t *cpu6502::LoadABSX()
-{
-    PC += 2;
-    return &mBus[PC-2 + XR];
-}
-
-uint8_t *cpu6502::LoadABSY()
-{
-    PC += 2;
-    return &mBus[PC-1 + YR];
-}
-
-uint8_t *cpu6502::LoadIMM()
-{
-    PC += 1;
-    return &mBus[PC-1];
-}
-
-uint8_t *cpu6502::LoadIMP()
-{
-    static uint8_t dummy = 0;
-    return &dummy;
-}
-
-uint8_t *cpu6502::LoadIND()
-{
-    PC += 2;
-    uint16_t addr = mBus.read16(PC-2);
-    uint16_t lo   = mBus.read(addr+0) & 0x00FF;
-    uint16_t hi   = mBus.read(addr+1) & 0x00FF;
-    return &mBus[(hi << 8) | lo];
-}
-
-
-/*
-    (LL + X, LL + X + 1), inc. without carry: C.w($00LL + X)
-*/
-uint8_t *cpu6502::LoadINDX()
-{
-    PC += 2;
-    uint16_t addr = mBus.read16(PC-2);
-    uint16_t lo   = mBus.read(addr+XR+0) & 0x00FF;
-    uint16_t hi   = mBus.read(addr+XR+1) & 0x00FF;
-    return &mBus[(hi << 8) | lo];
-}
-
-
-/*
-    OPC ($LL),Y operand is zeropage address; effective address is
-    word in (LL, LL + 1) incremented by Y with carry: C.w($00LL) + Y
-*/
-uint8_t *cpu6502::LoadINDY()
-{
-    PC += 2;
-    uint16_t addr = mBus.read16(PC-2);
-    uint16_t lo   = mBus.read(addr+0) & 0x00FF;
-    uint16_t hi   = mBus.read(addr+1) & 0x00FF;
-    return &mBus[((hi << 8) | lo) + YR];
-}
-
-uint8_t *cpu6502::LoadREL()
-{
-    return (uint8_t*)&mBus[PC++];
-}
-
-uint8_t *cpu6502::LoadZPG()
-{
-    return &mBus[uint16_t(_adv08()) & 0x00FF];
-}
-
-uint8_t *cpu6502::LoadZPGX()
-{
-    return &mBus[uint16_t(_adv08() + XR) & 0x00FF];
-}
-
-uint8_t *cpu6502::LoadZPGY()
-{
-    return &mBus[uint16_t(_adv08() + YR) & 0x00FF];
-}
-

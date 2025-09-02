@@ -12,7 +12,7 @@ void cpu6502::Tick()
     }
 
     uint16_t mCurrPC = PC;
-    mCurrOp = _adv08();
+    mCurrOp = fetch8();
 
     // printf("%04X  %02X %02X %02X  ", mCurrPC, mCurrOp, mBus[PC+0], mBus[PC+1]);
     // printf("%s ", mFtab[mCurrOp].label);
