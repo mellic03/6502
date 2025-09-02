@@ -112,21 +112,119 @@ public:
 
 // https://bugzmanov.github.io/nes_ebook/chapter_7.html
 
+
+
+static uint8_t *cpureadpram(iBusDevice *dev, uint16_t base, uint16_t addr)
+{
+    addr = base + (addr % 0x4000);
+    return ((MemoryDevice*)dev)->mMem + (addr - base);
+}
+
+static void cpuwritepram(iBusDevice *dev, uint16_t base, uint16_t addr, uint8_t byte)
+{
+    addr = base + (addr % 0x4000);
+    (*(MemoryDevice*)dev)[addr-base] = byte;
+}
+
+
+static uint8_t *cpureadvram( iBusDevice *dev, uint16_t base, uint16_t addr )
+{
+    addr = 0x0200 + (addr % 8);
+    return ((MemoryDevice*)dev)->mMem + (addr - base);
+}
+
+static void cpuwritevram( iBusDevice *dev, uint16_t base, uint16_t addr, uint8_t byte )
+{
+    addr = 0x0200 + (addr % 8);
+    (*(MemoryDevice*)dev)[addr-0x2000] = byte;
+}
+
+
 int emu::entry( uint8_t *rom )
 {
-    using BusAttachment6502 = cpu6502;
-    
-    // SignalEmitter     hwtimer(50);
-    SignalEmitter     hwtimer(1'790'000);
-    DataBus6502       bus6502;
-    DataBusPPU        busPPU;
-    BusAttachment6502 cpu(&bus6502);
-    BusAttachmentPPU  ppu(&busPPU);
-    cpu.Listen(hwtimer);
-    ppu.Listen(hwtimer);
+    using BusDevice6502 = cpu6502;
 
-    (MapperNROM()).MapROM(&bus6502, rom);
+    SignalEmitter hwtimer(1'790'000);
+    BusDevice6502 cpu;  cpu.Listen(hwtimer);
+    BusDevicePPU  ppu;  ppu.Listen(hwtimer);
+
+    cpu.mBus.attach(&(ppu.mRam), 0x2000, 0x3FFF, cpureadvram, cpuwritevram);
+
+    // void MapROM( ... )
+    {
+        INESHeader H = *(INESHeader*)rom;
+        uint16_t prgsize = 16384 * H.prgRomSize;
+        uint16_t chrsize = 8192  * H.chrRomSize;
+
+        uint8_t mapper = (0b11110000 & H.flags6) >> 4
+                       + (0b11110000 & H.flags7) >> 4;
+
+        bool iNESFormat  = false;
+        bool NES20Format = false;
+
+        if (rom[0]=='N' && rom[1]=='E' && rom[2]=='S' && rom[3]==0x1A)
+        {
+            if (iNESFormat && (rom[7]&0x0C)==0x08)
+                NES20Format = true;
+            else
+                iNESFormat = true;
+        }
+
+        printf("signature   %s\n", H.signature);
+        printf("prgRomSize  %u\n", prgsize);
+        printf("chrRomSize  %u\n", chrsize);
+        printf("mapper      %u\n", mapper);
+        printf("flags6      %u\n", H.flags6);
+        printf("flags7      %u\n", H.flags7);
+        printf("flags8      %u\n", H.flags8);
+        printf("flags9      %u\n", H.flags9);
+        printf("flags10     %u\n", H.flags10);
+        printf("\n");
+
+        if (iNESFormat)
+        {
+            /*
+                - All Banks are fixed,
+                - CPU $6000-$7FFF:
+                    Family Basic only: PRG RAM, mirrored as necessary to fill
+                    entire 8 KiB window, write protectable with an external switch
+                - CPU $8000-$BFFF:
+                    First 16 KB of ROM.
+                - CPU $C000-$FFFF:
+                    Last 16 KB of ROM (NROM-256) or mirror of $8000-$BFFF (NROM-128).
+            */
+
+            auto *prgRom = new MemoryDevice(prgsize);
+            memcpy(prgRom->mMem, rom+0x10, prgsize);
+            cpu.mBus.attach(prgRom, 0x8000, 0xFFFF, cpureadpram, cpuwritepram);
+            // cpu.mBus.attach(&(cpu.mRam), 0x6000, 0x7FFF, cpureadram, cpuwriteram);
+
+
+            auto *chrRom = new MemoryDevice(chrsize);
+            memcpy(chrRom->mMem, rom+prgsize, chrsize);
+
+            // memcpy(bus->mMem + 0x8000, rom+0x10, prgsize);
+
+            // memcpy(cpubus->mMem + 0x4000, rom+0x10, prgsize);
+            // memcpy(ppubus->mMem + 0x4000, rom+0x10, prgsize);
+            // printf("BOYE: 0x%04X\n", bus->mMem[0x6000 + 16834 - 2]);
+        }
+        
+        if (NES20Format)
+        {
+            
+        }
+    }
+
+
+
+
+    // (MapperNROM()).MapROM(&bus6502, rom);
     cpu.PC = 0xC000;
+    printf("WOOP  %02X %02X\n", cpu.mBus[0xFFFA], cpu.mBus[0xFFFB]);
+    printf("WOOP  %02X %02X\n", cpu.mBus[0xFFFC], cpu.mBus[0xFFFD]);
+    printf("WOOP  %02X %02X\n", cpu.mBus[0xFFFE], cpu.mBus[0xFFFF]);
+    // cpu.PC = cpu.mBus.read16(0xFFFC);
     // return 0;
 
     Display D;
@@ -135,17 +233,21 @@ int emu::entry( uint8_t *rom )
     uint64_t tcurr = SDL_GetTicks64();
     uint64_t tprev = tcurr;
 
-    // while (!cpu.mInvalidOp)
-    for (int i=0; i<64&&!cpu.mInvalidOp; i++)
+    // for (int i=0; i<64&&!cpu.mInvalidOp; i++)
+    while (!cpu.mInvalidOp)
     {
         D.beginFrame();
 
         tprev = tcurr;
         tcurr = SDL_GetTicks64();
         hwtimer.update(tcurr - tprev);
-        memcpy(D.mSurface->pixels, &(cpu.mBus[0]), 1024*32);
 
         D.endFrame();
+
+        if (cpu.mCycles >= 400)
+        {
+            break;
+        }
     }
     return 0;
 }

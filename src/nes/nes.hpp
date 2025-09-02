@@ -11,21 +11,25 @@
 
 struct NesEmu
 {
-    using BusAttachmentCPU = cpu6502;
+    using BusBusDeviceCPU = cpu6502;
 
-    SignalEmitter    hwtimer;
-    DataBus6502      bus6502;
-    DataBusPPU       busPPU;
-    BusAttachmentCPU cpu;
-    BusAttachmentPPU ppu;
+    SignalEmitter hwtimer;
+    DataBus       busCPU;
+    DataBus       busPPU;
+    cpu6502       cpu;
+    BusDevicePPU  ppu;
 
     NesEmu()
-    // :   hwtimer(1'790'000),
-    :   hwtimer(50),
-        cpu(&bus6502), ppu(&busPPU)
+    // :   hwtimer(1'790'000)
+    :   hwtimer(50)
+    //    cpu(busCPU),
+    //    ppu(busPPU),
     {
         cpu.Listen(hwtimer);
         ppu.Listen(hwtimer);
+
+        // busCPU.attach(&(ppu.mRam), 0x2000, 0x3FFF, cpureadvram, cpuwritevram);
+
     }
 
     // SignalEmitter hwtimer(50);

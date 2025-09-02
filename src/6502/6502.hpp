@@ -8,109 +8,113 @@
 
 struct cpu6502RegisterSSR
 {
-    /** carry; */
-    uint8_t C :1;
-
-    /** zero result; */
-    uint8_t Z :1;
-
-    /** interrupt disable; */
-    uint8_t I :1;
-
-    /** decimal mode */
-    uint8_t D :1;
-
-    /** unused */
-    uint8_t _ :1;
-
-    /** break */
-    uint8_t B :1;
+    /** negative result */
+    uint8_t N :1;
 
     /** overflow */
     uint8_t V :1;
 
-    /** negative result */
-    uint8_t N :1;
+    /** break */
+    uint8_t B :1;
+
+    /** unused */
+    uint8_t _ :1;
+    
+    /** decimal mode */
+    uint8_t D :1;
+
+    /** interrupt disable; */
+    uint8_t I :1;
+
+    /** zero result; */
+    uint8_t Z :1;
+
+    /** carry; */
+    uint8_t C :1;
 
     cpu6502RegisterSSR()
-    :   C(0), Z(0), I(1), D(0), _(0), B(0), V(0), N(0) {  };
+    :   N(0), V(0), B(1), _(0), D(0), I(1), Z(0), C(0) {  }
+
 } __attribute__((packed));
 
 
 
-struct MMap6502
-{
-    // union {
-    //     uint8_t ram[0x0800];
-    //     struct {
-    //         uint8_t zpage[0x0100]; // 0x0000 -> 0x0100
-    //         uint8_t stack[0x0100]; // 0x0100 -> 0x0200
-    //     };
-    // };
-    // uint8_t ram     [0x0800]; // 0x0000 -> 0x07FF
+// struct MMap6502
+// {
+//     union {
+//         uint8_t ram [0x0800];       // 0x0000 -> 0x07FF
+//         struct {
+//             uint8_t zpage[0x0100]; // 0x0000 -> 0x0100
+//             uint8_t stack[0x0100]; // 0x0100 -> 0x0200
+//         };
+//     };
 
-    union {
-        uint8_t ram [0x0800];       // 0x0000 -> 0x07FF
-        struct {
-            uint8_t zpage[0x0100]; // 0x0000 -> 0x0100
-            uint8_t stack[0x0100]; // 0x0100 -> 0x0200
-        };
-    };
+//  // uint8_t ram_mr1 [0x0800];   // 0x0800 -> 0x0FFF
+//  // uint8_t ram_mr2 [0x0800];   // 0x1000 -> 0x17FF
+//  // uint8_t ram_mr2 [0x0800];   // 0x1800 -> 0x1FFF
+//                                 // 
+//     uint8_t ppu     [0x0008];   // 0x2000 -> 0x2008
+//  // uint8_t ppu_mr1 [0x1FF8];   // 0x2008 -> 0x3FFF
+//                                 // 
+//     uint8_t apu_io  [0x0018];   // 0x4000 -> 0x4017
+//     uint8_t apu_io_ [0x0008];   // 0x4018 -> 0x401F
+//                                 // 
+//     uint8_t umapped [0xBFE0];   // 0x4020 -> 0xFFFF,   Available for cartridge use.
+//                                 // 0x6000 -> 0x7FFF,   Usually cartridge RAM, when present.
+//                                 // 0x8000 -> 0xFFFF,   Usually cartridge ROM and mapper registers.
 
- // uint8_t ram_mr1 [0x0800];   // 0x0800 -> 0x0FFF
- // uint8_t ram_mr2 [0x0800];   // 0x1000 -> 0x17FF
- // uint8_t ram_mr2 [0x0800];   // 0x1800 -> 0x1FFF
-                                // 
-    uint8_t ppu     [0x0008];   // 0x2000 -> 0x2008
- // uint8_t ppu_mr1 [0x1FF8];   // 0x2008 -> 0x3FFF
-                                // 
-    uint8_t apu_io  [0x0018];   // 0x4000 -> 0x4017
-    uint8_t apu_io_ [0x0008];   // 0x4018 -> 0x401F
-                                // 
-    uint8_t umapped [0xBFE0];   // 0x4020 -> 0xFFFF,   Available for cartridge use.
-                                // 0x6000 -> 0x7FFF,   Usually cartridge RAM, when present.
-                                // 0x8000 -> 0xFFFF,   Usually cartridge ROM and mapper registers.
-
-};
+// };
 
 
-class DataBus6502: public iDataBus
+// class DataBus6502: public iDataBus
+// {
+// private:
+
+// public:
+//     DataBus6502(): iDataBus(new uint8_t[0xFFFF+1]) {  }
+
+// };
+
+// class BusInterface6502: public BusInterface
+// {
+// private:
+//     virtual uint16_t deplex( uint16_t addr ) final
+//     {
+//         if (0x0000<=addr && addr<=0x1FFF)
+//         {
+//             return addr % 0x0800;
+//         }
+
+//         if (0x2000<=addr && addr<=0x3FFF)
+//         {
+//             return 0x2000 + (addr % 8);
+//         }
+    
+//         if (0x4000<=addr && addr<=0xFFFF)
+//         {
+//             return 0x4000 + (addr % 0x4000);
+//         }
+
+//         return addr;
+//     }
+// public:
+//     BusInterface6502( iDataBus *bus )
+//     :   BusInterface(bus) {  }
+// };
+
+
+// https://www.nesdev.org/wiki/CPU_power_up_state
+// struct cpu6502: public BusAttachment<BusInterface6502>, public SignalListener
+struct cpu6502: public iBusDevice, public SignalListener
 {
 private:
 
 public:
-    DataBus6502(): iDataBus(new uint8_t[0xFFFF+1]) {  }
+    // using InternalRamDevice = MemoryDevice<0x07FF+1>;
 
-};
+    DataBus      mBus;
+    MemoryDevice mRam;
 
-
-class BusInterface6502: public BusInterface
-{
-private:
-    uint16_t deplex( uint16_t addr )
-    {
-        if (0x0000<=addr && addr<=0x1FFF)
-        {
-            return addr % 0x0800;
-        }
-
-        if (0x2000<=addr && addr<=0x3FFF)
-        {
-            return 0x2000 + (addr % 8);
-        }
-
-        return addr;
-    }
-public:
-    BusInterface6502( iDataBus *bus )
-    :   BusInterface(bus) {  }
-};
-
-
-
-struct cpu6502: public BusAttachment<BusInterface6502>, public SignalListener
-{
-public:
     uint8_t  mInvalidOp;
     uint8_t  mCurrOp;
     size_t   mCycles;
@@ -134,8 +138,8 @@ public:
     };
 
 
-    cpu6502( iDataBus *bus );
-    void LoadROM( uint8_t *rom );
+    // cpu6502( iDataBus *bus );
+    cpu6502();
     virtual void Tick() final;
 
 
@@ -234,6 +238,8 @@ private:
     void InstrRTS( uint8_t* );
     void InstrSBC( uint8_t* );
     void InstrSEC( uint8_t* );
+    void InstrSED( uint8_t* );
+    void InstrSEI( uint8_t* );
     void InstrSTA( uint8_t* );
     void InstrSTX( uint8_t* );
     void InstrSTY( uint8_t* );

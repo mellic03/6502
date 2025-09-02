@@ -68,7 +68,7 @@ void cpu6502::_setssr( uint16_t word )
     }
 }
 
-// void cpu6502::InstrADC( uint8_t *src )
+// void cpu6502::InstrADC( uint8_t *x )
 // {
 //     uint16_t word = (uint16_t)AC + src;
 //     _setssr<0b11000011>(word);
@@ -86,129 +86,110 @@ void cpu6502::_setssr( uint16_t word )
     C (Carry): Acts as a 9th bit for addition/subtraction and bit shifts.
 */
 
-void cpu6502::InstrADC( uint8_t *src )
+void cpu6502::InstrADC( uint8_t *x )
 {
     static constexpr uint8_t BIT7 = (1<<7);
 
-	// uint16_t res = ((uint16_t)AC + x) + SSR.C;
-
-    // if (SSR.D)
-    // {
-    //     static constexpr uint8_t AAA0 = 9;
-    //     static constexpr uint8_t AAA1 = 0x09;
-    //     static constexpr uint8_t AAA2 = 0b0000'1001;
-    //     // result
-    //     _setssr<0b10000011>(x);
-    // }
-
-    // else
-    // {
-    //     _setssr<0b10000011>(x);
-    //     // SSR.V = (!(AC & BIT7) && (res & BIT7)) ? 1 : 0;
-    // }
-
-    uint8_t x = *src;
     // SSR.V = not(  ((A7 NOR B7) and C6)  NOR  ((A7 NAND B7) NOR C6)  )
     bool C6 = bool(SSR.C);
     bool A7 = bool(AC & BIT7);
-    bool B7 = bool(x  & BIT7);
+    bool B7 = bool(*x & BIT7);
     SSR.V = (!(A7||B7) && C6) || !(!(A7 && B7) || C6);
 
-    _setssr<0b10000011>((uint16_t)AC + x);
-    AC = uint8_t(uint16_t(AC) + x);
+    _setssr<0b10000011>((uint16_t)AC + *x);
+    AC = uint8_t(uint16_t(AC) + *x);
 }
 
 
-void cpu6502::InstrAND( uint8_t *src )
+void cpu6502::InstrAND( uint8_t *x )
 {
-    AC &= *src;
-    SSR.N = (AC) ? 1 : 0;
-    SSR.Z = (AC) ? 0 : 1;
+    AC &= *x;
+    _setssr<0b10000010>(AC);
 }
 
-
-
-void cpu6502::InstrBCC( uint8_t *src )
+void cpu6502::InstrBCC( uint8_t *x )
 {
-    if (SSR.C == 0) PC = *(uint16_t*)src;
+    if (SSR.C == 0) PC += *(int8_t*)x;
 }
 
-void cpu6502::InstrBCS( uint8_t *src )
+void cpu6502::InstrBCS( uint8_t *x )
 {
-    if (SSR.C == 1) PC = *(uint16_t*)src;
+    if (SSR.C == 1) PC += *(int8_t*)x;
 }
 
-void cpu6502::InstrBEQ( uint8_t *src )
+void cpu6502::InstrBEQ( uint8_t *x )
 {
-    if (SSR.Z == 1) PC = *(uint16_t*)src;
+    if (SSR.Z == 1) PC += *(int8_t*)x;
 }
 
-void cpu6502::InstrBIT( uint8_t *src )
+void cpu6502::InstrBIT( uint8_t *x )
 {
     union {
         uint8_t byte;
         cpu6502RegisterSSR ssr;
-    } U = { *src };
+    } U = { *x };
 
     SSR.N = U.ssr.N;
     SSR.V = U.ssr.V;
 }
 
-void cpu6502::InstrBMI( uint8_t *src )
+void cpu6502::InstrBMI( uint8_t *x )
 {
-    if (SSR.N == 1) PC = *(uint16_t*)src;
+    if (SSR.N == 1) PC += *(int8_t*)x;
 }
 
-void cpu6502::InstrBNE( uint8_t *src )
+void cpu6502::InstrBNE( uint8_t *x )
 {
-    if (SSR.Z == 0) PC = *(uint16_t*)src;
+    if (SSR.Z == 0) PC += *(int8_t*)x;
 }
 
-void cpu6502::InstrBPL( uint8_t *src )
+void cpu6502::InstrBPL( uint8_t *x )
 {
-    if (SSR.N == 0) PC = *(uint16_t*)src;
+    if (SSR.N == 0) PC += *(int8_t*)x;
 }
 
-void cpu6502::InstrBRK( uint8_t *src )
+void cpu6502::InstrBRK( uint8_t *x )
 {
     push16(PC+2);
+    uint8_t temp = SSR_byte;
     SSR.B = 1;
     push08(SSR_byte);
+    SSR_byte = temp;
 }
 
-void cpu6502::InstrBVC( uint8_t *src )
+void cpu6502::InstrBVC( uint8_t *x )
 {
-    if (SSR.V == 0) PC = *(uint16_t*)src;
+    if (SSR.V == 0) PC += *(int8_t*)x;
 }
 
-void cpu6502::InstrBVS( uint8_t *src )
+void cpu6502::InstrBVS( uint8_t *x )
 {
-    if (SSR.V == 1) PC = *(uint16_t*)src;
+    if (SSR.V == 1) PC += *(int8_t*)x;
 }
 
-void cpu6502::InstrCLC( uint8_t *src )
+void cpu6502::InstrCLC( uint8_t *x )
 {
     SSR.C = 0;
 }
 
-void cpu6502::InstrCLD( uint8_t *src )
+void cpu6502::InstrCLD( uint8_t *x )
 {
     SSR.D = 0;
 }
 
-void cpu6502::InstrCLI( uint8_t *src )
+void cpu6502::InstrCLI( uint8_t *x )
 {
     SSR.I = 0;
 }
 
-void cpu6502::InstrCLV( uint8_t *src )
+void cpu6502::InstrCLV( uint8_t *x )
 {
     SSR.V = 0;
 }
 
-void cpu6502::InstrCMP( uint8_t *src )
+void cpu6502::InstrCMP( uint8_t *x )
 {
-    uint16_t res = (uint16_t)AC - *src;
+    uint16_t res = (uint16_t)AC - *x;
     uint8_t  lo  = (uint8_t)(res & 0x00FF);
     uint8_t  hi  = (uint8_t)(res >> 8);
 
@@ -217,9 +198,9 @@ void cpu6502::InstrCMP( uint8_t *src )
     SSR.C = (hi) ? 1 : 0;
 }
 
-void cpu6502::InstrCPX( uint8_t *src )
+void cpu6502::InstrCPX( uint8_t *x )
 {
-    uint16_t res = (uint16_t)XR - *src;
+    uint16_t res = (uint16_t)XR - *x;
     uint8_t  lo  = (uint8_t)(res & 0x00FF);
     uint8_t  hi  = (uint8_t)(res >> 8);
 
@@ -228,9 +209,9 @@ void cpu6502::InstrCPX( uint8_t *src )
     SSR.C = (hi) ? 1 : 0;
 }
 
-void cpu6502::InstrCPY( uint8_t *src )
+void cpu6502::InstrCPY( uint8_t *x )
 {
-    uint16_t res = (uint16_t)YR - *src;
+    uint16_t res = (uint16_t)YR - *x;
     uint8_t  lo  = (uint8_t)(res & 0x00FF);
     uint8_t  hi  = (uint8_t)(res >> 8);
 
@@ -239,59 +220,56 @@ void cpu6502::InstrCPY( uint8_t *src )
     SSR.C = (hi) ? 1 : 0;
 }
 
-void cpu6502::InstrEOR( uint8_t *src )
+void cpu6502::InstrEOR( uint8_t *x )
 {
-    AC ^= *src;
+    AC ^= *x;
     _setssr<0b10000010>(AC);
 }
 
-void cpu6502::InstrJMP( uint8_t *src )
+void cpu6502::InstrJMP( uint8_t *x )
 {
-    PC = *(uint16_t*)src;
+    PC = *(uint16_t*)x;
 }
 
-void cpu6502::InstrJSR( uint8_t *src )
+void cpu6502::InstrJSR( uint8_t *x )
 {
-    push16(PC+2);
-    PC = *(uint16_t*)src;
+    push16(PC);
+    PC = *(uint16_t*)x;
 }
 
-void cpu6502::InstrLDA( uint8_t *src )
+void cpu6502::InstrLDA( uint8_t *x )
 {
-    AC = *src;
+    AC = *x;
     _setssr<0b10000010>(AC);
 }
 
-void cpu6502::InstrLDX( uint8_t *src )
+void cpu6502::InstrLDX( uint8_t *x )
 {
-    XR = *src;
+    XR = *x;
 }
 
-void cpu6502::InstrLDY( uint8_t *src )
+void cpu6502::InstrLDY( uint8_t *x )
 {
-    YR = *src;
+    YR = *x;
 }
 
-void cpu6502::InstrNOP( uint8_t* )
+void cpu6502::InstrNOP( uint8_t *x )
 {
 
 }
 
-void cpu6502::InstrORA( uint8_t *src )
+void cpu6502::InstrORA( uint8_t *x )
 {
-    AC |= *src;
+    AC |= *x;
     _setssr<0b10000010>(AC);
-    // SSR.N = ( AC) ? 1 : 0;
-    // SSR.Z = (!AC) ? 1 : 0;
 }
 
-void cpu6502::InstrPHA( uint8_t* )
+void cpu6502::InstrPHA( uint8_t *x )
 {
-    // mBus[SP++] = AC;
     push08(AC);
 }
 
-void cpu6502::InstrPHP( uint8_t* )
+void cpu6502::InstrPHP( uint8_t *x )
 {
     union {
         cpu6502RegisterSSR ssr;
@@ -303,13 +281,12 @@ void cpu6502::InstrPHP( uint8_t* )
     push08(U.byte);
 }
 
-void cpu6502::InstrPLA( uint8_t* )
+void cpu6502::InstrPLA( uint8_t *x )
 {
-    // AC = mBus[--SP];
     AC = pop08();
 }
 
-void cpu6502::InstrPLP( uint8_t* )
+void cpu6502::InstrPLP( uint8_t *x )
 {
     union {
         uint8_t byte;
@@ -321,7 +298,7 @@ void cpu6502::InstrPLP( uint8_t* )
     SSR = U.ssr;
 }
 
-void cpu6502::InstrRTI( uint8_t* )
+void cpu6502::InstrRTI( uint8_t *x )
 {
     auto tmp = SSR;
     InstrPLP(nullptr);
@@ -331,21 +308,31 @@ void cpu6502::InstrRTI( uint8_t* )
     PC = pop16();
 }
 
-void cpu6502::InstrRTS( uint8_t* )
+void cpu6502::InstrRTS( uint8_t *x )
 {
-    PC = pop16() + 1;
+    PC = pop16();
 }
 
 void cpu6502::InstrSBC( uint8_t *x )
 {
-    uint8_t onecomp = ~uint8_t(*x);
-    uint8_t twocomp = ~uint8_t(*x) + 1;
+    uint8_t onecomp = ~(*x);
+    uint8_t twocomp = onecomp + 1;
     InstrADC(&twocomp);
 }
 
-void cpu6502::InstrSEC( uint8_t* )
+void cpu6502::InstrSEC( uint8_t *x )
 {
     SSR.C = 1;
+}
+
+void cpu6502::InstrSED( uint8_t *x )
+{
+    SSR.D = 1;
+}
+
+void cpu6502::InstrSEI( uint8_t *x )
+{
+    SSR.I = 1;
 }
 
 void cpu6502::InstrSTA( uint8_t *x )
@@ -362,5 +349,3 @@ void cpu6502::InstrSTY( uint8_t *x )
 {
     *x = YR;
 }
-
-

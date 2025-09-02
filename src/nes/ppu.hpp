@@ -16,36 +16,34 @@
 // OAMDMA 	    $4014 	
 
 
-class DataBusPPU: public iDataBus
-{
-private:
-public:
-    struct MMapPPU {
-        uint8_t vrom[0x2000]; // 0x0000 -> 0x2000
-        uint8_t vram[0x1F00]; // 0x2000 -> 0x3F00
-        uint8_t data[0x0100]; // 0x3F00 -> 0x4000
-    };
+// class DataBusPPU: public iDataBus
+// {
+// private:
+// public:
+//     struct MMapPPU {
+//         uint8_t vrom[0x2000]; // 0x0000 -> 0x2000
+//         uint8_t vram[0x1F00]; // 0x2000 -> 0x3F00
+//         uint8_t data[0x0100]; // 0x3F00 -> 0x4000
+//     };
 
-    DataBusPPU(): iDataBus(new uint8_t[0x4000]) {  }
-};
+//     DataBusPPU(): iDataBus(new uint8_t[0x4000]) {  }
+// };
 
-class BusInterfacePPU: public BusInterface
-{
-private:
-    uint16_t deplex( uint16_t addr )
-    {
-        return addr & 0x7FFF; // 0x7FFE&0x7FFF; 0x7FFF&0x7FFF; 0x8000&0x7FFF; 0x8001&0x7FFF;
-    }
+// class BusInterfacePPU: public BusInterface
+// {
+// private:
+//     uint16_t deplex( uint16_t addr )
+//     {
+//         return addr & 0x7FFF; // 0x7FFE&0x7FFF; 0x7FFF&0x7FFF; 0x8000&0x7FFF; 0x8001&0x7FFF;
+//     }
 
-public:
-    BusInterfacePPU( iDataBus *bus ): BusInterface(bus) {  }
+// public:
+//     BusInterfacePPU( iDataBus *bus ): BusInterface(bus) {  }
 
-};
-
-
+// };
 
 
-class BusAttachmentPPU: public BusAttachment<BusInterfacePPU>, public SignalListener
+class BusDevicePPU: public SignalListener
 {
 public:
     struct mmio_t {
@@ -79,7 +77,11 @@ private:
     mmio_t *mmio;
 
 public:
-    BusAttachmentPPU( iDataBus* );
+    DataBus      mBus;
+    MemoryDevice mRam;
+    // MemoryDevice mRom;
+
+    BusDevicePPU();
     virtual void Tick() final;
 
     // void ersser()
