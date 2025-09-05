@@ -59,7 +59,7 @@ Byte    |   Contents
 ...-EOF |   VROM banks, in ascending order.
 ----------------------------------------------------------------------------
 */
-struct NesFile::iNES: public NesFile::File
+struct NesFile::iNES: public NesFile::Base
 {
     struct FileHeader {
         char    signature[4];

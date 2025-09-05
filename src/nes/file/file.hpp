@@ -6,11 +6,11 @@
 
 namespace NesFile
 {
-    struct File;
+    struct Base;
 }
 
 
-struct NesFile::File
+struct NesFile::Base
 {
 
 };
