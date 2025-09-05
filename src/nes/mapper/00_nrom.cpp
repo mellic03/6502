@@ -1,25 +1,17 @@
-#include "mapper.hpp"
-#include "cartridge.hpp"
-#include "system.hpp"
-#include <string.h>
-
+#include "hwmapper.hpp"
 using namespace NesEmu;
 
 
-static NesMem::MapFunc *InitMapFuncs()
-{
-    using Fmt = NesEmu::Cartridge::Fmt;
-    auto *ftab = new NesMem::MapFunc[Fmt::NumFmt];
 
-    ftab[Fmt::OTHER] = []( System&, Cartridge* ) { return; };
-    ftab[Fmt::iNES]  = NesMem::Mapper00;
-    ftab[Fmt::NES20] = []( System&, Cartridge* ) { return; };
-
-    return ftab;
-}
-
-NesMem::MapFunc *NesMem::MapperFuncs = InitMapFuncs();
-
+/*
+    - PRG ROM size: 16 KiB for NROM-128, 32 KiB for NROM-256 (DIP-28 standard pinout)
+    - PRG ROM bank size: Not bankswitched
+    - PRG RAM: 2 or 4 KiB, not bankswitched, only in Family Basic (but most emulators provide 8)
+    - CHR capacity: 8 KiB ROM (DIP-28 standard pinout) but most emulators support RAM
+    - CHR bank size: Not bankswitched, see CNROM
+    - Nametable mirroring: Solder pads select vertical or horizontal mirroring
+    - Subject to bus conflicts: Yes, but irrelevant
+*/
 
 /*
     CPU $6000-$7FFF:
@@ -32,8 +24,7 @@ NesMem::MapFunc *NesMem::MapperFuncs = InitMapFuncs();
     CPU $C000-$FFFF:
         Last 16 KB of ROM (NROM-256) or mirror of $8000-$BFFF (NROM-128).
 */
-
-void NesMem::Mapper00( NesEmu::System &nes, NesEmu::Cartridge *cart )
+void HwMapper00_NROM::map( System &nes, Cartridge *cart )
 {
     auto &bus_cpu = nes.cpu_bus;
 
@@ -60,23 +51,5 @@ void NesMem::Mapper00( NesEmu::System &nes, NesEmu::Cartridge *cart )
     //     [=](uint16_t x) { return nes.cpu_rom[16*1024 + (x-0xC000)]; },
     //     [=](uint16_t x, uint8_t v) { nes.cpu_rom[16*1024 + (x-0xC000)] = v; }
     // );
-}
-
-
-void NesMem::Mapper01( NesEmu::System &nes, NesEmu::Cartridge *cart )
-{
-
-}
-
-
-void NesMem::Mapper02( NesEmu::System &nes, NesEmu::Cartridge *cart )
-{
-
-}
-
-
-void NesMem::Mapper03( NesEmu::System &nes, NesEmu::Cartridge *cart )
-{
-
 }
 

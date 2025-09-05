@@ -49,7 +49,6 @@ class iBusDevice
 {
 public:
     virtual void Tick() = 0;
-
 };
 
 

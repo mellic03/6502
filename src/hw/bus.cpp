@@ -3,11 +3,25 @@
 #include <string.h>
 #include <cassert>
 
+
+#define clean_errno() (errno == 0 ? "None" : strerror(errno))
+#define log_error(M, ...) fprintf(stderr, "(%s:%d) " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#define assertf(A, M, ...) if(!(A)) {log_error(M, ##__VA_ARGS__); assert(A); }
+
 DataBus::DataBus()
 {
     memset(mPageTable, 0, sizeof(mPageTable));
-    mPageFuncs.push_back({[](uint16_t){return 0;}, [](uint16_t, uint8_t){}});
-    // mDevices.push_back({nullptr, 0, nullptr, nullptr});
+
+    mPageFuncs.push_back({
+        [](uint16_t){
+            fprintf(stderr, "[DataBus::DataBus] Bad read\n");
+            exit(1); return 0;
+        },
+        [](uint16_t, uint8_t){
+            fprintf(stderr, "[DataBus::DataBus] Bad write\n");
+            exit(1); return;
+        }
+    });
 }
 
 void DataBus::tick()
@@ -43,7 +57,6 @@ void DataBus::write( uint16_t addr, uint8_t byte )
 {
     mPageFuncs[mPageTable[addr]].write(addr, byte);
 }
-
 
 
 #include <cassert>

@@ -1,6 +1,6 @@
 #include "system.hpp"
 #include "cartridge.hpp"
-#include "mapper.hpp"
+#include "mapper/hwmapper.hpp"
 #include <stdio.h>
 #include <string.h>
 
@@ -45,24 +45,16 @@ NesEmu::System::System()
 }
 
 
-// void NesROM::map( NesEmu *nes )
-// {
-//     assert( mFormat < Format::NumFmt);
-//     NesROM::MapTab[mFormat](nes);
-// }
-
-
 void NesEmu::System::LoadRAW( uint8_t *rom )
 {
 
 }
 
+
 void NesEmu::System::LoadROM( Cartridge *cart )
 {
     mCartridge = cart;
-    // mCartridge->map(this);
-    // mCartridge->mMapNo
-    // NesEmu::Memory::Mapper00
+    NesMem::getMapper(cart->mMapNo)->map(*this, cart);
 
     cpu.PC = ((uint16_t)cpu_bus.read(0xFFFD) << 8) | cpu_bus.read(0xFFFC);
     printf("Reset vector: 0x%04X\n", cpu.PC);

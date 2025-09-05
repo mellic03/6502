@@ -8,6 +8,8 @@ file(
     "${CMAKE_SOURCE_DIR}/src/*.cpp"
     "${CMAKE_SOURCE_DIR}/src/6502/*.cpp"
     "${CMAKE_SOURCE_DIR}/src/nes/*.cpp"
+    "${CMAKE_SOURCE_DIR}/src/nes/file/*.cpp"
+    "${CMAKE_SOURCE_DIR}/src/nes/mapper/*.cpp"
     "${CMAKE_SOURCE_DIR}/src/hw/*.cpp"
 )
 

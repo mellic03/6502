@@ -1,4 +1,5 @@
 #include "cartridge.hpp"
+#include "file/ines.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -24,9 +25,11 @@ NesEmu::Cartridge::Cartridge( const std::string &path )
     mHead   = mData.get();
     mHeadSz = 0x10;
 
-    auto &H = *(ROM_iNES*)mHead;
-    mPrgSz  = 16384 * H.prgNum16kBanks;
-    mChrSz  = 8192  * H.chrNum8kBanks;
+    NesFile::iNES fh(mData.get());
+
+    auto &H = *(NesFile::iNES::header_t*)mHead;
+    mPrgSz  = 16384 * H.prgNo16kBanks;
+    mChrSz  = 8192  * H.chrNo8kBanks;
     mMapNo  = (uint8_t(H.f7.mapNo_hi) << 4) | H.f6.mapNo_lo;
 
     mHead = mData.get();
@@ -36,7 +39,7 @@ NesEmu::Cartridge::Cartridge( const std::string &path )
     printf("signature   %s\n",  H.signature);
     printf("prgRomSize  %lu\n", mPrgSz);
     printf("chrRomSize  %lu\n", mChrSz);
-    printf("mapno       %u\n",  mMapNo);
+    printf("mapNo       %u\n",  mMapNo);
     printf("flags6      %u\n",  H.flags6);
     printf("flags7      %u\n",  H.flags7);
     printf("flags8      %u\n",  H.flags8);
