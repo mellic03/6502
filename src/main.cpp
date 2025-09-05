@@ -7,8 +7,8 @@
 #include <stdint.h>
 
 #include "hw/display.hpp"
-#include "nes/rom.hpp"
-#include "nes/nes.hpp"
+#include "nes/cartridge.hpp"
+#include "nes/system.hpp"
 
 
 int main( int argc, char **argv )
@@ -19,8 +19,8 @@ int main( int argc, char **argv )
         return 1;
     }
 
-    NesROM rom(argv[1]);
-    if (rom.is_bad())
+    NesEmu::Cartridge cart(argv[1]);
+    if (cart.is_bad())
     {
         printf("Could not open file \"%s\"\n", argv[1]);
         return 1;
@@ -34,8 +34,8 @@ int main( int argc, char **argv )
     uint64_t accum = 0;
 
     
-    NesEmu *nes = new NesEmu();
-    nes->LoadROM(&rom);
+    NesEmu::System *nes = new NesEmu::System();
+    nes->LoadROM(&cart);
     nes->cpu.PC = 0xC000;
 
     while (!nes->cpu.mInvalidOp)
