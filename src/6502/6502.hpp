@@ -99,20 +99,17 @@ public:
 
     // cpu6502( iDataBus *bus );
     cpu6502();
-
     virtual void Tick() final;
-
-
     
     union HwPins
     {
         uint8_t byte;
         struct {
-            uint8_t nmi :1;
             uint8_t irq :1;
             uint8_t res :1;
+            uint8_t nmi :1;
         };
-        HwPins(): nmi(0), irq(1), res(1) {  };
+        HwPins(): irq(1), res(1), nmi(0) {  };
     };
 
     bool m_wai = false;
@@ -120,6 +117,7 @@ public:
     HwPins m_pins_prev;
 
     void sig_irq() { m_pins.irq = 0; }
+    void sig_res() { m_pins.res = 0; }
     void sig_nmi() { m_pins.nmi = !m_pins_prev.nmi; }
 
 
@@ -161,10 +159,10 @@ private:
     uint8_t _NZ( uint16_t );
     uint8_t _NZC( uint16_t );
     uint8_t _NVZC( uint16_t x, uint8_t a , uint8_t b );
+
     void   _fetch();
     void   _decode();
     void   _execute();
-    void   _wai_handler();
 
     uint8_t  fetch08();
     uint16_t fetch16();

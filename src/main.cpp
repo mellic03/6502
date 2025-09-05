@@ -6,9 +6,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// #include "6502/6502.hpp"
-
-namespace emu { extern int entry(uint8_t*); }
+#include "hw/display.hpp"
+#include "nes/rom.hpp"
+#include "nes/nes.hpp"
 
 
 int main( int argc, char **argv )
@@ -19,22 +19,70 @@ int main( int argc, char **argv )
         return 1;
     }
 
-    std::ifstream stream(argv[1], std::ifstream::binary);
-    if (!stream.is_open())
+    NesROM rom(argv[1]);
+    if (rom.is_bad())
     {
         printf("Could not open file \"%s\"\n", argv[1]);
         return 1;
     }
 
-    stream.seekg(0, std::ifstream::end);
-    size_t size = stream.tellg();
-    stream.seekg(0, std::ifstream::beg);
+    Display D;
+    D.init(256, 240, 4);
+
+    uint64_t tcurr = SDL_GetTicks64();
+    uint64_t tprev = tcurr;
+    uint64_t accum = 0;
+
     
-    uint8_t *rom = new uint8_t[size];
-    stream.read((char*)rom, size);
+    NesEmu *nes = new NesEmu();
+    nes->LoadROM(&rom);
+    nes->cpu.PC = 0xC000;
 
-    int res = emu::entry(rom);
+    while (!nes->cpu.mInvalidOp)
+    {
+        D.beginFrame();
 
-    return res;
+        tcurr  = SDL_GetTicks64();
+        accum += tcurr - tprev;
+        tprev  = tcurr;
+
+        if (accum >= 100)
+        {
+            accum = 0;
+            nes->cpu_bus.tick();
+        }
+
+        if (nes->cpu.mOpCount >= 500)
+        {
+            break;
+        }
+
+        if (D.keyReleased(SDL_SCANCODE_I))
+        {
+            printf("Key I --> IRQ\n");
+            nes->cpu.sig_irq();
+        }
+
+        if (D.keyReleased(SDL_SCANCODE_R))
+        {
+            printf("Key R --> RESET\n");
+            nes->cpu.sig_res();
+        }
+
+        if (D.keyReleased(SDL_SCANCODE_N))
+        {
+            printf("Key N --> NMI\n");
+            nes->cpu.sig_nmi();
+        }
+
+        if (D.keyReleased(SDL_SCANCODE_ESCAPE))
+        {
+            break;
+        }
+
+        D.endFrame();
+    }
+
+    return 0;
 }
 

@@ -2,6 +2,44 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <memory>
+
+
+
+namespace NesEmu
+{
+    class Cartridge;
+    class System;
+    struct ROM_iNES;
+}
+
+
+class NesEmu::Cartridge
+{
+public:
+    struct Fmt
+    {
+        enum { OTHER, iNES, NES20, NumFmt };
+    };
+
+    uint8_t mFormat;
+    uint8_t _readfmt( uint8_t *rom );
+
+    std::unique_ptr<uint8_t[]> mData = nullptr;
+    uint8_t *mHead   = nullptr;
+    uint8_t *mPrg    = nullptr;
+    uint8_t *mChr    = nullptr;
+    size_t   mDataSz = 0;
+    size_t   mHeadSz = 0;
+    size_t   mPrgSz  = 0;
+    size_t   mChrSz  = 0;
+    uint8_t  mMapNo  = 0;
+
+    Cartridge( const std::string &path );
+    bool is_bad() { return (mData.get() == nullptr); }
+
+};
 
 
 
@@ -40,8 +78,7 @@ Byte    |   Contents
 ...-EOF |   VROM banks, in ascending order.
 ----------------------------------------------------------------------------
 */
-
-struct NesHeader_iNES
+struct NesEmu::ROM_iNES
 {
     char signature[4];
 
@@ -88,4 +125,3 @@ struct NesHeader_iNES
     uint8_t flags10;    // Reserved, zero.
     uint8_t unused[5];  // Reserved, zero.
 };
-

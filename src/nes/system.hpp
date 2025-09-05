@@ -4,9 +4,16 @@
 #include "../hw/bus.hpp"
 #include "./ppu.hpp"
 
-
-struct NesEmu
+namespace NesEmu
 {
+    class Cartridge;
+    class System;
+}
+
+
+class NesEmu::System
+{
+public:
     DataBus       cpu_bus;
     uint8_t      *cpu_ram;
     uint8_t      *cpu_rom;
@@ -16,7 +23,9 @@ struct NesEmu
     uint8_t      *ppu_vram;
     BusDevicePPU  ppu;
 
-    NesEmu();
+    Cartridge    *mCartridge;
+
+    System();
     // :   hwtimer(1'790'000)
     // :   hwtimer(50)
     //    cpu(busCPU),
@@ -29,7 +38,9 @@ struct NesEmu
 
     // }
 
-    void LoadROM( uint8_t *rom );
+    void LoadRAW( uint8_t *rom );
+    void LoadROM( Cartridge* );
+    // void LoadROM( uint8_t *rom );
 
     // SignalEmitter hwtimer(50);
     // DataBus6502 cpu_bus;

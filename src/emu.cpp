@@ -1,179 +1,96 @@
-#include <iostream>
-#include <fstream>
+// #include <iostream>
+// #include <fstream>
 
-#include <stdio.h>
-#include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
+// #include <stdio.h>
+// #include <assert.h>
+// #include <stddef.h>
+// #include <stdint.h>
 
-#include "6502/6502.hpp"
-#include "nes/ppu.hpp"
-#include "nes/ines.hpp"
-#include "nes/mapper.hpp"
-#include "nes/nes.hpp"
-
-
-namespace emu { int entry(uint8_t*); }
+// #include "6502/6502.hpp"
+// #include "nes/ppu.hpp"
+// #include "nes/ines.hpp"
+// #include "nes/mapper.hpp"
+// #include "nes/nes.hpp"
+// #include "hw/display.hpp"
 
 
-#include <SDL2/SDL.h>
-
-class Display
-{
-private:
-public:
-    SDL_Window  *mWin;
-    SDL_Surface *mSurface;
-    SDL_Surface *mSurfaceScaled;
-    int mWidth;
-    int mHeight;
-    int mScale;
-    bool mRunning;
-    Uint8 mKeyCurr[512];
-    Uint8 mKeyPrev[512];
-
-    void init( int w, int h, int scale )
-    {
-        mWidth  = w;
-        mHeight = h;
-        mScale  = scale;
-        mRunning = true;
-        memset(mKeyCurr, 0, 512);
-        memset(mKeyPrev, 0, 512);
-
-        SDL_Init(SDL_INIT_VIDEO);
-
-        mWin = SDL_CreateWindow(
-            "6502 Emulation",
-            SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED,
-            scale*w,
-            scale*h,
-            0
-        );
-
-        mSurfaceScaled = SDL_GetWindowSurface(mWin);
-        mSurface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
-    }
-
-    bool keyReleased( int k )
-    {
-        return (mKeyPrev[k] == 1) && (mKeyCurr[k] == 0);
-    }
-
-    void beginFrame()
-    {
-
-        int numkeys = 0;
-        auto *state = SDL_GetKeyboardState(&numkeys);
-        memcpy(mKeyPrev, mKeyCurr, numkeys);
-        memcpy(mKeyCurr, state, numkeys);
-
-        SDL_Event e;
-        while (SDL_PollEvent(&e))
-        {
-            if ((e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) ||
-                (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) 
-            {
-                exit(0);
-            }
-
-            if (e.type == SDL_MOUSEBUTTONDOWN)
-            {
-        
-            }
-        }
-
-        SDL_PumpEvents();
-    }
-
-    void endFrame()
-    {
-        SDL_Rect src;
-        src.x = 0;
-        src.y = 0;
-        src.w = mWidth;
-        src.h = mHeight;
-
-        SDL_Rect dest;
-        dest.x = 0;
-        dest.y = 0;
-        dest.w = mScale*mWidth;
-        dest.h = mScale*mHeight;
-
-        SDL_BlitScaled(mSurface, &src, mSurfaceScaled, &dest);
-
-        SDL_UpdateWindowSurface(mWin);
-    }
+// namespace emu { int entry(uint8_t*); }
 
 
-    void pixel( int x, int y )
-    {
-        x %= mWidth;
-        y %= mHeight;
 
-        Uint8 *const blue  = ((Uint8 *) mSurface->pixels + (y%mHeight)*4*mWidth + (x%mWidth)*4 + 0);
-        *blue = 255;
+// // https://bugzmanov.github.io/nes_ebook/chapter_7.html
 
-        Uint8 *const green = ((Uint8 *) mSurface->pixels + (y%mHeight)*4*mWidth + (x%mWidth)*4 + 1);
-        *green = 255;
+// int emu::entry( uint8_t *rom )
+// {
+//     NesEmu *nes = new NesEmu();
+//     nes->LoadROM(rom);
+//     nes->cpu.PC = 0x8000;
 
-        Uint8 *const red   = ((Uint8 *) mSurface->pixels + (y%mHeight)*4*mWidth + (x%mWidth)*4 + 2);
-        *red = 255;
-    }
+//     Display D;
+//     D.init(256, 240, 4);
 
-};
+//     uint64_t tcurr = SDL_GetTicks64();
+//     uint64_t tprev = tcurr;
+//     uint64_t accum = 0;
 
+//     while (!nes->cpu.mInvalidOp)
+//     {
+//         D.beginFrame();
 
-// https://bugzmanov.github.io/nes_ebook/chapter_7.html
+//         tcurr  = SDL_GetTicks64();
+//         accum += tcurr - tprev;
+//         tprev  = tcurr;
 
-int emu::entry( uint8_t *rom )
-{
-    NesEmu *nes = new NesEmu();
-    nes->LoadROM(rom);
-    // nes->cpu.PC = 0xC000;
+//         if (accum >= 100)
+//         {
+//             accum = 0;
+//             nes->cpu_bus.tick();
+//         }
 
-    Display D;
-    D.init(256, 240, 4);
+//         // uint8_t status = nes->cpu_bus.read(0x6000);
+//         // printf("status: 0x%02X\n", status);
 
-    uint64_t tcurr = SDL_GetTicks64();
-    uint64_t tprev = tcurr;
-    uint64_t accum = 0;
+//         // char ch = '>';
+//         // uint16_t addr = 0x6004;
 
-    while (!nes->cpu.mInvalidOp)
-    {
-        D.beginFrame();
+//         // while (ch)
+//         // {
+//         //     printf("%c", ch);
+//         //     ch = nes->cpu_bus.read(addr++);
+//         // }
+//         // printf("\n\n");
 
-        tcurr  = SDL_GetTicks64();
-        accum += tcurr - tprev;
-        tprev  = tcurr;
+//         if (nes->cpu.mOpCount >= 500)
+//         {
+//             break;
+//         }
 
-        if (accum >= 100)
-        {
-            accum = 0;
-            nes->cpu_bus.tick();
-        }
+//         if (D.keyReleased(SDL_SCANCODE_I))
+//         {
+//             printf("Key I --> IRQ\n");
+//             nes->cpu.sig_irq();
+//         }
 
-        // if (nes->cpu.mOpCount >= 500)
-        // {
-        //     break;
-        // }
-    
-        // if (D.mKeyCurr[SDL_SCANCODE_SPACE] == 1)
-        if (D.keyReleased(SDL_SCANCODE_SPACE))
-        {
-            printf("SDL_SCANCODE_SPACE\n");
-            nes->cpu.sig_nmi();
-        }
-    
-        if (D.keyReleased(SDL_SCANCODE_ESCAPE))
-        {
-            break;
-        }
+//         if (D.keyReleased(SDL_SCANCODE_R))
+//         {
+//             printf("Key R --> RESET\n");
+//             nes->cpu.sig_res();
+//         }
 
-        D.endFrame();
-    }
-    return 0;
-}
+//         if (D.keyReleased(SDL_SCANCODE_N))
+//         {
+//             printf("Key N --> NMI\n");
+//             nes->cpu.sig_nmi();
+//         }
+
+//         if (D.keyReleased(SDL_SCANCODE_ESCAPE))
+//         {
+//             break;
+//         }
+
+//         D.endFrame();
+//     }
+//     return 0;
+// }
 
 

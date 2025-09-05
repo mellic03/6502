@@ -34,24 +34,26 @@ void cpu6502::_execute()
     mOpCount += 1;
 }
 
-void cpu6502::_wai_handler()
-{
-    if (m_pins.nmi != m_pins_prev.nmi)
-    {
-        _InstrNMI();
-        m_wai = false;
-    }
+// void cpu6502::_wai_handler()
+// {
+//     if (m_pins.nmi != m_pins_prev.nmi)
+//     {
+//         _InstrNMI();
+//         m_wai = false;
+//     }
 
-    if (m_pins.irq == 0)
-    {
-        _InstrIRQ();
-        m_pins.irq = 1;
-        m_wai = false;
-    }
+//     if (m_pins.irq == 0)
+//     {
+//         _InstrIRQ();
+//         m_pins.irq = 1;
+//         m_wai = false;
+//     }
 
-    m_pins_prev = m_pins;
-}
+//     m_pins_prev = m_pins;
+// }
 
+
+    
 
 void cpu6502::Tick()
 {
@@ -60,7 +62,29 @@ void cpu6502::Tick()
         return;
     }
 
-    _wai_handler();
+    if (m_pins.nmi != m_pins_prev.nmi)
+    {
+        m_pins.nmi = m_pins_prev.nmi;
+        m_wai = false;
+        _InstrNMI();
+    }
+
+    if (m_pins.res == 0)
+    {
+        m_pins.res = 1;
+        m_wai = false;
+        _InstrRES();
+        return;
+    }
+
+    if (m_pins.irq == 0)
+    {
+        m_pins.irq = 1;
+        m_wai = false;
+        _InstrIRQ();
+    }
+
+    m_pins_prev = m_pins;
 
     if (m_wai)
     {

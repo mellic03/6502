@@ -231,16 +231,15 @@ int cpu6502::LoadREL()
     }
 }
 
-
 /**
  * OPC $LL - operand is zeropage address (hi-byte is zero, address = $00LL)
  */
 int cpu6502::LoadZPG()
 {
-    mOpAddr = (uint16_t)fetch08() & 0x00FF;
+    // constexpr auto reee = GetAddr(0x00, 0x01);
+    // mOpAddr = (uint16_t)fetch08() & 0x00FF;
+    mOpAddr = rdbus(PC++);
     return 0;
-    // uint16_t addr = mBus[PC++] & 0x00FF;
-    // return &mBus[addr];
 }
 
 /**
@@ -249,7 +248,11 @@ int cpu6502::LoadZPG()
  */
 int cpu6502::LoadZPGX()
 {
-    mOpAddr = ((uint16_t)fetch08() + XR) & 0x00FF;
+    // uint8_t lo = rdbus(PC++) + XR;
+    // uint8_t hi = 0x00;
+    // mOpAddr = (hi << 8) | lo;
+    // mOpAddr = ((uint16_t)fetch08() + XR) & 0x00FF;
+    mOpAddr = rdbus(PC++) + XR;
     return 0;
 }
 
@@ -259,7 +262,8 @@ int cpu6502::LoadZPGX()
  */
 int cpu6502::LoadZPGY()
 {
-    mOpAddr = ((uint16_t)fetch08() + YR) & 0x00FF;
+    // mOpAddr = ((uint16_t)fetch08() + YR) & 0x00FF;
+    mOpAddr = rdbus(PC++) + YR;
     return 0;
 }
 

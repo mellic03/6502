@@ -74,7 +74,6 @@ void cpu6502::_IntJump( uint16_t addr )
     PC = (hi << 8) | lo;
 }
 
-// $FFFE (NMI).
 void cpu6502::_InstrNMI()
 {
     _IntPush();
@@ -82,7 +81,6 @@ void cpu6502::_InstrNMI()
     _IntJump(0xFFFE);
 }
 
-// $FFFA (IRQ).
 void cpu6502::_InstrIRQ()
 {
     if (SSR.I == 1)
@@ -94,7 +92,6 @@ void cpu6502::_InstrIRQ()
     _IntJump(0xFFFA);
 }
 
-// $FFFC (RES).
 void cpu6502::_InstrRES()
 {
     _IntPush();
@@ -307,10 +304,8 @@ void cpu6502::InstrPHA()
 
 void cpu6502::InstrPHP()
 {
-    uint8_t tmp = SSR_byte;
     SSR.B = 1;
     push08(SSR_byte);
-    SSR_byte = tmp;
 }
 
 void cpu6502::InstrPLA()
@@ -321,9 +316,7 @@ void cpu6502::InstrPLA()
 
 void cpu6502::InstrPLP()
 {
-    auto tmp = SSR;
     SSR_byte = pop08();
-    SSR.B = tmp.B;
 }
 
 void cpu6502::InstrROL()

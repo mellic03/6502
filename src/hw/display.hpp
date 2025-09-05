@@ -1,22 +1,30 @@
 #pragma once
+
 #include <SDL2/SDL.h>
+
 
 class Display
 {
 private:
+public:
     SDL_Window  *mWin;
     SDL_Surface *mSurface;
     SDL_Surface *mSurfaceScaled;
     int mWidth;
     int mHeight;
     int mScale;
+    bool mRunning;
+    Uint8 mKeyCurr[512];
+    Uint8 mKeyPrev[512];
 
-public:
     void init( int w, int h, int scale )
     {
         mWidth  = w;
         mHeight = h;
         mScale  = scale;
+        mRunning = true;
+        memset(mKeyCurr, 0, 512);
+        memset(mKeyPrev, 0, 512);
 
         SDL_Init(SDL_INIT_VIDEO);
 
@@ -33,8 +41,19 @@ public:
         mSurface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
     }
 
+    bool keyReleased( int k )
+    {
+        return (mKeyPrev[k] == 1) && (mKeyCurr[k] == 0);
+    }
+
     void beginFrame()
     {
+
+        int numkeys = 0;
+        auto *state = SDL_GetKeyboardState(&numkeys);
+        memcpy(mKeyPrev, mKeyCurr, numkeys);
+        memcpy(mKeyCurr, state, numkeys);
+
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
@@ -72,6 +91,7 @@ public:
         SDL_UpdateWindowSurface(mWin);
     }
 
+
     void pixel( int x, int y )
     {
         x %= mWidth;
@@ -88,5 +108,3 @@ public:
     }
 
 };
-
-static Display D;

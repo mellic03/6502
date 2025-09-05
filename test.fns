@@ -1,0 +1,5 @@
+; ./test.s
+instrs                           = $E000
+test_values                      = $E004
+correct_checksums                = $E005
+instr_template                   = $E000
