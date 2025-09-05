@@ -2,7 +2,7 @@
 using namespace NesEmu;
 
 
-void HwMapper01_MMC1::map( System &nes, Cartridge *cart )
+void HwMapper01_MMC1::map( System &nes, GamePak *cart )
 {
 
 }

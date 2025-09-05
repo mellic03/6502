@@ -2,7 +2,10 @@
 
 #include "../hw/bus.hpp"
 #include "../hw/memory.hpp"
+#include "../hw/tmemory.hpp"
 #include "../hw/clock.hpp"
+#include "mmio.hpp"
+#include "rwx.hpp"
 
 
 
@@ -44,8 +47,47 @@
 // };
 
 
-class BusDevicePPU: public iBusDevice
+template <size_t mNumRegs>
+struct NesMMIO
 {
+    struct mmio_entry_t { uint8_t val, rwx; };
+    mmio_entry_t mRegs[mNumRegs];
+
+    void wt( uint8_t idx, uint8_t val )
+    {
+        if (mRegs[idx].rwx & RWX::W)
+            mRegs[idx].val = val;
+    }
+};
+
+
+class NesPPU: public ioDevice
+{
+private:
+    enum class regPPU: uint8_t {
+        REG_PPUCTRL,
+        REG_PPUMASK,
+        REG_PPUSTATUS,
+        REG_OAMADDR,
+        REG_OAMDATA,
+        REG_PPUSCROLL,
+        REG_PPUADDR,
+        REG_PPUDATA,
+        NumValues
+    };
+
+    enum class rwxPPU: uint8_t {
+        RWX_PPUCTRL   = RWX::W,
+        RWX_PPUMASK   = RWX::W,
+        RWX_PPUSTATUS = RWX::R,
+        RWX_OAMADDR   = RWX::W,
+        RWX_OAMDATA   = RWX::RW,
+        RWX_PPUSCROLL = RWX::Wx2,
+        RWX_PPUADDR   = RWX::Wx2,
+        RWX_PPUDATA   = RWX::RW,
+        NumValues     = 8
+    };
+
 public:
     struct mmio_t 
     {
@@ -75,25 +117,42 @@ public:
         };
     };
 
-private:
+    
+    static constexpr uint8_t REG_R   = 0b00'01;
+    static constexpr uint8_t REG_W   = 0b00'10;
+    static constexpr uint8_t REG_RW  = 0b00'11;
 
-public:
-    DataBus  mBus;
-    MemoryRW mRam;
+    static constexpr uint8_t REG_x2  = 0b01'00;
+    static constexpr uint8_t REG_Rx2 = REG_R  | REG_x2;
+    static constexpr uint8_t REG_Wx2 = REG_W  | REG_x2;
 
-    union {
-        mmio_t  mReg;
+    union
+    {
         uint8_t mRegArray[8];
+
+        struct
+        {
+            uint8_t PPUCTRL;
+            uint8_t PPUMASK;
+            uint8_t PPUSTATUS;
+            uint8_t OAMADDR;
+            uint8_t OAMDATA;
+            uint8_t PPUSCROLL;
+            uint8_t PPUADDR;
+            uint8_t PPUDATA;
+        };
     };
 
-    BusDevicePPU();
-    virtual void Tick() final;
+    const uint8_t mRegAccess[8] = {
+        REG_W,  REG_W,   REG_R,   REG_W,
+        REG_RW, REG_Wx2, REG_Wx2, REG_RW,
+    };
 
-    // void ersser()
-    // {
-    //     auto *bus = (DataBusPPU*)(mBus.mBus);
-    //     bus->mMap.
-    // }
+
+    NesPPU();
+    virtual uint8_t rd( uint16_t ) final;
+    virtual void wt( uint16_t, uint8_t ) final;
+    virtual void Tick() final;
 };
 
 

@@ -5,7 +5,7 @@
 static NesEmu::HwMapper **InitHwMappers()
 {
     using namespace NesEmu;
-    using Fmt = NesEmu::Cartridge::Fmt;
+    using Fmt = NesEmu::GamePak::Fmt;
 
     auto **ftab = new HwMapper*[Fmt::NumFmt];
     ftab[Fmt::iNES]  = new HwMapper00_NROM();
@@ -19,7 +19,7 @@ static NesEmu::HwMapper **HwMapTable = InitHwMappers();
 
 NesEmu::HwMapper *NesEmu::getMapper( int idx )
 {
-    using Fmt = NesEmu::Cartridge::Fmt;
+    using Fmt = NesEmu::GamePak::Fmt;
     assert(0<=idx && idx<=Fmt::NumFmt);
     return HwMapTable[idx];
 }

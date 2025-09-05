@@ -13,6 +13,7 @@ using namespace NesEmu;
     - Subject to bus conflicts: Yes, but irrelevant
 */
 
+
 /*
     CPU $6000-$7FFF:
         Family Basic only: PRG RAM, mirrored as necessary to fill entire 8 KiB
@@ -24,48 +25,67 @@ using namespace NesEmu;
     CPU $C000-$FFFF:
         Last 16 KB of ROM (NROM-256) or mirror of $8000-$BFFF (NROM-128).
 */
-void HwMapper00_NROM::map( System &nes, Cartridge *cart )
+void HwMapper00_NROM::map( System &nes, GamePak *cart )
 {
+    using namespace NesFile;
 
-    // 0x A    B    C    D
-    // 0b 0000 0000 0000 0000
-    union BusAddr
+    auto &bus = nes.mBusCPU;
+    auto *pak = nes.mGamePak;
+
+    iNES *file   = pak->miNES;
+    auto &info   = file->mInfo;
+    auto *PrgROM = &(file->mPrgROM);
+
+    bus.map(&(nes.wRAM), 0x0000, 0x2000, // CPU --> CPU working RAM.
+        DC_FUNC(         return addr % 2048;    ),
+        RD_FUNC(MemRW2K, return dev->rd(addr);  ),
+        WT_FUNC(MemRW2K, dev->wt(addr, byte);   )
+    );
+    
+    bus.map(&(nes.wRAM), 0x6000, 0x7FFF, // CPU --> PRG RAM
+        DC_FUNC(         return addr % 2048;   ),
+        RD_FUNC(MemRW2K, return dev->rd(addr); ),
+        WT_FUNC(MemRW2K, dev->wt(addr, byte);  )
+    );
+
+    bus.map(PrgROM, 0x8000, 0xBFFF, // CPU --> ROM, First 16KB of ROM
+        DC_FUNC(          return addr - 0x8000; ),
+        RD_FUNC(MemoryRO, return dev->rd(addr); ),
+        WT_FUNC(MemoryRO, dev->wt(addr, byte);  )
+    );
+
+    if (info.prgRomSz <= 16*1024)
     {
-        uint16_t word;
+        bus.map(PrgROM, 0xC000, 0xFFFF, // CPU --> ROM, NROM-128, mirror of 0x8000-0xBFFF
+            DC_FUNC(          return addr - 0xC000; ),
+            RD_FUNC(MemoryRO, return dev->rd(addr); ),
+            WT_FUNC(MemoryRO, dev->wt(addr, byte);  )
+        );
+    }
 
-        struct
-        {
-            uint8_t D :4;
-            uint8_t C :4;
-            uint8_t B :4;
-            uint8_t A :4;
-        };
-    };
-
-    auto &bus_cpu = nes.cpu_bus;
-
-    // PRG RAM
-    bus_cpu.map(0x6000, 0x7FFF,
-        [=](uint16_t x) { return nes.cpu_ram[(x - 0x6000) % 2048]; },
-        [=](uint16_t x, uint8_t v) { nes.cpu_ram[(x - 0x6000) % 2048] = v; }
-    );
-
-    // First 16KB of ROM
-    bus_cpu.map(0x8000, 0xBFFF,
-        [=](uint16_t x) { return nes.cpu_rom[x-0x8000]; },
-        [=](uint16_t x, uint8_t v) { nes.cpu_rom[x-0x8000] = v; }
-    );
-
-    // NROM-128, mirror of 0x8000-0xBFFF
-    bus_cpu.map(0xC000, 0xFFFF,
-        [=](uint16_t x) { return nes.cpu_rom[x-0xC000]; },
-        [=](uint16_t x, uint8_t v) { nes.cpu_rom[x-0xC000] = v; }
-    );
-
-    // // NROM-256, second 16KB of ROM.
-    // nes.cpu_bus.map(0xC000, 0xFFFF,
-    //     [=](uint16_t x) { return nes.cpu_rom[16*1024 + (x-0xC000)]; },
-    //     [=](uint16_t x, uint8_t v) { nes.cpu_rom[16*1024 + (x-0xC000)] = v; }
-    // );
+    else
+    {
+        bus.map(PrgROM, 0xC000, 0xFFFF, // NROM-256, second 16KB of ROM.
+            DC_FUNC(          return (addr - 0xC000) + 16*1024; ),
+            RD_FUNC(MemoryRO, return dev->rd(addr); ),
+            WT_FUNC(MemoryRO, dev->wt(addr, byte);  )
+        );
+    }
 }
 
+
+static constexpr uint16_t GetAddr( uint16_t addr )
+{
+    return 16*1024 + (addr - 0xC000);
+}
+
+
+void sddfssdfds()
+{
+    16388;
+
+    static constexpr uint16_t ADDR = 0xC004;
+    static constexpr uint16_t BBBB = ADDR - 0xC000;
+    static constexpr uint16_t CCCC = 16*1024;
+
+}

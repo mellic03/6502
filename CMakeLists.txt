@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(nesemu LANGUAGES CXX)
 
+set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g" )
+
 find_package(SDL2 REQUIRED)
 
 file(

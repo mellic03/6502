@@ -2,57 +2,54 @@
 
 #include "../6502/6502.hpp"
 #include "../hw/bus.hpp"
+#include "../hw/tmemory.hpp"
 #include "./ppu.hpp"
+#include "./apu.hpp"
+
+
 
 namespace NesEmu
 {
-    class Cartridge;
+    class GamePak;
     class System;
 }
 
 
-class NesEmu::System
+#define DC_FUNC(Content) \
+    [](uint16_t addr) -> uint16_t { Content }
+
+#define RD_FUNC(Tp, Content) \
+    [](iBusDevice *ibd, uint16_t addr) -> uint8_t \
+    {\
+        Tp *dev = static_cast<Tp*>(ibd);\
+        Content\
+    }
+
+#define WT_FUNC(Tp, Content) \
+    [](iBusDevice *ibd, uint16_t addr, uint8_t byte) \
+    {\
+        Tp *dev = static_cast<Tp*>(ibd);\
+        Content\
+    }
+
+
+
+class NesEmu::System: public iBusDevice
 {
 public:
-    DataBus       cpu_bus;
-    uint8_t      *cpu_ram;
-    uint8_t      *cpu_rom;
-    cpu6502       cpu;
-
-    DataBus       ppu_bus;
-    uint8_t      *ppu_vram;
-    BusDevicePPU  ppu;
-
-    Cartridge    *mCartridge;
+    MemRW2K  wRAM;
+    MemRW2K  vRAM;
+    DataBus  mBusCPU;
+    DataBus  mBusPPU;
+    cpu6502  mCPU;
+    NesPPU   mPPU;
+    NesAPU   mAPU;
+    GamePak *mGamePak;
 
     System();
-    // :   hwtimer(1'790'000)
-    // :   hwtimer(50)
-    //    cpu(busCPU),
-    //    ppu(busPPU),
-    // {
-    //     // cpu.Listen(hwtimer);
-    //     // ppu.Listen(hwtimer);
-
-    //     // busCPU.attach(&(ppu.mRam), 0x2000, 0x3FFF, cpureadvram, cpuwritevram);
-
-    // }
-
     void LoadRAW( uint8_t *rom );
-    void LoadROM( Cartridge* );
-    // void LoadROM( uint8_t *rom );
-
-    // SignalEmitter hwtimer(50);
-    // DataBus6502 cpu_bus;
-    // DataBusPPU  ppu_bus;
-
-    // auto cpu = BusAttachment6502(&cpu_bus);
-    // // cpu.LoadROM(rom);
-    // cpu.Listen(hwtimer);
-
-    // auto ppu = BusAttachmentPPU(&ppu_bus);
-    // ppu.Listen(hwtimer);
-
+    void LoadROM( GamePak* );
+    virtual void Tick() final;
 
 };
 

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../cartridge.hpp"
+#include "../gamepak.hpp"
 #include "../system.hpp"
 
 
 namespace NesEmu
 {
     class System;
-    class Cartridge;
-    struct HwMapper { virtual void map( System&, Cartridge* ) = 0; };
+    class GamePak;
+    struct HwMapper { virtual void map( System&, GamePak* ) = 0; };
 
     HwMapper *getMapper( int mapno );
 }
@@ -17,7 +17,7 @@ namespace NesEmu
 
 #define HW_MAPPER(Nm) \
 struct HwMapper##Nm: public HwMapper \
-{ virtual void map( System&, Cartridge* ) final; };
+{ virtual void map( System&, GamePak* ) final; };
 
 namespace NesEmu
 {

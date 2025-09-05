@@ -1,5 +1,7 @@
 #pragma once
 #include "file.hpp"
+#include "../../hw/memory.hpp"
+#include "../../hw/tmemory.hpp"
 
 namespace NesFile
 {
@@ -40,7 +42,7 @@ Byte    |   Contents
         |   bit 3     1 for a four-screen VRAM layout. 
         |   bit 4-7   Four lower bits of ROM Mapper Type.
         |
-7       |   bit 0     1 for VS-System cartridges.
+7       |   bit 0     1 for VS-System GamePaks.
         |   bit 1-3   Reserved, must be zeroes!
         |   bit 4-7   Four higher bits of ROM Mapper Type.
         |
@@ -48,7 +50,7 @@ Byte    |   Contents
         |   versions of the .NES format, assume 1x8kB RAM page when this
         |   byte is zero.
         |
-9       |   bit 0     1 for PAL cartridges, otherwise assume NTSC.
+9       |   bit 0     1 for PAL GamePaks, otherwise assume NTSC.
         |   bit 1-7   Reserved, must be zeroes!
         |
 10-15   |   Reserved, must be zeroes!
@@ -80,7 +82,7 @@ struct NesFile::iNES: public NesFile::Base
         union {
             uint8_t flags7;
             struct {
-                uint8_t vsUnisystem  :1; // 1 for VS-System cartridges.
+                uint8_t vsUnisystem  :1; // 1 for VS-System GamePaks.
                 uint8_t playChoice10 :1; // 8 KB of Hint Screen data after CHR
                 uint8_t flag8To15N20 :2; // If 0b10, flags 8-15 are in NES 2.0 format
                 uint8_t mapNo_hi4    :4;
@@ -120,22 +122,34 @@ struct NesFile::iNES: public NesFile::Base
      * - Some ROM-Images additionally contain a 128-byte (or sometimes 127-byte)
      *   title at the end of the file.
      */
-    // struct FileInfo {
+    struct FileInfo
+    {
         uint8_t  mapperNo;
 
-        uint64_t headerSz = 16;
+        uint64_t headerSz = 0x10;
         uint64_t trainerSz;
         uint64_t prgRomSz;
         uint64_t chrRomSz;
-        uint64_t playChoiceInstRomSz;
-        uint64_t playChoicePRomSz;
+        uint64_t playChInstRomSz;
+        uint64_t playChPRomSz;
         uint64_t titleSz;
-    // } __attribute__((packed));
-    // FileInfo info;
 
-    uint8_t *data;
+        uint64_t headerOff = 0x00;
+        uint64_t trainerOff;
+        uint64_t prgRomOff;
+        uint64_t chrRomOff;
+        uint64_t playChInstRomOff;
+        uint64_t playChPRomOff;
+        uint64_t titleOff;
+    
+        FileInfo( uint8_t *data, size_t size );
+    } __attribute__((packed));
+    FileInfo mInfo;
 
-    iNES( uint8_t *base );
+    MemoryRO mPrgROM;
+    MemoryRO mChrROM;
+
+    iNES( uint8_t *raw = nullptr, size_t size = 0 );
 };
 
 // struct NesFile_iNES

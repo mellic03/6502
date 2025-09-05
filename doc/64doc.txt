@@ -1656,7 +1656,7 @@ thus setting all three processor-driven memory management lines to
 logical "1" level.
 
   The two remaining memory management lines are -EXROM and -GAME on
-the cartridge port. Each line has a pull-up resistor, so the lines
+the GamePak port. Each line has a pull-up resistor, so the lines
 are "1" by default.
 
   Even though the memory banking has been implemented with a 82S100

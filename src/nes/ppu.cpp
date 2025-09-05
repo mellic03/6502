@@ -2,18 +2,32 @@
 #include <stdio.h>
 
 
-
-BusDevicePPU::BusDevicePPU()
-:   mRam(2048)
+NesPPU::NesPPU()
 {
-    // mBus.attach(&mRam, 0x2000, 0x3FFF);
-    // mBus.attach(&mRom);
-    // mMap = (MMapPPU*)(&mBus[0]);
-    // mMap->PtrnTab
+
 }
 
 
-void BusDevicePPU::Tick()
+uint8_t NesPPU::rd( uint16_t addr )
+{
+    uint16_t idx = addr % 8;
+    if (mRegAccess[idx] & REG_R)
+        return mRegArray[idx];
+    return 0;
+}
+
+
+void NesPPU::wt( uint16_t addr, uint8_t byte )
+{
+    uint16_t idx = addr % 8;
+    if (mRegAccess[idx] & REG_W)
+        mRegArray[idx] = byte;
+}
+
+
+
+
+void NesPPU::Tick()
 {
     // printf("[PPU]\n");
 }

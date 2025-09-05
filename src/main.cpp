@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #include "hw/display.hpp"
-#include "nes/cartridge.hpp"
+#include "nes/gamepak.hpp"
 #include "nes/system.hpp"
 
 
@@ -19,8 +19,8 @@ int main( int argc, char **argv )
         return 1;
     }
 
-    NesEmu::Cartridge cart(argv[1]);
-    if (cart.is_bad())
+    NesEmu::GamePak gpak(argv[1]);
+    if (gpak.is_bad())
     {
         printf("Could not open file \"%s\"\n", argv[1]);
         return 1;
@@ -35,10 +35,10 @@ int main( int argc, char **argv )
 
     
     NesEmu::System *nes = new NesEmu::System();
-    nes->LoadROM(&cart);
-    nes->cpu.PC = 0xC000;
+    nes->LoadROM(&gpak);
+    nes->mCPU.PC = 0xC000;
 
-    while (!nes->cpu.mInvalidOp)
+    while (!nes->mCPU.mInvalidOp)
     {
         D.beginFrame();
 
@@ -49,10 +49,10 @@ int main( int argc, char **argv )
         if (accum >= 100)
         {
             accum = 0;
-            nes->cpu_bus.tick();
+            nes->mBusCPU.tick();
         }
 
-        if (nes->cpu.mOpCount >= 500)
+        if (nes->mCPU.mOpCount >= 500)
         {
             break;
         }
@@ -60,19 +60,19 @@ int main( int argc, char **argv )
         if (D.keyReleased(SDL_SCANCODE_I))
         {
             printf("Key I --> IRQ\n");
-            nes->cpu.sig_irq();
+            nes->mCPU.sig_irq();
         }
 
         if (D.keyReleased(SDL_SCANCODE_R))
         {
             printf("Key R --> RESET\n");
-            nes->cpu.sig_res();
+            nes->mCPU.sig_res();
         }
 
         if (D.keyReleased(SDL_SCANCODE_N))
         {
             printf("Key N --> NMI\n");
-            nes->cpu.sig_nmi();
+            nes->mCPU.sig_nmi();
         }
 
         if (D.keyReleased(SDL_SCANCODE_ESCAPE))

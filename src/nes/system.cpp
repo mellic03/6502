@@ -1,53 +1,59 @@
 #include "system.hpp"
-#include "cartridge.hpp"
+#include "gamepak.hpp"
 #include "mapper/hwmapper.hpp"
 #include <stdio.h>
 #include <string.h>
 
+// hwtimer(1'790'000)
 
 NesEmu::System::System()
-:   cpu_ram  (new uint8_t[2048]),
-    cpu_rom  (new uint8_t[32*1024]),
-    ppu_vram (new uint8_t[2048])
 {
-    cpu_bus.attach(&cpu);
-
     static constexpr auto AAA = 0x4000/256;
     static constexpr auto CCC = 0x4017/256;
 
     static constexpr auto DAA = 0x4017;
     static constexpr auto DCC = 0x2000/256;
 
-    cpu_bus.map(0x0000, 0x2000,
-        [=](uint16_t x) { return cpu_ram[x % 2048]; },
-        [=](uint16_t x, uint8_t v) { cpu_ram[x % 2048] = v; }
-    );
-    
-    cpu_bus.map(0x2000, 0x4000,
-        [=](uint16_t x) { return ppu.mRegArray[x%8]; },
-        [=](uint16_t x, uint8_t v) { ppu.mRegArray[x%8] = v; }
-    );
-    
-    cpu_bus.map(0x4000, 0x4017,
-        [=](uint16_t x) { return 0; },
-        [=](uint16_t x, uint8_t v) {  }
+    using iBD = iBusDevice;
+    using Sys = System;
+    using u08 = uint8_t;
+    using u16 = uint16_t;
+
+    mBusCPU.attach(&mCPU);
+
+    mBusCPU.map(&wRAM, 0x0000, 0x1FFF, // CPU --> CPU working RAM.
+        DC_FUNC(         return addr % 2048;    ),
+        RD_FUNC(MemRW2K, return dev->rd(addr);  ),
+        WT_FUNC(MemRW2K, dev->wt(addr, byte);   )
     );
 
-    // cpu_bus.map(0x4018, 0x401F, cpu_rd_apu, cpu_wt_apu);
+    mBusCPU.map(&mPPU, 0x2000, 0x3FFF, // CPU --> PPU mmio registers.
+        DC_FUNC(        return 0x2000 + (addr % 8); ),
+        RD_FUNC(NesPPU, return dev->rd(addr);  ),
+        WT_FUNC(NesPPU, dev->wt(addr, byte);  )
+    );
+
+    mBusCPU.map(&mAPU, 0x4000, 0x4017, // CPU --> NES APU and IO registers.
+        DC_FUNC(        return 0x4000 + (addr % 0x18);  ),
+        RD_FUNC(NesAPU, return dev->mTestMem[addr];     ),
+        WT_FUNC(NesAPU, dev->mTestMem[addr] = byte;     )
+    );
 
     // [0x4020, 0xFFFF] --> Up to mapper.
-    //     [0x6000, 0x7FFF] --> Usually cartridge RAM, when present. 
-    //     [0x8000, 0xFFFF] --> Usually cartridge ROM and mapper registers.
+    //     [0x6000, 0x7FFF] --> Usually GamePak RAM, when present. 
+    //     [0x8000, 0xFFFF] --> Usually GamePak ROM and mapper registers.
 
-    ppu_bus.attach(&ppu);
+    mBusPPU.attach(&mPPU);
 
-    ppu_bus.map(0x2000, 0x3000,
-        [=](uint16_t x) { return ppu_vram[x % 2048]; },
-        [=](uint16_t x, uint8_t v) { ppu_vram[x % 2048] = v; }
-    );
+    // mBusPPU.map(&XXXXXX, 0x2000, 0x2FFF, // PPU --> XXXXXX
+    //     DC_FUNC(        return 0x2000 + (addr % 0x08);  ),
+    //     RD_FUNC(XXXXXX, return 0;       ),
+    //     WT_FUNC(XXXXXX, byte = byte;    )
+    // );
 
-    cpu.rdbus = [=](uint16_t x) { return cpu_bus.read(x); };
-    cpu.wtbus = [=](uint16_t x, uint8_t v) { cpu_bus.write(x, v); };
+    // cpu.rdbus = [=](uint16_t x) { return cpu_bus.read(x); };
+    // cpu.wtbus = [=](uint16_t x, uint8_t v) { cpu_bus.write(x, v); };
+
 }
 
 
@@ -57,16 +63,25 @@ void NesEmu::System::LoadRAW( uint8_t *rom )
 }
 
 
-void NesEmu::System::LoadROM( Cartridge *cart )
+void NesEmu::System::LoadROM( GamePak *cart )
 {
-    mCartridge = cart;
-    NesEmu::getMapper(cart->mMapNo)->map(*this, cart);
+    mGamePak = cart;
+    NesEmu::getMapper(cart->miNES->mInfo.mapperNo)->map(*this, cart);
 
-    cpu.PC = ((uint16_t)cpu_bus.read(0xFFFD) << 8) | cpu_bus.read(0xFFFC);
-    printf("Reset vector: 0x%04X\n", cpu.PC);
+    mCPU.PC = ((uint16_t)mBusCPU.read(0xFFFD) << 8) | mBusCPU.read(0xFFFC);
+    printf("Reset vector: 0x%04X\n", mCPU.PC);
 }
 
 
+
+void NesEmu::System::Tick()
+{
+    mBusCPU.tick();
+
+    mBusPPU.tick();
+    mBusPPU.tick();
+    mBusPPU.tick();
+}
 
 // void NesEmu::System::LoadROM( uint8_t *rom )
 // {

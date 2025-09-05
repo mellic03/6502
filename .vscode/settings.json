@@ -86,6 +86,7 @@
         "typeindex": "cpp",
         "variant": "cpp",
         "stdlib.h": "c",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "cerrno": "cpp"
     }
 }
