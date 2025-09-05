@@ -120,7 +120,7 @@ public:
     HwPins m_pins_prev;
 
     void sig_irq() { m_pins.irq = 0; }
-    void sig_nmi() { m_pins.nmi = !m_pins.nmi; }
+    void sig_nmi() { m_pins.nmi = !m_pins_prev.nmi; }
 
 
 private:
