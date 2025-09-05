@@ -12,22 +12,30 @@ uint16_t cpu6502::fetch16()
     return ((uint16_t)hi << 8) | (uint16_t)lo;
 }
 
-uint8_t cpu6502::LoadACC()
+uint8_t cpu6502::LoadACC( int cycle )
 {
     mOpAC = true;
     return 0;
 }
 
 // OPC $LLHH - operand is address $HHLL *
-uint8_t cpu6502::LoadABS()
+uint8_t cpu6502::LoadABS( int cycle )
 {
-    mOpAddr = fetch16();
+cycle_0:
+    uint16_t lo = rdbus(PC++);
+
+cycle_1:
+    uint16_t hi = rdbus(PC++);
+
+cycle_2:
+    mOpAddr = (hi << 8) | lo;
+    // mOpAddr = fetch16();
     return 0;
 }
 
 // OPC $LLHH,X - operand is address;
 // effective address is address incremented by X with carry **
-uint8_t cpu6502::LoadABSX()
+uint8_t cpu6502::LoadABSX( int cycle )
 {
     mOpAddr = fetch16() + XR;
     return 0;
@@ -35,7 +43,7 @@ uint8_t cpu6502::LoadABSX()
 
 // OPC $LLHH,Y - operand is address;
 // effective address is address incremented by Y with carry **
-uint8_t cpu6502::LoadABSY()
+uint8_t cpu6502::LoadABSY( int cycle )
 {
     mOpAddr = fetch16() + YR;
     return 0;
@@ -43,14 +51,14 @@ uint8_t cpu6502::LoadABSY()
 
 
 // OPC #$BB - operand is byte BB
-uint8_t cpu6502::LoadIMM()
+uint8_t cpu6502::LoadIMM( int cycle )
 {
     mOpAddr = PC++;
     return 0;
 }
 
 
-uint8_t cpu6502::LoadIMP()
+uint8_t cpu6502::LoadIMP( int cycle )
 {
     return 0;
 }
@@ -60,7 +68,7 @@ uint8_t cpu6502::LoadIMP()
  * OPC ($LLHH) operand is address;
  * effective address is contents of word at address: C.w($HHLL)
  */
-uint8_t cpu6502::LoadIND()
+uint8_t cpu6502::LoadIND( int cycle )
 {
     uint16_t ind_lo  = fetch08() & 0x00FF;
     uint16_t ind_hi  = fetch08() & 0x00FF;
@@ -93,7 +101,7 @@ uint8_t cpu6502::LoadIND()
  * OPC ($LL,X) - operand is zeropage address;
  * effective address is word in (LL + X, LL + X + 1), inc. without carry: C.w($00LL + X)
  */
-uint8_t cpu6502::LoadINDX()
+uint8_t cpu6502::LoadINDX( int cycle )
 {
     uint16_t ind_lo  = fetch08() & 0x00FF;
     uint16_t ind_hi  = fetch08() & 0x00FF;
@@ -126,7 +134,7 @@ uint8_t cpu6502::LoadINDX()
  * OPC ($LL),Y - operand is zeropage address;
  * effective address is word in (LL, LL + 1) incremented by Y with carry: C.w($00LL) + Y
  */
-uint8_t cpu6502::LoadINDY()
+uint8_t cpu6502::LoadINDY( int cycle )
 {
     uint16_t ind_lo  = fetch08() & 0x00FF;
     uint16_t ind_hi  = fetch08() & 0x00FF;
@@ -158,7 +166,7 @@ uint8_t cpu6502::LoadINDY()
 /**
  * OPC $BB - branch target is PC + signed offset BB ***
  */
-uint8_t cpu6502::LoadREL()
+uint8_t cpu6502::LoadREL( int cycle )
 {
     uint8_t byte = fetch08();
     mOpAddr = PC + *(int8_t*)(&byte);
@@ -169,7 +177,7 @@ uint8_t cpu6502::LoadREL()
 /**
  * OPC $LL - operand is zeropage address (hi-byte is zero, address = $00LL)
  */
-uint8_t cpu6502::LoadZPG()
+uint8_t cpu6502::LoadZPG( int cycle )
 {
     mOpAddr = (uint16_t)fetch08() & 0x00FF;
     return 0;
@@ -181,7 +189,7 @@ uint8_t cpu6502::LoadZPG()
  * OPC $LL,X - operand is zeropage address;
  * effective address is address incremented by X without carry **
  */
-uint8_t cpu6502::LoadZPGX()
+uint8_t cpu6502::LoadZPGX( int cycle )
 {
     mOpAddr = ((uint16_t)fetch08() + XR) & 0x00FF;
     return 0;
@@ -191,7 +199,7 @@ uint8_t cpu6502::LoadZPGX()
  * OPC $LL,Y - operand is zeropage address;
  * effective address is address incremented by Y without carry **
  */
-uint8_t cpu6502::LoadZPGY()
+uint8_t cpu6502::LoadZPGY( int cycle )
 {
     mOpAddr = ((uint16_t)fetch08() + YR) & 0x00FF;
     return 0;

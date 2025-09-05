@@ -109,7 +109,7 @@ private:
     static constexpr uint16_t PAGE_PROG  = 2*256;
 
     // -----------------------------------------------------------------------------------------
-    typedef uint8_t (cpu6502::*GetAddrFn)();
+    typedef uint8_t (cpu6502::*GetAddrFn)(int);
     typedef void (cpu6502::*ExecFn)();
 
     struct Inst
@@ -124,11 +124,11 @@ private:
 
         Inst(): Inst("", nullptr, nullptr, 1) {  }
     
-        void operator()( cpu6502 &cpu )
-        {
-            (cpu.*fA)();
-            (cpu.*fE)();
-        }
+        // void operator()( cpu6502 &cpu )
+        // {
+        //     (cpu.*fA)();
+        //     (cpu.*fE)();
+        // }
     };
 
 
@@ -177,19 +177,19 @@ private:
     void    _InstrRES();
     void    _InstrADC( uint8_t );
 
-    uint8_t LoadACC();
-    uint8_t LoadABS();
-    uint8_t LoadABSX();
-    uint8_t LoadABSY();
-    uint8_t LoadIMM();
-    uint8_t LoadIMP();
-    uint8_t LoadIND();
-    uint8_t LoadINDX();
-    uint8_t LoadINDY();
-    uint8_t LoadREL();
-    uint8_t LoadZPG();
-    uint8_t LoadZPGX();
-    uint8_t LoadZPGY();
+    uint8_t LoadACC( int );
+    uint8_t LoadABS( int );
+    uint8_t LoadABSX( int );
+    uint8_t LoadABSY( int );
+    uint8_t LoadIMM( int );
+    uint8_t LoadIMP( int );
+    uint8_t LoadIND( int );
+    uint8_t LoadINDX( int );
+    uint8_t LoadINDY( int );
+    uint8_t LoadREL( int );
+    uint8_t LoadZPG( int );
+    uint8_t LoadZPGX( int );
+    uint8_t LoadZPGY( int );
 
     void InstrUnimp();
     void InstrADC();
