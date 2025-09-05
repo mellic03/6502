@@ -150,7 +150,8 @@ int emu::entry( uint8_t *rom )
         //     break;
         // }
     
-        if (D.mKeyState[SDL_SCANCODE_SPACE] == 1)
+        // if (D.mKeyState[SDL_SCANCODE_SPACE] == 1)
+        if (D.keyReleased(SDL_SCANCODE_SPACE))
         {
             printf("SDL_SCANCODE_SPACE %lu\n", clock());
             nes->cpu.sig_nmi();
