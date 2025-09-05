@@ -103,6 +103,26 @@ public:
     virtual void Tick() final;
 
 
+    
+    union HwPins
+    {
+        uint8_t byte;
+        struct {
+            uint8_t nmi :1;
+            uint8_t irq :1;
+            uint8_t res :1;
+        };
+        HwPins(): nmi(0), irq(1), res(1) {  };
+    };
+
+    bool m_wai = false;
+    HwPins m_pins;
+    HwPins m_pins_prev;
+
+    void sig_irq() { m_pins.irq = 0; }
+    void sig_nmi() { m_pins.nmi = !m_pins.nmi; }
+
+
 private:
     static constexpr uint16_t PAGE_ZERO  = 0*256;
     static constexpr uint16_t PAGE_STACK = 1*256;
@@ -131,22 +151,6 @@ private:
         //     (cpu.*fE)();
         // }
     };
-
-
-    union HwPins
-    {
-        uint8_t byte;
-        struct {
-            uint8_t nmi :1;
-            uint8_t irq :1;
-            uint8_t res :1;
-        };
-        HwPins(): nmi(0), irq(1), res(1) {  };
-    };
-
-    bool m_wai = false;
-    HwPins m_pins;
-    HwPins m_pins_prev;
 
     Inst mCurrInstr;
     Inst mFtab[256];

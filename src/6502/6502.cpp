@@ -6,7 +6,7 @@
 
 void cpu6502::_fetch()
 {
-    printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
+    // printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
 
     mOpAC   = false;
     mCurrOp = rdbus(PC++);
@@ -15,7 +15,7 @@ void cpu6502::_fetch()
 void cpu6502::_decode()
 {
     mCurrInstr = mFtab[mCurrOp];
-    printf("%s ", mCurrInstr.label);
+    // printf("%s ", mCurrInstr.label);
 }
 
 void cpu6502::_execute()
@@ -24,9 +24,9 @@ void cpu6502::_execute()
 
     (this->*mCurrInstr.fA)();
 
-    printf("%04X\t", (mOpAC) ? AC : mOpAddr);
-    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X ", AC, XR, YR, SSR_byte, SP);
-    printf("PPU: %u,%u CYC:%lu\n", 0, 0, mCycles );
+    // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
+    // printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X ", AC, XR, YR, SSR_byte, SP);
+    // printf("PPU: %u,%u CYC:%lu\n", 0, 0, mCycles );
 
     (this->*mCurrInstr.fE)();
 
@@ -45,6 +45,7 @@ void cpu6502::_wai_handler()
     if (m_pins.irq == 0)
     {
         m_wai = false;
+        m_pins.irq = 1;
         _InstrIRQ();
     }
 

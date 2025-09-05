@@ -29,6 +29,8 @@ public:
     int mHeight;
     int mScale;
     bool mRunning;
+    Uint8 mKeyState[512];
+    Uint8 mKeyPrev[512];
 
     void init( int w, int h, int scale )
     {
@@ -36,6 +38,7 @@ public:
         mHeight = h;
         mScale  = scale;
         mRunning = true;
+        memset(mKeyPrev, 0, sizeof(mKeyPrev));
 
         SDL_Init(SDL_INIT_VIDEO);
 
@@ -52,8 +55,18 @@ public:
         mSurface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
     }
 
+    bool keyReleased( int k )
+    {
+        return mKeyPrev[k] && !mKeyState[k];
+    }
+
     void beginFrame()
     {
+        int numkeys = 0;
+        auto *state = SDL_GetKeyboardState(&numkeys);
+        memcpy(mKeyState, state, numkeys);
+        memcpy(mKeyPrev, mKeyState, numkeys);
+
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
@@ -126,16 +139,28 @@ int emu::entry( uint8_t *rom )
 
     while (!nes->cpu.mInvalidOp)
     {
-        nes->cpu_bus.tick();
+        D.beginFrame();
+        tprev = tcurr;
+        tcurr = SDL_GetTicks64();
 
-        if (nes->cpu.mOpCount >= 500)
+        // nes->cpu_bus.tick();
+
+        // if (nes->cpu.mOpCount >= 500)
+        // {
+        //     break;
+        // }
+    
+        if (D.mKeyState[SDL_SCANCODE_SPACE] == 1)
+        {
+            printf("SDL_SCANCODE_SPACE %lu\n", clock());
+            nes->cpu.sig_nmi();
+        }
+    
+        if (D.keyReleased(SDL_SCANCODE_ESCAPE))
         {
             break;
         }
 
-        D.beginFrame();
-        tprev = tcurr;
-        tcurr = SDL_GetTicks64();
         D.endFrame();
     }
     return 0;
