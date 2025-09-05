@@ -39,6 +39,25 @@ uint8_t cpu6502::_NVZC( uint16_t x, uint8_t a , uint8_t b )
 }
 
 
+#define SET_NZ(x, a, op, b) \
+    uint16_t Tmp = uint16_t(a) op uint16_t(b);\
+    SSR.N = (Tmp & (1<<7)) ? 1 : 0; \
+    SSR.Z = (Tmp == 0) ? 1 : 0; \
+
+#define SET_NZC(x, a, op, b) \
+    uint16_t Tmp = uint16_t(a) op uint16_t(b);\
+    SSR.N = (Tmp & (1<<7)) ? 1 : 0; \
+    SSR.Z = (Tmp == 0) ? 1 : 0; \
+    SSR.C = (Tmp & (1<<8)) ? 1 : 0;
+
+#define SET_NVZC(x, a, op, b) \
+    uint16_t Tmp = uint16_t(a) op uint16_t(b);\
+    SSR.N = (Tmp & (1<<7)) ? 1 : 0; \
+    SSR.V = ((a^Tmp) & (b^Tmp) & 0x80) ? 1 : 0; \
+    SSR.Z = (Tmp == 0) ? 1 : 0; \
+    SSR.C = (Tmp & (1<<8)) ? 1 : 0;
+
+
 void cpu6502::_IntPush()
 {
     PC += 1;
@@ -89,8 +108,9 @@ void cpu6502::_InstrADC( uint8_t b )
     static constexpr uint16_t BIT_8 = (1<<8);
 
     uint16_t a = (uint16_t)AC;
-    uint16_t x = a + b + SSR.C;
-    AC = _NVZC(x, a, b);
+    // uint16_t x = a + b + SSR.C;
+    SET_NVZC(AC, a, +, b);
+    // AC = _NVZC(x, a, b);
 }
 
 void cpu6502::InstrADC()

@@ -128,7 +128,7 @@ int emu::entry( uint8_t *rom )
     {
         nes->cpu_bus.tick();
 
-        if (nes->cpu.mCycles >= 1000)
+        if (nes->cpu.mOpCount >= 500)
         {
             break;
         }

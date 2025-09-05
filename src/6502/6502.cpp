@@ -20,6 +20,8 @@ void cpu6502::_decode()
 
 void cpu6502::_execute()
 {
+    int cycles = mCurrInstr.nCycles;
+
     (this->*mCurrInstr.fA)();
 
     printf("%04X\t", (mOpAC) ? AC : mOpAddr);
@@ -28,7 +30,7 @@ void cpu6502::_execute()
 
     (this->*mCurrInstr.fE)();
 
-    mCycles += mCurrInstr.nCycles;
+    mCycles += cycles;
     mOpCount += 1;
 }
 

@@ -77,7 +77,7 @@ public:
     size_t   mOpCount;
     bool     mOpAC;
     uint16_t mOpAddr;
-    uint8_t  mOpu8;
+    uint8_t  mOpData;
 
     uint8_t  AC;
     uint8_t  XR;
@@ -109,7 +109,8 @@ private:
     static constexpr uint16_t PAGE_PROG  = 2*256;
 
     // -----------------------------------------------------------------------------------------
-    typedef uint8_t (cpu6502::*GetAddrFn)(int);
+    // typedef int (cpu6502::*GetAddrFn)(int);
+    typedef int (cpu6502::*GetAddrFn)();
     typedef void (cpu6502::*ExecFn)();
 
     struct Inst
@@ -177,19 +178,19 @@ private:
     void    _InstrRES();
     void    _InstrADC( uint8_t );
 
-    uint8_t LoadACC( int );
-    uint8_t LoadABS( int );
-    uint8_t LoadABSX( int );
-    uint8_t LoadABSY( int );
-    uint8_t LoadIMM( int );
-    uint8_t LoadIMP( int );
-    uint8_t LoadIND( int );
-    uint8_t LoadINDX( int );
-    uint8_t LoadINDY( int );
-    uint8_t LoadREL( int );
-    uint8_t LoadZPG( int );
-    uint8_t LoadZPGX( int );
-    uint8_t LoadZPGY( int );
+    int LoadACC();
+    int LoadABS();
+    int LoadABSX();
+    int LoadABSY();
+    int LoadIMM();
+    int LoadIMP();
+    int LoadIND();
+    int LoadINDX();
+    int LoadINDY();
+    int LoadREL();
+    int LoadZPG();
+    int LoadZPGX();
+    int LoadZPGY();
 
     void InstrUnimp();
     void InstrADC();
