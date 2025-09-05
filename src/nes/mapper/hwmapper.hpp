@@ -9,12 +9,10 @@ namespace NesEmu
     class System;
     class Cartridge;
     struct HwMapper { virtual void map( System&, Cartridge* ) = 0; };
+
+    HwMapper *getMapper( int mapno );
 }
 
-namespace NesMem
-{
-    NesEmu::HwMapper *getMapper( int mapno );
-}
 
 
 #define HW_MAPPER(Nm) \

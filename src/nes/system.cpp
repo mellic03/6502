@@ -11,13 +11,19 @@ NesEmu::System::System()
     ppu_vram (new uint8_t[2048])
 {
     cpu_bus.attach(&cpu);
-    
-    cpu_bus.map(0x0000, 0x1FFF,
+
+    static constexpr auto AAA = 0x4000/256;
+    static constexpr auto CCC = 0x4017/256;
+
+    static constexpr auto DAA = 0x4017;
+    static constexpr auto DCC = 0x2000/256;
+
+    cpu_bus.map(0x0000, 0x2000,
         [=](uint16_t x) { return cpu_ram[x % 2048]; },
         [=](uint16_t x, uint8_t v) { cpu_ram[x % 2048] = v; }
     );
     
-    cpu_bus.map(0x2000, 0x3FFF,
+    cpu_bus.map(0x2000, 0x4000,
         [=](uint16_t x) { return ppu.mRegArray[x%8]; },
         [=](uint16_t x, uint8_t v) { ppu.mRegArray[x%8] = v; }
     );
@@ -35,7 +41,7 @@ NesEmu::System::System()
 
     ppu_bus.attach(&ppu);
 
-    ppu_bus.map(0x2000, 0x2FFF,
+    ppu_bus.map(0x2000, 0x3000,
         [=](uint16_t x) { return ppu_vram[x % 2048]; },
         [=](uint16_t x, uint8_t v) { ppu_vram[x % 2048] = v; }
     );
@@ -54,7 +60,7 @@ void NesEmu::System::LoadRAW( uint8_t *rom )
 void NesEmu::System::LoadROM( Cartridge *cart )
 {
     mCartridge = cart;
-    NesMem::getMapper(cart->mMapNo)->map(*this, cart);
+    NesEmu::getMapper(cart->mMapNo)->map(*this, cart);
 
     cpu.PC = ((uint16_t)cpu_bus.read(0xFFFD) << 8) | cpu_bus.read(0xFFFC);
     printf("Reset vector: 0x%04X\n", cpu.PC);

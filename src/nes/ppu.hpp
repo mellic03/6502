@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../hw/bus.hpp"
+#include "../hw/memory.hpp"
 #include "../hw/clock.hpp"
 
 
@@ -77,14 +78,13 @@ public:
 private:
 
 public:
-    DataBus      mBus;
-    MemoryDevice mRam;
+    DataBus  mBus;
+    MemoryRW mRam;
 
     union {
         mmio_t  mReg;
         uint8_t mRegArray[8];
     };
-    // MemoryDevice mRom;
 
     BusDevicePPU();
     virtual void Tick() final;

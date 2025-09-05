@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <cassert>
+#include <cstdlib>
 
 
 #define clean_errno() (errno == 0 ? "None" : strerror(errno))
@@ -39,8 +40,16 @@ void DataBus::map( uint16_t min, uint16_t max, ReadFunc rd, WriteFunc wt )
 
     for (uint32_t i=min; i<=max; i++)
     {
-        mPageTable[(uint16_t)i] = idx;
+        mPageTable[i] = idx;
     }
+
+    // uint16_t minPage = min/256;
+    // uint16_t maxPage = max/256;
+
+    // for (uint16_t page=minPage; page<=maxPage; page++)
+    // {
+    //     mPageTable[page] = idx;
+    // }
 }
 
 void DataBus::attach( iBusDevice *dev )
@@ -50,19 +59,10 @@ void DataBus::attach( iBusDevice *dev )
 
 uint8_t DataBus::read( uint16_t addr )
 {
-    return mPageFuncs[mPageTable[addr]].read(addr);
+    return mPageFuncs[mPageTable[addr/256]].read(addr);
 }
 
 void DataBus::write( uint16_t addr, uint8_t byte )
 {
-    mPageFuncs[mPageTable[addr]].write(addr, byte);
-}
-
-
-#include <cassert>
-
-uint8_t &MemoryDevice::operator[]( uint16_t i )
-{
-    assert((0<=i && i<=MaxAddr));
-    return mMem[i];
+    mPageFuncs[mPageTable[addr/256]].write(addr, byte);
 }

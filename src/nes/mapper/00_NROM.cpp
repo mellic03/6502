@@ -26,6 +26,22 @@ using namespace NesEmu;
 */
 void HwMapper00_NROM::map( System &nes, Cartridge *cart )
 {
+
+    // 0x A    B    C    D
+    // 0b 0000 0000 0000 0000
+    union BusAddr
+    {
+        uint16_t word;
+
+        struct
+        {
+            uint8_t D :4;
+            uint8_t C :4;
+            uint8_t B :4;
+            uint8_t A :4;
+        };
+    };
+
     auto &bus_cpu = nes.cpu_bus;
 
     // PRG RAM

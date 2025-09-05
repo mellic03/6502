@@ -1,5 +1,4 @@
 #include "hwmapper.hpp"
-#include "cartridge.hpp"
 #include <cassert>
 
 
@@ -18,7 +17,7 @@ static NesEmu::HwMapper **HwMapTable = InitHwMappers();
 
 
 
-NesEmu::HwMapper *NesMem::getMapper( int idx )
+NesEmu::HwMapper *NesEmu::getMapper( int idx )
 {
     using Fmt = NesEmu::Cartridge::Fmt;
     assert(0<=idx && idx<=Fmt::NumFmt);
