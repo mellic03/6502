@@ -2,122 +2,82 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "../system/bus.hpp"
-#include "../system/clock.hpp"
+#include "../hw/bus.hpp"
 
 
+/**
+ * - Break (B) Changes when SSR is pushed/popped. When pushed, it will
+ *   be 1 when transfered by a BRK or PHP instruction, and zero otherwise
+ *   (i.e., when pushed by a hardware interrupt). When pulled into the
+ *   status register (by PLP or on RTI), it will be ignored.
+ * 
+ * - The break flag will be set to on (1), whenever the transfer was
+ *   caused by software (BRK or PHP).
+ * 
+ * - The break flag will be set to zero (0), whenever the transfer was
+ *   caused by a hardware interrupt.
+ * 
+ * - The break flag will be masked and cleared (0), whenever transferred
+ *   from the stack to the status register, either by PLP or during a
+ *   return from interrupt (RTI).
+ *
+ * - Interrupt Disable (I) When set, IRQ interrupts are inhibited. NMI, BRK,
+ *   and reset are not affected.
+ * - Can be set or cleared directly with SEI or CLI.
+ * - Automatically set by the CPU after pushing flags to the stack when any
+ *   interrupt is triggered (NMI, IRQ/BRK, or reset). Restored to its previous
+ *   state from the stack when leaving an interrupt handler with RTI.
+ * - If an IRQ is pending when this flag is cleared (i.e. the /IRQ line is low),
+ *   an interrupt will be triggered immediately. However, the effect of toggling
+ *   this flag is delayed 1 instruction when caused by SEI, CLI, or PLP.
+ * 
+ */
 struct cpu6502RegisterSSR
 {
-    /** negative result */
-    uint8_t N :1;
-
-    /** overflow */
-    uint8_t V :1;
-
-    /** break */
-    uint8_t B :1;
-
-    /** unused */
-    uint8_t _ :1;
-    
-    /** decimal mode */
-    uint8_t D :1;
-
-    /** interrupt disable; */
-    uint8_t I :1;
+    /** carry; */
+    uint8_t C :1;
 
     /** zero result; */
     uint8_t Z :1;
 
-    /** carry; */
-    uint8_t C :1;
+    /** interrupt disable; */
+    uint8_t I :1;
+
+    /** decimal mode */
+    uint8_t D :1;
+
+    /** unused */
+    uint8_t U :1;
+
+    /** break */
+    uint8_t B :1;
+
+    /** overflow */
+    uint8_t V :1;
+
+    /** negative result */
+    uint8_t N :1;
 
     cpu6502RegisterSSR()
-    :   N(0), V(0), B(1), _(0), D(0), I(1), Z(0), C(0) {  }
-
+    :   C(0), Z(0), I(1), D(0), U(0), B(1), V(0), N(0) {  };
 } __attribute__((packed));
 
 
 
-// struct MMap6502
-// {
-//     union {
-//         uint8_t ram [0x0800];       // 0x0000 -> 0x07FF
-//         struct {
-//             uint8_t zpage[0x0100]; // 0x0000 -> 0x0100
-//             uint8_t stack[0x0100]; // 0x0100 -> 0x0200
-//         };
-//     };
-
-//  // uint8_t ram_mr1 [0x0800];   // 0x0800 -> 0x0FFF
-//  // uint8_t ram_mr2 [0x0800];   // 0x1000 -> 0x17FF
-//  // uint8_t ram_mr2 [0x0800];   // 0x1800 -> 0x1FFF
-//                                 // 
-//     uint8_t ppu     [0x0008];   // 0x2000 -> 0x2008
-//  // uint8_t ppu_mr1 [0x1FF8];   // 0x2008 -> 0x3FFF
-//                                 // 
-//     uint8_t apu_io  [0x0018];   // 0x4000 -> 0x4017
-//     uint8_t apu_io_ [0x0008];   // 0x4018 -> 0x401F
-//                                 // 
-//     uint8_t umapped [0xBFE0];   // 0x4020 -> 0xFFFF,   Available for cartridge use.
-//                                 // 0x6000 -> 0x7FFF,   Usually cartridge RAM, when present.
-//                                 // 0x8000 -> 0xFFFF,   Usually cartridge ROM and mapper registers.
-
-// };
-
-
-// class DataBus6502: public iDataBus
-// {
-// private:
-
-// public:
-//     DataBus6502(): iDataBus(new uint8_t[0xFFFF+1]) {  }
-
-// };
-
-// class BusInterface6502: public BusInterface
-// {
-// private:
-//     virtual uint16_t deplex( uint16_t addr ) final
-//     {
-//         if (0x0000<=addr && addr<=0x1FFF)
-//         {
-//             return addr % 0x0800;
-//         }
-
-//         if (0x2000<=addr && addr<=0x3FFF)
-//         {
-//             return 0x2000 + (addr % 8);
-//         }
-    
-//         if (0x4000<=addr && addr<=0xFFFF)
-//         {
-//             return 0x4000 + (addr % 0x4000);
-//         }
-
-//         return addr;
-//     }
-// public:
-//     BusInterface6502( iDataBus *bus )
-//     :   BusInterface(bus) {  }
-// };
-
-
 // https://www.nesdev.org/wiki/CPU_power_up_state
-// struct cpu6502: public BusAttachment<BusInterface6502>, public SignalListener
-struct cpu6502: public iBusDevice, public SignalListener
+struct cpu6502: public iBusDevice
 {
-private:
-
 public:
-    // using InternalRamDevice = MemoryDevice<0x07FF+1>;
-
-    DataBus      mBus;
-    MemoryDevice mRam;
+    std::function<uint8_t(uint16_t)>       rdbus = [](uint16_t) { return 0; };
+    std::function<void(uint16_t, uint8_t)> wtbus = [](uint16_t, uint8_t) {  };
 
     uint8_t  mInvalidOp;
     uint8_t  mCurrOp;
     size_t   mCycles;
+    size_t   mOpCount;
+    bool     mOpAC;
+    uint16_t mOpAddr;
+    uint8_t  mOpu8;
 
     uint8_t  AC;
     uint8_t  XR;
@@ -137,9 +97,9 @@ public:
         cpu6502RegisterSSR SSR;
     };
 
-
     // cpu6502( iDataBus *bus );
     cpu6502();
+
     virtual void Tick() final;
 
 
@@ -149,8 +109,8 @@ private:
     static constexpr uint16_t PAGE_PROG  = 2*256;
 
     // -----------------------------------------------------------------------------------------
-    typedef uint8_t* (cpu6502::*GetAddrFn)();
-    typedef void (cpu6502::*ExecFn)(uint8_t*);
+    typedef uint8_t (cpu6502::*GetAddrFn)();
+    typedef void (cpu6502::*ExecFn)();
 
     struct Inst
     {
@@ -166,19 +126,42 @@ private:
     
         void operator()( cpu6502 &cpu )
         {
-            (cpu.*fE)((cpu.*fA)());
+            (cpu.*fA)();
+            (cpu.*fE)();
         }
     };
 
+
+    union HwPins
+    {
+        uint8_t byte;
+        struct {
+            uint8_t nmi :1;
+            uint8_t irq :1;
+            uint8_t res :1;
+        };
+        HwPins(): nmi(0), irq(1), res(1) {  };
+    };
+
+    bool m_wai = false;
+    HwPins m_pins;
+    HwPins m_pins_prev;
+
+    Inst mCurrInstr;
     Inst mFtab[256];
     // -----------------------------------------------------------------------------------------
 
     // -----------------------------------------------------------------------------------------
-    /** N|7 V|6 B|5 4|4 D|3 I|2 Z|1 C|0 **/ 
-    template <uint8_t mask>
-    void _setssr( uint16_t res );
+    uint8_t _N( uint16_t );
+    uint8_t _NZ( uint16_t );
+    uint8_t _NZC( uint16_t );
+    uint8_t _NVZC( uint16_t x, uint8_t a , uint8_t b );
+    void   _fetch();
+    void   _decode();
+    void   _execute();
+    void   _wai_handler();
 
-    uint8_t  fetch8();
+    uint8_t  fetch08();
     uint16_t fetch16();
     // -----------------------------------------------------------------------------------------
 
@@ -187,61 +170,83 @@ private:
     uint8_t  pop08();
     uint16_t pop16();
 
-    uint8_t *LoadACC();
-    uint8_t *LoadABS();
-    uint8_t *LoadABSX();
-    uint8_t *LoadABSY();
-    uint8_t *LoadIMM();
-    uint8_t *LoadIMP();
-    uint8_t *LoadIND();
-    uint8_t *LoadINDX();
-    uint8_t *LoadINDY();
-    uint8_t *LoadREL();
-    uint8_t *LoadZPG();
-    uint8_t *LoadZPGX();
-    uint8_t *LoadZPGY();
+    void    _IntPush();
+    void    _IntJump( uint16_t addr );
+    void    _InstrNMI();
+    void    _InstrIRQ();
+    void    _InstrRES();
+    void    _InstrADC( uint8_t );
 
-    void InstrUnimp( uint8_t* );
-    void InstrADC( uint8_t* );
-    void InstrAND( uint8_t* );
-    void InstrASL( uint8_t* );
-    void InstrBCC( uint8_t* );
-    void InstrBCS( uint8_t* );
-    void InstrBEQ( uint8_t* );
-    void InstrBIT( uint8_t* );
-    void InstrBMI( uint8_t* );
-    void InstrBNE( uint8_t* );
-    void InstrBPL( uint8_t* );
-    void InstrBRK( uint8_t* );
-    void InstrBVC( uint8_t* );
-    void InstrBVS( uint8_t* );
-    void InstrCLC( uint8_t* );
-    void InstrCLD( uint8_t* );
-    void InstrCLI( uint8_t* );
-    void InstrCLV( uint8_t* );
-    void InstrCMP( uint8_t* );
-    void InstrCPX( uint8_t* );
-    void InstrCPY( uint8_t* );
-    void InstrEOR( uint8_t* );
-    void InstrJMP( uint8_t* );
-    void InstrJSR( uint8_t* );
-    void InstrLDA( uint8_t* );
-    void InstrLDX( uint8_t* );
-    void InstrLDY( uint8_t* );
-    void InstrNOP( uint8_t* );
-    void InstrORA( uint8_t* );
-    void InstrPHA( uint8_t* );
-    void InstrPHP( uint8_t* );
-    void InstrPLA( uint8_t* );
-    void InstrPLP( uint8_t* );
-    void InstrRTI( uint8_t* );
-    void InstrRTS( uint8_t* );
-    void InstrSBC( uint8_t* );
-    void InstrSEC( uint8_t* );
-    void InstrSED( uint8_t* );
-    void InstrSEI( uint8_t* );
-    void InstrSTA( uint8_t* );
-    void InstrSTX( uint8_t* );
-    void InstrSTY( uint8_t* );
+    uint8_t LoadACC();
+    uint8_t LoadABS();
+    uint8_t LoadABSX();
+    uint8_t LoadABSY();
+    uint8_t LoadIMM();
+    uint8_t LoadIMP();
+    uint8_t LoadIND();
+    uint8_t LoadINDX();
+    uint8_t LoadINDY();
+    uint8_t LoadREL();
+    uint8_t LoadZPG();
+    uint8_t LoadZPGX();
+    uint8_t LoadZPGY();
+
+    void InstrUnimp();
+    void InstrADC();
+    void InstrAND();
+    void InstrASL();
+    void InstrBCC();
+    void InstrBCS();
+    void InstrBEQ();
+    void InstrBIT();
+    void InstrBMI();
+    void InstrBNE();
+    void InstrBPL();
+    void InstrBRK();
+    void InstrBVC();
+    void InstrBVS();
+    void InstrCLC();
+    void InstrCLD();
+    void InstrCLI();
+    void InstrCLV();
+    void InstrCMP();
+    void InstrCPX();
+    void InstrCPY();
+    void InstrDEC();
+    void InstrDEX();
+    void InstrDEY();
+    void InstrEOR();
+    void InstrINC();
+    void InstrINX();
+    void InstrINY();
+    void InstrJMP();
+    void InstrJSR();
+    void InstrLDA();
+    void InstrLDX();
+    void InstrLDY();
+    void InstrNOP();
+    void InstrORA();
+    void InstrPHA();
+    void InstrPHP();
+    void InstrPLA();
+    void InstrPLP();
+    void InstrROL();
+    void InstrROR();
+    void InstrRTI();
+    void InstrRTS();
+    void InstrSBC();
+    void InstrSEC();
+    void InstrSED();
+    void InstrSEI();
+    void InstrSTA();
+    void InstrSTX();
+    void InstrSTY();
+    void InstrTAX();
+    void InstrTAY();
+    void InstrTSX();
+    void InstrTXA();
+    void InstrTXS();
+    void InstrTYA();
+    void InstrWAI();
 
 };

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../system/bus.hpp"
-#include "../system/clock.hpp"
+#include "../hw/bus.hpp"
+#include "../hw/clock.hpp"
 
 
 
@@ -43,10 +43,11 @@
 // };
 
 
-class BusDevicePPU: public SignalListener
+class BusDevicePPU: public iBusDevice
 {
 public:
-    struct mmio_t {
+    struct mmio_t 
+    {
         uint8_t PPUCTRL;
         uint8_t PPUMASK;
         uint8_t PPUSTATUS;
@@ -55,7 +56,7 @@ public:
         uint8_t PPUSCROLL;
         uint8_t PPUADDR;
         uint8_t PPUDATA;
-        uint8_t OAMDMA; 
+        // uint8_t OAMDMA; 
     };
 
     struct AttrTable
@@ -74,11 +75,15 @@ public:
     };
 
 private:
-    mmio_t *mmio;
 
 public:
     DataBus      mBus;
     MemoryDevice mRam;
+
+    union {
+        mmio_t  mReg;
+        uint8_t mRegArray[8];
+    };
     // MemoryDevice mRom;
 
     BusDevicePPU();

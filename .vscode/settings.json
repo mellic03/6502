@@ -84,6 +84,8 @@
         "text_encoding": "cpp",
         "thread": "cpp",
         "typeindex": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "stdlib.h": "c",
+        "cassert": "cpp"
     }
 }

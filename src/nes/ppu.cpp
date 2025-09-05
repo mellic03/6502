@@ -4,8 +4,7 @@
 
 
 BusDevicePPU::BusDevicePPU()
-:   SignalListener(12),
-    mRam(2048)
+:   mRam(2048)
 {
     // mBus.attach(&mRam, 0x2000, 0x3FFF);
     // mBus.attach(&mRom);

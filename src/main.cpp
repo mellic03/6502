@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "6502/6502.hpp"
+// #include "6502/6502.hpp"
 
 namespace emu { extern int entry(uint8_t*); }
 

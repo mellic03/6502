@@ -2,7 +2,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <set>
 #include <vector>
+#include <functional>
 
 
 class DataBus;
@@ -10,91 +12,60 @@ class iBusDevice;
 class iBusAddrMap;
 
 
+class BusDevice
+{
+public:
+    uint8_t (*read)(uint16_t);
+    void    (*write)(uint16_t, uint8_t);
+};
+
+
 class DataBus
 {
 public:
-    using ReadFn = uint8_t* (*)(iBusDevice*, uint16_t base, uint16_t addr);
+    using ReadFn  = uint8_t* (*)(iBusDevice*, uint16_t base, uint16_t addr);
     using WriteFn = void (*)(iBusDevice*, uint16_t base, uint16_t, uint8_t);
 
 private:
-    struct Tup {
-        iBusDevice *dev;
-        uint16_t    base;
-        ReadFn      rdfn;
-        WriteFn     wtfn;
-    };
-    std::vector<Tup> mDevices;
-    uint8_t          mDeviceMap[0xFFFF+1];
-    uint8_t          mSafetyWord[4];
-
-    uint8_t *_read( uint16_t addr );
+    using ReadFunc  = std::function<uint8_t(uint16_t addr)>;
+    using WriteFunc = std::function<void(uint16_t addr, uint8_t byte)>;
+    struct FPair { ReadFunc read; WriteFunc write; };
+    std::vector<FPair> mPageFuncs;
+    uint8_t mPageTable[0xFFFF + 1];
+    std::set<iBusDevice*> mDevices;
 
 public:
     DataBus();
-
-    void attach( iBusDevice *dev, uint16_t minaddr, uint16_t maxaddr,
-                 ReadFn rd, WriteFn wt );
+    void map( uint16_t min, uint16_t max, ReadFunc, WriteFunc );
+    void attach( iBusDevice* );
+    void tick();
 
     uint8_t read( uint16_t addr );
-    uint16_t read16( uint16_t addr );
     void write( uint16_t addr, uint8_t byte );
-    void write16( uint16_t addr, uint16_t word );
-
-    uint8_t &operator[]( uint16_t i )
-    {
-        return *_read(i);
-    }
 };
 
 
 class iBusDevice
 {
-protected:
-    friend class DataBus;
-    virtual uint8_t _iBus_read( uint16_t a ) { return 0; }
-    virtual void _iBus_write( uint16_t a, uint8_t x ) {  }
-
 public:
+    virtual void Tick() = 0;
 
 };
 
 
-struct iBusAddrMap
-{
-private:
-
-public:
-    uint16_t mMin, mMax;
-    iBusAddrMap( uint16_t min, uint16_t max ): mMin(min), mMax(max) {  }
-    virtual uint16_t rmap( uint16_t x ) { return x; };
-    virtual uint16_t wmap( uint16_t x ) { return x; };
-};
-
-
-
-// template <uint32_t Size>
 class MemoryDevice: public iBusDevice
 {
-private:
-    // uint8_t mMem[Size];
-    virtual uint8_t _iBus_read( uint16_t a ) { return mMem[a]; }
-    virtual void _iBus_write( uint16_t a, uint8_t x ) { mMem[a] = x; }
-
 public:
     uint8_t *mMem;
     const uint16_t MaxAddr;
 
+    virtual void Tick() final {  }
+
     MemoryDevice( uint32_t size )
     :   mMem(new uint8_t[size]),
-        MaxAddr(size-1)
-    {
+        MaxAddr(size-1) {  }
 
-    }
-
-    uint8_t &operator[]( uint16_t i )
-    {
-        return mMem[i];
-    }
+    uint8_t &operator[]( uint16_t i );
 };
 
 
