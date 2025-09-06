@@ -9,96 +9,45 @@
 
 
 
-// PPUCTRL 	    $2000 	VPHB SINN 	W 	NMI enable (V), PPU master/slave (P), sprite height (H), background tile select (B), sprite tile select (S), increment mode (I), nametable select / X and Y scroll bit 8 (NN)
-// PPUMASK 	    $2001 	BGRs bMmG 	W 	color emphasis (BGR), sprite enable (s), background enable (b), sprite left column enable (M), background left column enable (m), greyscale (G)
-// PPUSTATUS    $2002 	VSO- ---- 	R 	vblank (V), sprite 0 hit (S), sprite overflow (O); read resets write pair for $2005/$2006
-// OAMADDR 	    $2003 	AAAA AAAA 	W 	OAM read/write address
-// OAMDATA 	    $2004 	DDDD DDDD 	RW 	OAM data read/write
-// PPUSCROLL 	$2005 	XXXX XXXX YYYY YYYY 	Wx2 	X and Y scroll bits 7-0 (two writes: X scroll, then Y scroll)
-// PPUADDR 	    $2006 	..AA AAAA AAAA AAAA 	Wx2 	VRAM address (two writes: most significant byte, then least significant byte)
-// PPUDATA 	    $2007 	DDDD DDDD 	RW 	VRAM data read/write
-// OAMDMA 	    $4014 	
-
-
-// class DataBusPPU: public iDataBus
-// {
-// private:
-// public:
-//     struct MMapPPU {
-//         uint8_t vrom[0x2000]; // 0x0000 -> 0x2000
-//         uint8_t vram[0x1F00]; // 0x2000 -> 0x3F00
-//         uint8_t data[0x0100]; // 0x3F00 -> 0x4000
-//     };
-
-//     DataBusPPU(): iDataBus(new uint8_t[0x4000]) {  }
-// };
-
-// class BusInterfacePPU: public BusInterface
-// {
-// private:
-//     uint16_t deplex( uint16_t addr )
-//     {
-//         return addr & 0x7FFF; // 0x7FFE&0x7FFF; 0x7FFF&0x7FFF; 0x8000&0x7FFF; 0x8001&0x7FFF;
-//     }
-
-// public:
-//     BusInterfacePPU( iDataBus *bus ): BusInterface(bus) {  }
-
-// };
-
-
-enum class NesPPU_Reg: uint8_t
+struct NesPPU_AttrTable
 {
-    PPUCTRL,
-    PPUMASK,
-    PPUSTATUS,
-    OAMADDR,
-    OAMDATA,
-    PPUSCROLL,
-    PPUADDR,
-    PPUDATA,
-    NumValues
-};
-
-enum class NesPPU_Rwx: uint8_t
-{
-    RWX_PPUCTRL   = RWX::W,
-    RWX_PPUMASK   = RWX::W,
-    RWX_PPUSTATUS = RWX::R,
-    RWX_OAMADDR   = RWX::W,
-    RWX_OAMDATA   = RWX::RW,
-    RWX_PPUSCROLL = RWX::Wx2,
-    RWX_PPUADDR   = RWX::Wx2,
-    RWX_PPUDATA   = RWX::RW,
-    NumValues     = 8
+    uint8_t data[64];
 };
 
 
-class NesPPU: public NesEmu::RegisterMMIO<NesPPU_Reg, NesPPU_Rwx>
+union NesPPU_NameTable
+{
+    uint8_t data[1024];
+    
+    struct {
+        uint8_t dat0[1024-64];
+        uint8_t attr[64];
+    };
+};
+
+
+// enum class NesPPU_Reg: uint8_t
+// {
+//     PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR,
+//     OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA,
+//     NumValues
+// };
+
+// static constexpr
+// uint8_t NesPPU_Acs[(uint8_t)NesPPU_Reg::NumValues] = {
+//     RWX::W,  RWX::W,   RWX::R,   RWX::W,
+//     RWX::RW, RWX::Wx2, RWX::Wx2, RWX::RW,
+// };
+
+
+
+class NesPPU: public HwDevice
 {
 private:
-    using Reg = NesPPU_Reg;
-    using Rwx = NesPPU_Rwx;
+    uint8_t mPage[0x0100];
 
 public:
-    struct AttrTable
-    {
-        uint8_t data[64];
-    };
-    
-    union NameTable
-    {
-        uint8_t data[1024];
-        
-        struct {
-            uint8_t dat0[1024-64];
-            uint8_t attr[64];
-        };
-    };
-
-    // NesEmu::RegisterMMIO<Reg, Rwx> mRegs;
-    // uint8_t rd( Reg r ) { return mRegs.rd(r); };
-    // void    wt( Reg r, uint8_t v ) { mRegs.wt(r, v); };
+    NesPPU();
 
     virtual uint8_t rd( uint16_t ) final { return 0; };
     virtual void wt( uint16_t, uint8_t ) final {  };
@@ -124,6 +73,35 @@ public:
     $2800 at the bottom left, and $2C00 at the bottom right. 
 */
 
+/*
+    |Name      | Addr  | Bits                | Type |
+    |-----------------------------------------------|
+    |PPUCTRL   | $2000 |           VPHB SINN | -W   | 
+    |PPUMASK   | $2001 |           BGRs bMmG | -W   | 
+    |PPUSTATUS | $2002 |           VSO- ---- | R-   | 
+    |OAMADDR   | $2003 |           AAAA AAAA | -W   | 
+    |OAMDATA   | $2004 |           DDDD DDDD | RW   | 
+    |PPUSCROLL | $2005 | XXXX XXXX YYYY YYYY | Wx2  | 
+    |PPUADDR   | $2006 | ..AA AAAA AAAA AAAA | Wx2  | 
+    |PPUDATA   | $2007 |           DDDD DDDD | RW   | 
+    |OAMDMA    | $4014 |           AAAA AAAA | -W   | 
+    |-----------------------------------------------|
+
+    PPUCTRL   - NMI enable (V), PPU master/slave (P), sprite height (H), background tile
+                select (B), sprite tile select (S), increment mode (I), nametable select / X
+                and Y scroll bit 8 (NN).
+    PPUMASK   - Color emphasis (BGR), sprite enable (s), background enable (b), sprite left
+                column enable (M), background left column enable (m), greyscale (G).
+    PPUSTATUS - VBlank (V), sprite 0 hit (S), sprite overflow (O); read resets write pair
+                for $2005/$2006.
+    OAMADDR   - OAM read/write address.
+    OAMDATA   - OAM data read/write.
+    PPUSCROLL - X and Y scroll bits 7-0 (two writes: X scroll, then Y scroll).
+    PPUADDR   - VRAM address (two writes: most significant byte, then least significant byte).
+    PPUDATA   - VRAM data read/write.
+    OAMDMA    - OAM DMA high address.
+        
+*/
 
 
 //        2xx0    2xx1    2xx2    2xx3    2xx4    2xx5    2xx6    2xx7

@@ -1,20 +1,8 @@
 #pragma once
 
-#include "bus.hpp"
+// #include "bus.hpp"
+#include "device.hpp"
 #include <cassert>
-
-
-
-/**
- * Read/write memory.
- */
-class ioDevice: public HwDevice
-{
-public:
-    virtual uint8_t rd( uint16_t addr ) = 0;
-    virtual void wt( uint16_t addr, uint8_t x ) = 0;
-    virtual void tick() = 0;
-};
 
 
 /**
