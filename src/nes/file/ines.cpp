@@ -16,17 +16,17 @@ iNES::FileInfo::FileInfo( uint8_t *data, size_t size )
 
     headerSz  = 16;
     trainerSz = (f6.trainer512byte) ? 512 : 0;
-    prgRomSz  = 16*1024 * H.prgsz;
-    chrRomSz  =  8*1024 * H.chrsz;
+    prgSz     = 16*1024 * H.prgsz;
+    chrSz     =  8*1024 * H.chrsz;
     playChInstRomSz = 0;
     playChPRomSz = 0;
     titleSz = 0;
 
     headerOff        = 0x0000;
     trainerOff       = headerOff + headerSz;
-    prgRomOff        = trainerOff + trainerSz;
-    chrRomOff        = prgRomOff + prgRomSz;
-    playChInstRomOff = chrRomOff + chrRomSz;
+    prgOff           = trainerOff + trainerSz;
+    chrOff           = prgOff + prgSz;
+    playChInstRomOff = chrOff + chrSz;
     playChPRomOff    = playChInstRomOff + playChInstRomSz;
     titleOff         = playChPRomOff + playChPRomSz;
     titleSz          = size - titleOff;
@@ -35,8 +35,8 @@ iNES::FileInfo::FileInfo( uint8_t *data, size_t size )
     printf("----------------------\n");
     printf("header        %04X - %04X\n", headerOff, headerOff+headerSz);
     printf("trainer       %04X - %04X\n", trainerOff, trainerOff+trainerSz);
-    printf("prgRom        %04X - %04X\n", prgRomOff, prgRomOff+prgRomSz);
-    printf("chrRom        %04X - %04X\n", chrRomOff, chrRomOff+chrRomSz);
+    printf("prgRom        %04X - %04X\n", prgOff, prgOff+prgSz);
+    printf("chrRom        %04X - %04X\n", chrOff, chrOff+chrSz);
     printf("playChInstRom %04X - %04X\n", playChInstRomOff, playChInstRomOff+playChInstRomSz);
     printf("playChPRom    %04X - %04X\n", playChPRomOff, playChPRomOff+playChPRomSz);
     printf("title         %04X - %04X\n", titleOff, titleOff+titleSz);
@@ -60,15 +60,16 @@ iNES::FileInfo::FileInfo( uint8_t *data, size_t size )
 
 
 
-NesFile::iNES::iNES( uint8_t *raw, size_t size )
-:   NesFile::Base(raw, size),
-    mInfo(raw, size),
-    mHead(*(FileHead*)raw)
+NesFile::iNES::iNES( uint8_t *base, size_t size )
+:   NesFile::Base(base, size),
+    mInfo(base, size),
+    mHead(*(FileHead*)base)
 {
-    mPrgROM.reset(mInfo.prgRomSz);
-    mChrROM.reset(mInfo.chrRomSz);
+    auto &I = mInfo;
+    mPrgROM = MemoryRO(base + I.prgOff, I.prgSz);
+    mChrROM = MemoryRO(base + I.chrOff, I.chrSz);
 
-    mPrgROM.flash(raw + mInfo.prgRomOff, mInfo.prgRomSz);
-    mChrROM.flash(raw + mInfo.chrRomOff, mInfo.chrRomSz);
+    // mPrgROM.flash(raw + mInfo.prgRomOff, mInfo.prgRomSz);
+    // mChrROM.flash(raw + mInfo.chrRomOff, mInfo.chrRomSz);
 }
 

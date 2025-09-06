@@ -22,6 +22,7 @@ static uint8_t rdFmt( uint8_t *rom )
 
 
 NesEmu::GamePak::GamePak( const std::string &path )
+:   ioDevice(nullptr, 0)
 {
     std::ifstream stream(path, std::ifstream::binary);
 
@@ -35,49 +36,25 @@ NesEmu::GamePak::GamePak( const std::string &path )
     mSize = stream.tellg();
 
     stream.seekg(0, std::ifstream::beg);
-    mData = std::unique_ptr<uint8_t[]>(new uint8_t[mSize]);
-    mBase = mData.get();
-    stream.read(reinterpret_cast<char*>(mBase), mSize);
+    mData = new uint8_t[mSize];
+    stream.read((char*)mData, mSize);
 
-    mFmt   = rdFmt(mBase);
-    miNES  = new NesFile::iNES(mBase, mSize);
+    mFmt   = rdFmt(mData);
+    miNES  = new NesFile::iNES(mData, mSize);
     mNES20 = nullptr;
-
-    // mHead   = mData.get();
-    // mHeadSz = 0x10;
-    // NesFile::iNES fh(mData.get());
-
-    // auto &H = *(NesFile::iNES::header_t*)mHead;
-    // mPrgSz  = 16384 * H.prgNo16kBanks;
-    // mChrSz  = 8192  * H.chrNo8kBanks;
-    // mMapNo  = (uint8_t(H.f7.mapNo_hi) << 4) | H.f6.mapNo_lo;
-
-    // mHead = mData.get();
-    // mPrg  = mHead + mHeadSz;
-    // mChr  = mPrg  + mPrgSz;
-
-    // printf("signature   %s\n",  H.signature);
-    // printf("prgRomSize  %lu\n", mPrgSz);
-    // printf("chrRomSize  %lu\n", mChrSz);
-    // printf("mapNo       %u\n",  mMapNo);
-    // printf("flags6      %u\n",  H.flags6);
-    // printf("flags7      %u\n",  H.flags7);
-    // printf("flags8      %u\n",  H.flags8);
-    // printf("flags9      %u\n",  H.flags9);
-    // printf("flags10     %u\n",  H.flags10);
-    // printf("\n");
 }
 
 
-uint8_t NesEmu::GamePak::rd( uint16_t addr )
-{
-    return mBase[addr];
-}
+// ubyte NesEmu::GamePak::ioRead( uint16_t addr )
+// {
+//     return mBase[addr];
+// }
 
-void NesEmu::GamePak::wt( uint16_t addr, uint8_t byte )
-{
-    // mData[fh.prgRomOff + addr] = byte;
-}
+// void NesEmu::GamePak::ioWrite( uint16_t addr, ubyte value )
+// {
+//     mBase[addr] = value;
+//     // mData[fh.prgRomOff + addr] = byte;
+// }
 
 
 

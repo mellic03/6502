@@ -19,7 +19,7 @@ public:
 
     };
 
-    uint8_t mmio_read( EnumType tag )
+    uint8_t mmioRead( EnumType tag )
     {
         uint8_t idx = (uint8_t)tag;
         if (idx & RWX::R)
@@ -27,7 +27,7 @@ public:
         return 0;
     }
 
-    void mmio_write( EnumType tag, uint8_t value )
+    void mmioWrite( EnumType tag, uint8_t value )
     {
         uint8_t idx = (uint8_t)tag;
         if (idx & RWX::W)

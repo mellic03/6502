@@ -1,6 +1,8 @@
 #pragma once
 
 #include "bus.hpp"
+using ubyte = uint8_t;
+
 class DataBus;
 
 
@@ -8,26 +10,25 @@ class HwDevice
 {
 public:
     DataBus *mBus = nullptr;
+    virtual void tick( uint64_t dt ) {  };
 
-    uint8_t rdbus( uint16_t );
-    void    wtbus( uint16_t, uint8_t );
-    virtual void tick( uint64_t dt ) = 0;
+    ubyte busRead( uint16_t );
+    void  busWrite( uint16_t, ubyte );
 };
 
 
 
 class ioDevice: public HwDevice
 {
-private:
-    // uint8_t mPage[0x0100];
+protected:
+    ubyte   *mData;
+    uint16_t mSize;
 
 public:
-    virtual uint8_t io_read(uint8_t) = 0;
-    virtual void io_write(uint16_t, uint8_t) = 0;
-    virtual uint8_t *io_base() = 0;
+    ioDevice( ubyte *data, uint16_t sz )
+    :   mData(data), mSize(sz) {  };
 
-    virtual void tick( uint64_t dt ) = 0;
-    virtual uint8_t rd( uint16_t a ) { return mPage[a]; };
-    virtual void wt( uint16_t a, uint8_t x ) { mPage[a] = x; };
-
+    ubyte *ioData();
+    virtual ubyte ioRead( uint16_t );
+    virtual void ioWrite( uint16_t, ubyte );
 };

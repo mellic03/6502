@@ -3,33 +3,31 @@
 #include <cstring>
 
 
-uint8_t MemoryRW::rd( uint16_t i )
+// void MemoryRW::flash( uint8_t *src, size_t sz )
+// {
+//     assert(!(sz > mSize));
+//     memcpy(mBack, src, sz);
+//     flush();
+// }
+
+// void MemoryRW::flush()
+// {
+//     memcpy(mFront, mBack, mSize);
+// }
+
+// void MemoryRW::tick( uint64_t dt )
+// {
+//     flush();
+// }
+
+void MemoryRO::ioWrite( uint16_t addr, ubyte value )
 {
-    assert(i < mSize);
-    return mFront[i];
+    assert(false);
 }
 
-void MemoryRW::wt( uint16_t i, uint8_t x )
+ubyte MemoryWO::ioRead( uint16_t addr )
 {
-    assert(i < mSize);
-    mBack[i] = x;
-}
-
-void MemoryRW::flash( uint8_t *src, size_t sz )
-{
-    assert(!(sz > mSize));
-    memcpy(mBack, src, sz);
-    flush();
-}
-
-void MemoryRW::flush()
-{
-    memcpy(mFront, mBack, mSize);
-}
-
-void MemoryRW::tick( uint64_t dt )
-{
-    flush();
+    assert(false);
 }
 
 

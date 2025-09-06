@@ -129,16 +129,16 @@ struct NesFile::iNES: public NesFile::Base
 
         uint64_t headerSz = 0x10;
         uint64_t trainerSz;
-        uint64_t prgRomSz;
-        uint64_t chrRomSz;
+        uint64_t prgSz;
+        uint64_t chrSz;
         uint64_t playChInstRomSz;
         uint64_t playChPRomSz;
         uint64_t titleSz;
 
         uint64_t headerOff = 0x00;
         uint64_t trainerOff;
-        uint64_t prgRomOff;
-        uint64_t chrRomOff;
+        uint64_t prgOff;
+        uint64_t chrOff;
         uint64_t playChInstRomOff;
         uint64_t playChPRomOff;
         uint64_t titleOff;

@@ -21,24 +21,17 @@ namespace NesEmu
 class NesEmu::GamePak: public ioDevice
 {
 private:
-    std::unique_ptr<uint8_t[]> mData;
+    // std::unique_ptr<uint8_t[]> mData;
 
 public:
     struct Fmt { enum { iNES, NES20, OTHER, NumFmt }; };
 
-    uint8_t        *mBase;
-    size_t          mSize;
     uint8_t         mFmt;
     NesFile::iNES  *miNES;
     NesFile::NES20 *mNES20;
 
     GamePak( const std::string &path );
-    bool is_bad() { return (mData.get() == nullptr); }
-
-    virtual uint8_t rd( uint16_t ) override;
-    virtual void wt( uint16_t, uint8_t ) override;
-    virtual void tick( uint64_t dt ) final {  };
-
+    bool is_bad() { return (mData == nullptr); }
 };
 
 

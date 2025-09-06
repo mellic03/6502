@@ -145,19 +145,3 @@ void DataBus::write( uint16_t addr, uint8_t byte )
 
 
 
-
-
-uint8_t HwDevice::rdbus( uint16_t addr )
-{
-    if (!mBus) return 0;
-    return mBus->read(addr);
-}
-
-void HwDevice::wtbus( uint16_t addr, uint8_t byte )
-{
-    if (!mBus) return;
-    mBus->write(addr, byte);
-}
-
-
-

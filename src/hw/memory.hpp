@@ -10,30 +10,23 @@
  */
 class MemoryRW: public ioDevice
 {
-private:
-    size_t   mSize;
-    uint8_t *mBack;
-    uint8_t *mFront;
-
 public:
-    void reset( size_t sz )
-    {
-        if (mBack)  delete[] mBack;
-        if (mFront) delete[] mFront;
+    MemoryRW(): ioDevice(nullptr, 0) {  };
+    MemoryRW( ubyte *d, size_t s ): ioDevice(d, s) {  };
 
-        mSize  = sz;
-        mBack  = new uint8_t[sz];
-        mFront = new uint8_t[sz];
-    }
+    // void reset( size_t sz )
+    // {
+    //     if (mBack)  delete[] mBack;
+    //     if (mFront) delete[] mFront;
 
-    uint8_t *data() { return mBack; }
-    size_t   size() { return mSize; }
+    //     mSize  = sz;
+    //     mBack  = new uint8_t[sz];
+    //     mFront = new uint8_t[sz];
+    // }
 
-    virtual uint8_t rd( uint16_t ) override;
-    virtual void wt( uint16_t, uint8_t ) override;
-    virtual void flash( uint8_t *src, size_t sz );
-    virtual void flush();
-    virtual void tick( uint64_t dt ) override;
+    // virtual void flash( uint8_t *src, size_t sz );
+    // virtual void flush();
+    // virtual void tick( uint64_t dt ) override;
 };
 
 
@@ -44,7 +37,7 @@ class MemoryRO: public MemoryRW
 {
 public:
     using MemoryRW::MemoryRW;
-    virtual void tick( uint64_t dt ) final {  };
+    virtual void ioWrite(uint16_t, ubyte) final;
 };
 
 
@@ -55,6 +48,5 @@ class MemoryWO: public MemoryRW
 {
 public:
     using MemoryRW::MemoryRW;
-    virtual uint8_t rd( uint16_t ) final { return 0; };
-    virtual void tick( uint64_t dt ) final {  };
+    virtual ubyte ioRead(uint16_t) final;
 };

@@ -37,7 +37,6 @@ private:
         RWX::RW, RWX::Wx2, RWX::Wx2, RWX::RW,
     };
 
-
 public:
     struct NameTable {
         uint8_t data[30][32];
@@ -46,8 +45,8 @@ public:
 
     NesPPU();
 
-    virtual uint8_t rd( uint16_t ) final { return 0; };
-    virtual void wt( uint16_t, uint8_t ) final {  };
+    virtual ubyte ioRead(uint16_t) final;
+    virtual void ioWrite(uint16_t, ubyte) final;
     virtual void tick( uint64_t dt ) final;
 };
 
