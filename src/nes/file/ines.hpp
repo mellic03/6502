@@ -37,7 +37,6 @@
 struct iNES_File
 {
     char    signature[4];
-
     uint8_t prgRomSz; // size of PRG ROM in 16 KB units
     uint8_t chrRomSz; // Board uses CHR RAM if zero.
 

@@ -12,7 +12,6 @@
 class NesPPU: public HwDevice
 {
 private:
-
      enum REG_: uint16_t
      {
           REG_PPUCTRL = 0x2000,

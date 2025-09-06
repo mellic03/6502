@@ -9,12 +9,13 @@ static MapperFunc MapTable[]
     Mapper00_NROM,
     Mapper01_MMC1,
     Mapper02_UxROM,
-    Mapper03_CNROM
+    Mapper03_CNROM,
+    Mapper04_MMC3,
 };
 
 void NesEmu::ExecuteMapper( int mapno, NesEmu::System &nes )
 {
-    assert(0<=mapno && mapno<=3);
+    assert(0<=mapno && mapno<=4);
     MapTable[mapno](nes);
 }
 
