@@ -1,8 +1,8 @@
-#include "hwmapper.hpp"
+#include "mapper.hpp"
 using namespace NesEmu;
 
 
-void HwMapper02_UxROM( System &nes )
+void Mapper02_UxROM( System &nes )
 {
 
 }

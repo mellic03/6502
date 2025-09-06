@@ -1,4 +1,4 @@
-#include "hwmapper.hpp"
+#include "mapper.hpp"
 using namespace NesEmu;
 
 
@@ -11,10 +11,7 @@ using namespace NesEmu;
     - CHR bank size: Not bankswitched, see CNROM
     - Nametable mirroring: Solder pads select vertical or horizontal mirroring
     - Subject to bus conflicts: Yes, but irrelevant
-*/
 
-
-/*
     CPU $6000-$7FFF:
         Family Basic only: PRG RAM, mirrored as necessary to fill entire 8 KiB
         window, write protectable with an external switch.
@@ -85,7 +82,7 @@ static void MapPpuBus( System &nes )
 }
 
 
-void HwMapper00_NROM( System &nes )
+void Mapper00_NROM( System &nes )
 {
     using namespace NesFile;
     MapCpuBus(nes);

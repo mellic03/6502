@@ -1,8 +1,8 @@
-#include "hwmapper.hpp"
+#include "mapper.hpp"
 using namespace NesEmu;
 
 
-void HwMapper03_CNROM( System &nes )
+void Mapper03_CNROM( System &nes )
 {
 
 }

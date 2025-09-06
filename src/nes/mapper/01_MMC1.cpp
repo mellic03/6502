@@ -1,8 +1,8 @@
-#include "hwmapper.hpp"
+#include "mapper.hpp"
 using namespace NesEmu;
 
 
-void HwMapper01_MMC1( System &nes )
+void Mapper01_MMC1( System &nes )
 {
 
 }

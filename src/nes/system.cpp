@@ -1,6 +1,6 @@
 #include "system.hpp"
 #include "gamepak.hpp"
-#include "mapper/hwmapper.hpp"
+#include "mapper/mapper.hpp"
 #include <stdio.h>
 #include <string.h>
 
@@ -36,7 +36,7 @@ void NesEmu::System::LoadRAW( uint8_t *rom )
 void NesEmu::System::LoadROM( GamePak *gpak )
 {
     mGPak = gpak;
-    NesEmu::callHwMapper(gpak->mMapperNo, *this);
+    NesEmu::callMapper(gpak->mMapperNo, *this);
 
     mCPU.PC = (mBusCPU[0xFFFD] << 8) | mBusCPU[0xFFFC];
     printf("Reset vector: 0x%04X\n", mCPU.PC);
