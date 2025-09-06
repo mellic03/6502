@@ -38,13 +38,14 @@ private:
 
     std::set<iBusDevice*> mDevices;
     std::vector<FuncQuad> mPageFuncs;
-    uint8_t mPageTable[0xFFFF + 1];
-    // uint8_t mPageTable[(0xFFFF + 1) / 256];
+    // uint8_t mPageTable[0xFFFF + 1];
+    uint8_t *mPageTable[(0xFFFF + 1) / 256];
 
 public:
     DataBus();
     
     void attach( iBusDevice* );
+    void mapPage( uint16_t addr, uint8_t *page );
     void map( iBusDevice *dev, uint16_t min, uint16_t max, DcFun, RdFun, WtFun );
     void map( iBusDevice *dev, uint16_t min, uint16_t max, RdFun, WtFun );
     // void map( uint16_t min, uint16_t max, ReadFunc, WriteFunc );
