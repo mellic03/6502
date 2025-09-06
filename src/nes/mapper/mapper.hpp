@@ -15,65 +15,41 @@ void Mapper03_CNROM(NesEmu::System&);
 void Mapper04_MMC3(NesEmu::System&);
 
 
+
 struct HwMapper
 {
-    struct pml0_t
+    struct PageDesc {
+        ubyte *page;
+        uword  base;
+        uword  mask;
+        ubyte  rwx; // 0b0RWX -> 0b0111
+    } mPageTable[256];
+
+    ubyte *getPtr( uint16_t addr, uint8_t access )
     {
-        uint16_t base;
-        uint16_t mask;
-        uint8_t  rwx;
-    };
+        ubyte page_idx = (addr & 0x00FF);
+        auto &[page, base, mask, rwx] = mPageTable[page_idx];
 
-    struct pml1_t
+        if (page && (rwx & access))
+        {
+            return &page[(addr - base) & mask];
+        }
+    
+        return nullptr;
+    }
+
+    ubyte pageRead( uint16_t addr )
     {
-        pml0_t *pml0;
-        uint16_t base;
-        uint16_t mask;
-        uint8_t  rwx;
-    };
+        ubyte *ptr = getPtr(addr, RWX::R);
+        return (ptr) ? *ptr : 0;
+    }
 
-    struct pml2_t
+    void pageWrite( uint16_t addr, uint8_t value )
     {
-        pml1_t *pml1;
-        uint16_t base;
-        uint16_t mask;
-        uint8_t  rwx;
-    };
-
-    struct pml3_t
-    {
-        pml2_t  *pml2;
-        uint16_t base;
-        uint16_t mask;
-        uint8_t  rwx;
-    };
-
-    pml3_t mPML3[16];
-
-
-
-    ubyte read( uint16_t addr )
-    {
-        union {
-            uint16_t word;
-            struct {
-                uint8_t nib0 :4;
-                uint8_t nib1 :4;
-                uint8_t nib2 :4;
-                uint8_t nib3 :4;
-            };
-        } U = { addr };
-
-        int idx3 = U.nib3;
-        int idx2 = U.nib2;
-        int idx1 = U.nib1;
-        int idx0 = U.nib0;
-
-        pml3_t &pml3 = mPML3[idx3];
-        pml2_t &pml2 = pml3.pml2[idx2];
-        pml1_t &pml1 = pml2.pml1[idx1];
-        pml0_t &pml0 = pml1.pml0[idx0];
-        pml0.base
+        if (ubyte *ptr = getPtr(addr, RWX::W))
+        {
+            *ptr = value;
+        }
     }
 
 };
