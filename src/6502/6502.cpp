@@ -216,8 +216,9 @@ uint16_t cpu6502::pop16()
 }
 
 
-cpu6502::cpu6502()
-:   mInvalidOp(0),
+cpu6502::cpu6502( DataBus *bus )
+:   HwDevice(bus),
+    mInvalidOp(0),
     mCurrOp(0),
     mCycles(0),
     mOpCount(0),

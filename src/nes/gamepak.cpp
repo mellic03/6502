@@ -24,8 +24,8 @@ static uint8_t rdFmt( uint8_t *rom )
 NesEmu::GamePak::GamePak( const std::string &path )
 :   ioDevice(nullptr, 0),
     mPrgROM(nullptr, 0),
-    mChrROM(nullptr, 0),
-    mChrRAM(nullptr, 0)
+    mPrgRAM(nullptr, 0),
+    mChrROM(nullptr, 0)
 {
     std::ifstream stream(path, std::ifstream::binary);
 
@@ -55,8 +55,8 @@ NesEmu::GamePak::GamePak( const std::string &path )
     mChrROM = MemoryRO(cursor, 8*1024 * H.chrRomSz);
     cursor += mChrROM.size();
 
-    mChrRAM = MemoryRW(cursor, 8*1024 * ((H.chrRamSz==0) ? 1 : H.chrRamSz));
-    cursor += mChrRAM.size();
+    mPrgRAM = MemoryRW(cursor, 8*1024 * ((H.prgRamSz==0) ? 1 : H.prgRamSz));
+    cursor += mPrgRAM.size();
 
     printf("iNES::iNES\n");
     printf("--------------------------------------------\n");
@@ -69,7 +69,7 @@ NesEmu::GamePak::GamePak( const std::string &path )
     printf("trainer512byte   %u\n", H.f6Trainer512byte);
     printf("fourScreenVRAM   %u\n", H.f6FourScreenVRAM);
 
-    printf("chrRamSz         %lu\n", mChrRAM.size());
+    printf("prgRamSz         %lu\n", mPrgRAM.size());
     printf("isPAL            %u\n",  H.f9IsPAL);
     printf("--------------------------------------------\n\n");
 

@@ -7,7 +7,9 @@
 // hwtimer(1'790'000)
 
 NesEmu::System::System()
-:   mClock(1'790'000)
+:   mClock(1'790'000),
+    mCPU(&mBusCPU),
+    mPPU(&mBusPPU)
 {
     ubyte *cpuRAM  = mCPU.mRAM.data<ubyte>();
     ubyte *ppuRAM  = mPPU.mRAM.data<ubyte>();
@@ -17,10 +19,12 @@ NesEmu::System::System()
     mBusCPU.attach(&mCPU);
     mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, cpuRAM);  // CPU --> CPU wRAM,  mirror 2K banks until to 0x1FFF
     mBusCPU.mapRange(0x2000, 0x3FFF, 0x08-1, ppuMMIO); // CPU --> PPU IO regs.
-    mBusCPU.mapPage(0x4000, 32-1, apuMMIO);            // CPU --> NES APU and IO regs.
+    mBusCPU.mapRange(0x4000, 0x401F, 0x001F, apuMMIO); // CPU --> NES APU and IO regs.
 
     mBusPPU.attach(&mPPU);
     // mBusPPU.mapPage(0x2000, 32-1, mAPU.data(), RWX::RW);
+
+
 }
 
 

@@ -69,7 +69,6 @@ struct cpu6502RegisterSSR
 struct cpu6502: public HwDevice
 {
 public:
-    DataBus   *mBus;
     Memory2kRW mRAM;
 
     uint8_t  mInvalidOp;
@@ -99,7 +98,7 @@ public:
     };
 
     // cpu6502( iDataBus *bus );
-    cpu6502();
+    cpu6502( DataBus *bus = nullptr );
     virtual void tick( uint64_t dt ) final;
     ubyte rdbus( uint16_t i ) { return busRead(i); }
     void  wtbus( uint16_t i, ubyte v ) { busWrite(i, v); };

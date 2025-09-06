@@ -8,7 +8,9 @@ class DataBus;
 class HwDevice
 {
 public:
-    DataBus *mBus = nullptr;
+    DataBus *mBus;
+    HwDevice( DataBus *bus=nullptr ): mBus(bus) {  };
+
     virtual void tick( uint64_t dt ) {  };
 
     ubyte busRead( uint16_t );

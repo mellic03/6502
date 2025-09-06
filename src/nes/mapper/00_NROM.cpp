@@ -52,8 +52,10 @@ static void MapPpuBus( System &nes )
     auto  &bus  = nes.mBusPPU;
     auto  &ppu  = nes.mPPU;
     auto  *gpak = nes.mGPak;
+
+    printf("[MapPpuBus] gpak->mChrROM: %luK\n", gpak->mChrROM.size());
     ubyte *chrROM = gpak->mChrROM.data<ubyte>();
-    ubyte *chrRAM = gpak->mChrRAM.data<ubyte>();
+    // ubyte *prgRAM = gpak->mPrgRAM.data<ubyte>();
 
 
     // | Addr      | Size | Desc        | Mapped By |
@@ -74,10 +76,10 @@ static void MapPpuBus( System &nes )
     // $2800 at the bottom left, and $2C00 at the bottom right.
 
     // PPU --> ChrROM
-    bus.mapRange(0x0000, 0x0FFF, 4096-1, chrROM, RWX::R);
+    bus.mapRange(0x0000, 0x1FFF, 0x1FFF, chrROM, RWX::R);
 
-    // PPU --> ChrRAM
-    bus.mapRange(0x1000, 0x1FFF, 4096-1, chrRAM);
+    // // PPU --> ChrRAM
+    // bus.mapRange(0x1000, 0x1FFF, 0x0FFF, chrRAM);
 
     // PPU --> NameTables
     auto *table = ppu.mNameTables;

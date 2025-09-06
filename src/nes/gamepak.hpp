@@ -24,9 +24,9 @@ public:
     struct Fmt { enum { iNES, NES20, OTHER, NumFmt }; };
 
     MemoryRO mPrgROM;
-    MemoryRO mChrROM;
     MemoryRW mPrgRAM;
-    MemoryRW mChrRAM;
+    MemoryRO mChrROM;
+    // MemoryRW mChrRAM;
     uint8_t  mMapperNo;
     iNES_File *mFile;
 

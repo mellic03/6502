@@ -15,7 +15,8 @@
 
     ? = unknown, x = irrelevant, + = often set, U = unchanged
 */
-NesPPU::NesPPU()
+NesPPU::NesPPU( DataBus *bus )
+:   HwDevice(bus)
 {
     mNameTables = (NameTable*)(mRAM.data());
     mRegMMIO    = (RegisterMMIO*)(mMMIO.data());

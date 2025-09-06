@@ -47,12 +47,13 @@ private:
     };
 
 public:
+    DataBus      *mBus;
     Memory2kRW    mRAM;
     Memory1pRW    mMMIO;
     NameTable    *mNameTables;
     RegisterMMIO *mRegMMIO;
 
-    NesPPU();
+    NesPPU( DataBus *bus = nullptr );
     virtual void tick( uint64_t dt ) final;
 };
 
