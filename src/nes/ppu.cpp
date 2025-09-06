@@ -16,29 +16,20 @@
     ? = unknown, x = irrelevant, + = often set, U = unchanged
 */
 NesPPU::NesPPU()
-:   mTables(new NameTable[4])
 {
-    mmioWrite(Reg::PPUCTRL,    0b0000'0000);
-    mmioWrite(Reg::PPUMASK,    0b0000'0000);
-    mmioWrite(Reg::PPUSTATUS,  0b1010'0000);
-    mmioWrite(Reg::OAMADDR,    0b0000'0000);
-    // 2005/2006 latch?
-    mmioWrite(Reg::PPUSCROLL,  0b0000'0000);
-    mmioWrite(Reg::PPUADDR,    0b0000'0000);
-    mmioWrite(Reg::PPUDATA,    0b0000'0000);
+    mNameTables = (NameTable*)(&mRAM[0]);
+    mRegMMIO    = (RegisterMMIO*)(&mMMIO[0]);
+
+    // mmioWrite(Reg::PPUCTRL,    0b0000'0000);
+    // mmioWrite(Reg::PPUMASK,    0b0000'0000);
+    // mmioWrite(Reg::PPUSTATUS,  0b1010'0000);
+    // mmioWrite(Reg::OAMADDR,    0b0000'0000);
+    // // 2005/2006 latch?
+    // mmioWrite(Reg::PPUSCROLL,  0b0000'0000);
+    // mmioWrite(Reg::PPUADDR,    0b0000'0000);
+    // mmioWrite(Reg::PPUDATA,    0b0000'0000);
 }
 
-
-ubyte NesPPU::ioRead( uint16_t addr )
-{
-
-}
-
-
-void NesPPU::ioWrite( uint16_t addr, ubyte value )
-{
-
-}
 
 void NesPPU::tick( uint64_t dt )
 {

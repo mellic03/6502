@@ -38,15 +38,15 @@ class NesEmu::System
 {
 public:
     HwClock  mClock;
-    MemRW2K  wRAM;
-    MemRW2K  vRAM;
+    // Memory2kRW  wRAM;
+    // Memory2kRW  vRAM;
 
     DataBus  mBusCPU;
     DataBus  mBusPPU;
     cpu6502  mCPU;
     NesPPU   mPPU;
     NesAPU   mAPU;
-    GamePak *mGamePak;
+    GamePak *mGPak;
 
     System();
     void LoadRAW( uint8_t *rom );

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "../hw/bus.hpp"
-#include "../hw/memory.hpp"
-#include "../hw/tmemory.hpp"
 #include "../hw/clock.hpp"
+#include "../hw/memory.hpp"
+#include "../hw/mmio.hpp"
+#include "../hw/tmemory.hpp"
 #include "../rwx.hpp"
-#include "mmio.hpp"
 
 
 
@@ -19,34 +19,40 @@ struct NesPPU_AttrTable
 // at the top left, $2400 at the top right, $2800 at the bottom left,
 // and $2C00 at the bottom right.
 
+// enum class NesPPU_Reg: uint8_t
+// {
+//     PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR,
+//     OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA,
+//     NumValues
+// };
+// using Reg = NesPPU_Reg;
+// static constexpr uint8_t RegRWX[int(Reg::NumValues)]
+// {
+//     RWX::W,  RWX::W,   RWX::R,   RWX::W,
+//     RWX::RW, RWX::Wx2, RWX::Wx2, RWX::RW,
+// };
 
 
-class NesPPU: public mmioDevice<NesPPU::Reg>
+class NesPPU: public HwDevice
 {
 private:
-    enum class Reg: uint8_t
-    {
-        PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR,
-        OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA,
-        NumValues
-    };
-
-    static constexpr uint8_t RegRWX[int(Reg::NumValues)]
-    {
-        RWX::W,  RWX::W,   RWX::R,   RWX::W,
-        RWX::RW, RWX::Wx2, RWX::Wx2, RWX::RW,
-    };
-
-public:
     struct NameTable {
         uint8_t data[30][32];
         uint8_t attr[8][8];
-    } *mTables;
+    };
+
+    struct RegisterMMIO {
+        uint8_t PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR;
+        uint8_t OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA;
+    };
+
+public:
+    Memory2kRW    mRAM;
+    Memory1pRW    mMMIO;
+    NameTable    *mNameTables;
+    RegisterMMIO *mRegMMIO;
 
     NesPPU();
-
-    virtual ubyte ioRead(uint16_t) final;
-    virtual void ioWrite(uint16_t, ubyte) final;
     virtual void tick( uint64_t dt ) final;
 };
 

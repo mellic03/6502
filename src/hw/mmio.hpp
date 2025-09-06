@@ -6,35 +6,36 @@
 #include "../rwx.hpp"
 
 
-template <typename EnumType>
-struct mmioDevice: public ioDevice
-{
-private:
-    // struct mmio_entry_t { uint8_t val, rwx; };
+// template <typename EnumType>
+// struct mmioDevice: public ioDevice
+// {
+// private:
+//     // struct mmio_entry_t { uint8_t val, rwx; };
 
-public:
+// public:
+//     using ioDevice::ioDevice;
 
-    virtual void tick( uint64_t dt ) override
-    {
+//     virtual void tick( uint64_t dt ) override
+//     {
 
-    };
+//     };
 
-    uint8_t mmioRead( EnumType tag )
-    {
-        uint8_t idx = (uint8_t)tag;
-        if (idx & RWX::R)
-            return iobuf()[idx];
-        return 0;
-    }
+//     uint8_t mmioRead( EnumType tag )
+//     {
+//         uint8_t idx = (uint8_t)tag;
+//         if (idx & RWX::R)
+//             return mData[idx];
+//         return 0;
+//     }
 
-    void mmioWrite( EnumType tag, uint8_t value )
-    {
-        uint8_t idx = (uint8_t)tag;
-        if (idx & RWX::W)
-            iobuf()[idx] = value;
-        return;
-    }
-};
+//     void mmioWrite( EnumType tag, uint8_t value )
+//     {
+//         uint8_t idx = (uint8_t)tag;
+//         if (idx & RWX::W)
+//             mData[idx] = value;
+//         return;
+//     }
+// };
 
 
 

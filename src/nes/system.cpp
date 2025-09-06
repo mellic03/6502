@@ -9,13 +9,17 @@
 NesEmu::System::System()
 :   mClock(1'790'000)
 {
+    auto &wRAM  = mCPU.wRAM;
+    auto &vRAM  = mPPU.vRAM;
+    auto &vMMIO = mPPU.vMMIO;
+
     mBusCPU.attach(&mCPU);
 
     // CPU --> CPU wRAM,  2KB mirrored to 0x1FFF
-    mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, RWX::RW, wRAM.data());
+    mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, RWX::RW, &wRAM[0]);
 
     // CPU --> PPU mmio registers.
-    mBusCPU.mapRange(0x2000, 0x4000, 8-1, RWX::RW, mPPU.ioData());
+    mBusCPU.mapRange(0x2000, 0x4000, 8-1, RWX::RW, &vRAM[0]);
 
     // CPU --> NES APU and IO registers.
     // mBusCPU.mapPage(0x4000, 32-1, RWX::RW, mAPU.data());
@@ -31,25 +35,22 @@ void NesEmu::System::LoadRAW( uint8_t *rom )
 }
 
 
-void NesEmu::System::LoadROM( GamePak *cart )
+void NesEmu::System::LoadROM( GamePak *gpak )
 {
-    mGamePak = cart;
-    NesEmu::getMapper(cart->miNES->mInfo.mapperNo)->map(*this, cart);
+    mGPak = gpak;
+    NesEmu::getMapper(gpak->miNES->mInfo.mapperNo)->map(*this, gpak);
 
     mCPU.PC = ((uint16_t)mBusCPU.read(0xFFFD) << 8) | mBusCPU.read(0xFFFC);
     printf("Reset vector: 0x%04X\n", mCPU.PC);
 }
 
 
-
 void NesEmu::System::tick( uint64_t dt )
 {
     if (mClock.tick(dt))
     {
-        mBusCPU.tick();
-        mBusPPU.tick();
-        mBusPPU.tick();
-        mBusPPU.tick(); 
+        mBusCPU.tick(dt/12);
+        mBusPPU.tick(dt/4);
     }
 }
 

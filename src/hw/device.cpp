@@ -2,35 +2,36 @@
 #include <cassert>
 
 
-uint8_t HwDevice::busRead( uint16_t addr )
+ubyte HwDevice::busRead( uint16_t i )
 {
     if (!mBus) return 0;
-    return mBus->read(addr);
+    return mBus->read(i);
 }
 
-void HwDevice::busWrite( uint16_t addr, uint8_t byte )
+void HwDevice::busWrite( uint16_t i, ubyte v )
 {
     if (!mBus) return;
-    mBus->write(addr, byte);
+    mBus->write(i, v);
 }
 
 
 
-
-ubyte *ioDevice::ioData()
+ubyte &ioDevice::operator[]( uint16_t i )
 {
-    return mData;
+    assert(i < mSize);
+    return mData[i];
 }
 
-ubyte ioDevice::ioRead( uint16_t addr )
+
+ubyte ioDevice::ioRead( uint16_t i )
 {
-    assert(addr < mSize);
-    return mData[addr];
+    assert(i < mSize);
+    return mData[i];
 }
 
-void ioDevice:: ioWrite( uint16_t addr, ubyte value )
+void ioDevice:: ioWrite( uint16_t i, ubyte v )
 {
-    assert(addr < mSize);
-    mData[addr] = value;
+    assert(i < mSize);
+    mData[i] = v;
 }
 

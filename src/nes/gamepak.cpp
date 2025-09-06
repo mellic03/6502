@@ -22,7 +22,9 @@ static uint8_t rdFmt( uint8_t *rom )
 
 
 NesEmu::GamePak::GamePak( const std::string &path )
-:   ioDevice(nullptr, 0)
+:   ioDevice(nullptr, 0),
+    mPrgROM(nullptr, 0),
+    mChrROM(nullptr, 0)
 {
     std::ifstream stream(path, std::ifstream::binary);
 
@@ -42,6 +44,9 @@ NesEmu::GamePak::GamePak( const std::string &path )
     mFmt   = rdFmt(mData);
     miNES  = new NesFile::iNES(mData, mSize);
     mNES20 = nullptr;
+
+    mPrgROM = MemoryRO(mData + miNES->prgOff, miNES->prgSz);
+    mChrROM = MemoryRO(mData + miNES->chrOff, miNES->chrSz);
 }
 
 

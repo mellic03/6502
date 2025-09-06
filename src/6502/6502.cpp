@@ -55,7 +55,7 @@ void cpu6502::_execute()
 
     
 
-void cpu6502::tick()
+void cpu6502::tick( uint64_t dt )
 {
     if (mInvalidOp)
     {

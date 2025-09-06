@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "../hw/bus.hpp"
 #include "../hw/device.hpp"
-#include "../hw/tmemory.hpp"
+#include "../hw/memory.hpp"
 
 /**
  * - Break (B) Changes when SSR is pushed/popped. When pushed, it will
@@ -69,10 +69,9 @@ struct cpu6502RegisterSSR
 struct cpu6502: public HwDevice
 {
 public:
-    // std::function<uint8_t(uint16_t)>       rdbus = [](uint16_t) { return 0; };
-    // std::function<void(uint16_t, uint8_t)> wtbus = [](uint16_t, uint8_t) {  };
+    DataBus   *mBus;
+    Memory2kRW wRAM;
 
-    DataBus *mBus;
     uint8_t  mInvalidOp;
     uint8_t  mCurrOp;
     size_t   mCycles;
@@ -157,6 +156,9 @@ private:
     // -----------------------------------------------------------------------------------------
 
     // -----------------------------------------------------------------------------------------
+    ubyte rdbus( uint16_t i ) { return busRead(i); }
+    void  wtbus( uint16_t i, ubyte v ) { busWrite(i, v); };
+
     uint8_t _N( uint16_t );
     uint8_t _NZ( uint16_t );
     uint8_t _NZC( uint16_t );

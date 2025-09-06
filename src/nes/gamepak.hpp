@@ -20,11 +20,13 @@ namespace NesEmu
 
 class NesEmu::GamePak: public ioDevice
 {
-private:
-    // std::unique_ptr<uint8_t[]> mData;
-
 public:
     struct Fmt { enum { iNES, NES20, OTHER, NumFmt }; };
+
+    MemoryRO  mPrgROM;
+    MemoryRO  mChrROM;
+    // MemoryRO  mPrgRAM;
+    // MemoryRO  mChrRAM;
 
     uint8_t         mFmt;
     NesFile::iNES  *miNES;

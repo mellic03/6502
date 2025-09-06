@@ -25,26 +25,41 @@ using namespace NesEmu;
     CPU $C000-$FFFF:
         Last 16 KB of ROM (NROM-256) or mirror of $8000-$BFFF (NROM-128).
 */
+
+static void MapCpuBus( System &nes )
+{
+    using namespace NesFile;
+
+    auto  &bus    = nes.mBusCPU;
+    auto  *gpak   = nes.mGPak;
+    ubyte *prgROM = gpak->mPrgROM.data();
+    ubyte *chrROM = gpak->mChrROM.data();
+
+    // CPU --> PRG ROM,  First 16KB of ROM
+    bus.mapRange(0x8000, 0xBFFF, 0xBFFF-0x8000, RWX::RW, gpak.mPrgROM.data());
+
+    // CPU --> PRG ROM,  Mirror of 8000-BFFF (NROM-128) or final 16KB of ROM (NROM-256)
+    if (H.prgsz==2) cpubus.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX::RW, pgrom + 0x4000);
+    else            cpubus.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX::RW, pgrom);
+
+}
+
+
 void HwMapper00_NROM::map( System &nes, GamePak *cart )
 {
     using namespace NesFile;
 
-    auto &bus0 = nes.mBusCPU;
-    auto &bus1 = nes.mBusPPU;
+    auto &cpubus = nes.mBusCPU;
+    auto &ppubus = nes.mBusPPU;
     auto &ppu  = nes.mPPU;
-    auto *pak  = nes.mGamePak;
+    auto *pak  = nes.mGPak;
 
-    iNES *file  = pak->miNES;
-    auto *pgrom = file->mPrgROM.data();
-    auto *chrom = file->mChrROM.data();
-    auto &H     = file->mHead;
+    iNES  *file  = pak->miNES;
+    ubyte *pgrom = file->mPrgROM.ioData();
+    ubyte *chrom = file->mChrROM.ioData();
+    auto  &H     = file->mHead;
 
-    // CPU --> PRG ROM,  First 16KB of ROM
-    bus0.mapRange(0x8000, 0xBFFF, 0xBFFF-0x8000, RWX::RW, pgrom);
-
-    // CPU --> PRG ROM,  Mirror of 8000-BFFF (NROM-128) or final 16KB of ROM (NROM-256)
-    if (H.prgsz==2) bus0.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX::RW, pgrom + 0x4000);
-    else            bus0.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX::RW, pgrom);
+    MapCpuBus(nes);
 
 
     // | Addr      | Size | Desc        | Mapped By |
@@ -62,8 +77,8 @@ void HwMapper00_NROM::map( System &nes, GamePak *cart )
     // ----------------------------------------------
 
     // PPU --> CHR ROM
-    bus1.mapRange(0x0000, 0x0FFF, 0x0FFF, RWX::R, chrom);
-    bus1.mapRange(0x1000, 0x1FFF, 0x0FFF, RWX::R, chrom);
+    ppubus.mapRange(0x0000, 0x0FFF, 0x0FFF, RWX::R, chrom);
+    ppubus.mapRange(0x1000, 0x1FFF, 0x0FFF, RWX::R, chrom);
 
     // PPU --> NameTables
 
@@ -72,10 +87,11 @@ void HwMapper00_NROM::map( System &nes, GamePak *cart )
     // 0x2800: 0b10
     // 0x2C00: 0b11
 
-    bus1.mapRange(0x2000, 0x23FF, 1024-1, RWX::RW, &(ppu.mTables[0]));
-    bus1.mapRange(0x2400, 0x27FF, 1024-1, RWX::RW, &(ppu.mTables[1]));
-    bus1.mapRange(0x2800, 0x2BFF, 1024-1, RWX::RW, &(ppu.mTables[2]));
-    bus1.mapRange(0x2C00, 0x2FFF, 1024-1, RWX::RW, &(ppu.mTables[3]));
+    auto *ntabs = ppu.mNameTables;
+    ppubus.mapRange(0x2000, 0x23FF, 1024-1, RWX::RW, &ntabs[0]);
+    ppubus.mapRange(0x2400, 0x27FF, 1024-1, RWX::RW, &ntabs[1]);
+    ppubus.mapRange(0x2800, 0x2BFF, 1024-1, RWX::RW, &ntabs[2]);
+    ppubus.mapRange(0x2C00, 0x2FFF, 1024-1, RWX::RW, &ntabs[3]);
 
     // starting at $2000 at the top left, $2400 at the top right,
     // $2800 at the bottom left, and $2C00 at the bottom right.

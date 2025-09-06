@@ -18,17 +18,18 @@ public:
 
 
 
-class ioDevice: public HwDevice
+class ioDevice
 {
 protected:
     ubyte   *mData;
     uint16_t mSize;
 
 public:
-    ioDevice( ubyte *data, uint16_t sz )
-    :   mData(data), mSize(sz) {  };
+    ioDevice(void *p, uint16_t s): mData((uint8_t*)p), mSize(s) {  };
+    ioDevice(): ioDevice(nullptr, 0) {  };
+    ubyte *data() { return mData; };
+    ubyte &operator[](uint16_t i);
 
-    ubyte *ioData();
     virtual ubyte ioRead( uint16_t );
     virtual void ioWrite( uint16_t, ubyte );
 };

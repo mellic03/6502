@@ -123,33 +123,31 @@ struct NesFile::iNES: public NesFile::Base
      * - Some ROM-Images additionally contain a 128-byte (or sometimes 127-byte)
      *   title at the end of the file.
      */
-    struct FileInfo
-    {
+    // struct FileInfo
+    // {
         uint8_t  mapperNo;
 
-        uint64_t headerSz = 0x10;
-        uint64_t trainerSz;
-        uint64_t prgSz;
-        uint64_t chrSz;
-        uint64_t playChInstRomSz;
-        uint64_t playChPRomSz;
-        uint64_t titleSz;
+        uint16_t headerSz = 0x10;
+        uint16_t trainerSz;
+        uint16_t prgSz;
+        uint16_t chrSz;
+        uint16_t playChInstRomSz;
+        uint16_t playChPRomSz;
+        uint16_t titleSz;
 
-        uint64_t headerOff = 0x00;
-        uint64_t trainerOff;
-        uint64_t prgOff;
-        uint64_t chrOff;
-        uint64_t playChInstRomOff;
-        uint64_t playChPRomOff;
-        uint64_t titleOff;
+        uint16_t headerOff = 0x00;
+        uint16_t trainerOff;
+        uint16_t prgOff;
+        uint16_t chrOff;
+        uint16_t playChInstRomOff;
+        uint16_t playChPRomOff;
+        uint16_t titleOff;
     
-        FileInfo( uint8_t *data, size_t size );
-    } __attribute__((packed));
+    //     FileInfo( uint8_t *data, size_t size );
+    // } __attribute__((packed));
 
-    FileInfo mInfo;
-    FileHead mHead;
-    MemoryRO mPrgROM;
-    MemoryRO mChrROM;
+    // FileInfo mInfo;
+    // FileHead mHead;
 
     iNES( uint8_t *raw = nullptr, size_t size = 0 );
 };
