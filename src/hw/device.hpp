@@ -22,6 +22,7 @@ private:
     uint8_t mPage[0x0100];
 
 public:
+    uint8_t *ioblk() { return mPage; } 
     virtual void tick() = 0;
     virtual uint8_t rd( uint16_t a ) { return mPage[a]; };
     virtual void wt( uint16_t a, uint8_t x ) { mPage[a] = x; };
