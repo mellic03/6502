@@ -33,7 +33,6 @@ namespace NesEmu
     }
 
 
-
 class NesEmu::System: public iBusDevice
 {
 public:

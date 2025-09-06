@@ -15,6 +15,7 @@ class iBusAddrMap;
 class iBusDevice
 {
 public:
+    DataBus *mBus = nullptr;
     virtual void Tick() = 0;
 };
 

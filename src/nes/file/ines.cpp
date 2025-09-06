@@ -51,5 +51,7 @@ NesFile::iNES::iNES( uint8_t *raw, size_t size )
     mPrgROM.reset(mInfo.prgRomSz);
     mChrROM.reset(mInfo.chrRomSz);
 
+    mPrgROM.flash(raw + mInfo.prgRomOff, mInfo.prgRomSz);
+    mChrROM.flash(raw + mInfo.chrRomOff, mInfo.chrRomSz);
 }
 

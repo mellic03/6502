@@ -48,12 +48,15 @@ void DataBus::map( iBusDevice *d, uint16_t a, uint16_t b, RdFun r, WtFun w )
 
 void DataBus::attach( iBusDevice *dev )
 {
+    dev->mBus = this;
     mDevices.insert(dev);
 }
 
 uint8_t DataBus::read( uint16_t addr )
 {
     auto &[dev, dc, rd, wt] = mPageFuncs[mPageTable[addr/256]];
+    addr = dc(addr);
+
     if (!dev || !rd)
     {
         fprintf(stderr, "[DataBus::read] Bad read *0x%04X\n", addr);
@@ -66,6 +69,8 @@ uint8_t DataBus::read( uint16_t addr )
 void DataBus::write( uint16_t addr, uint8_t byte )
 {
     auto &[dev, dc, rd, wt] = mPageFuncs[mPageTable[addr/256]];
+    addr = dc(addr);
+
     if (!dev || !wt)
     {
         fprintf(stderr, "[DataBus::write] Bad write *0x%04X = 0x%02X\n", addr, byte);

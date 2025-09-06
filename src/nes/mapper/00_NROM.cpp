@@ -25,6 +25,26 @@ using namespace NesEmu;
     CPU $C000-$FFFF:
         Last 16 KB of ROM (NROM-256) or mirror of $8000-$BFFF (NROM-128).
 */
+
+static void MapNROM128( DataBus &bus, MemoryRO *prg_rom )
+{
+    bus.map(prg_rom, 0xC000, 0xFFFF, // CPU --> ROM, NROM-128, mirror of 0x8000-0xBFFF
+        DC_FUNC(          return addr - 0xC000; ),
+        RD_FUNC(MemoryRO, return dev->rd(addr); ),
+        WT_FUNC(MemoryRO, dev->wt(addr, byte);  )
+    );
+}
+
+static void MapNROM256( DataBus &bus, MemoryRO *prg_rom )
+{
+    bus.map(prg_rom, 0xC000, 0xFFFF, // NROM-256, second 16KB of ROM.
+        DC_FUNC(          return (addr - 0xC000) + 16*1024; ),
+        RD_FUNC(MemoryRO, return dev->rd(addr); ),
+        WT_FUNC(MemoryRO, dev->wt(addr, byte);  )
+    );
+}
+
+
 void HwMapper00_NROM::map( System &nes, GamePak *cart )
 {
     using namespace NesFile;
@@ -55,22 +75,9 @@ void HwMapper00_NROM::map( System &nes, GamePak *cart )
     );
 
     if (info.prgRomSz <= 16*1024)
-    {
-        bus.map(PrgROM, 0xC000, 0xFFFF, // CPU --> ROM, NROM-128, mirror of 0x8000-0xBFFF
-            DC_FUNC(          return addr - 0xC000; ),
-            RD_FUNC(MemoryRO, return dev->rd(addr); ),
-            WT_FUNC(MemoryRO, dev->wt(addr, byte);  )
-        );
-    }
-
+        MapNROM128(bus, PrgROM);
     else
-    {
-        bus.map(PrgROM, 0xC000, 0xFFFF, // NROM-256, second 16KB of ROM.
-            DC_FUNC(          return (addr - 0xC000) + 16*1024; ),
-            RD_FUNC(MemoryRO, return dev->rd(addr); ),
-            WT_FUNC(MemoryRO, dev->wt(addr, byte);  )
-        );
-    }
+        MapNROM256(bus, PrgROM);
 }
 
 

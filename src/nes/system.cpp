@@ -51,8 +51,8 @@ NesEmu::System::System()
     //     WT_FUNC(XXXXXX, byte = byte;    )
     // );
 
-    // cpu.rdbus = [=](uint16_t x) { return cpu_bus.read(x); };
-    // cpu.wtbus = [=](uint16_t x, uint8_t v) { cpu_bus.write(x, v); };
+    mCPU.rdbus = [=](uint16_t x) { return mBusCPU.read(x); };
+    mCPU.wtbus = [=](uint16_t x, uint8_t v) { mBusCPU.write(x, v); };
 
 }
 

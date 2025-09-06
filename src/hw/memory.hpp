@@ -24,17 +24,17 @@ class MemoryRW: public ioDevice
 {
 private:
     size_t   mSize;
-    // uint8_t *mBack;
+    uint8_t *mBack;
     uint8_t *mFront;
 
 public:
     void reset( size_t sz )
     {
-        // if (mBack)  delete[] mBack;
+        if (mBack)  delete[] mBack;
         if (mFront) delete[] mFront;
 
         mSize  = sz;
-        // mBack  = new uint8_t[sz];
+        mBack  = new uint8_t[sz];
         mFront = new uint8_t[sz];
     }
 
@@ -42,6 +42,8 @@ public:
 
     virtual uint8_t rd( uint16_t ) override;
     virtual void wt( uint16_t, uint8_t ) override;
+    virtual void flash( uint8_t *src, size_t sz );
+    virtual void flush();
     virtual void Tick() override;
 };
 

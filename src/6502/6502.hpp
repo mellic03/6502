@@ -72,6 +72,19 @@ public:
     std::function<uint8_t(uint16_t)>       rdbus = [](uint16_t) { return 0; };
     std::function<void(uint16_t, uint8_t)> wtbus = [](uint16_t, uint8_t) {  };
 
+    // uint8_t rdbus( uint16_t addr )
+    // {
+    //     if (!mBus) return 0;
+    //     return mBus->read(addr);
+    // }
+
+    // void wtbus( uint16_t addr, uint8_t byte )
+    // {
+    //     if (!mBus) return;
+    //     mBus->write(addr, byte);
+    // }
+
+    DataBus *mBus;
     uint8_t  mInvalidOp;
     uint8_t  mCurrOp;
     size_t   mCycles;
