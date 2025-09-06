@@ -71,18 +71,12 @@ NesPPU::NesPPU( DataBus *bus )
 
     */
 
-    ubyte *VRAM = mVRAM.data();
-
-    mBus->mapRange(0x2000, 0x2FFF, 0x0FFF, VRAM);
-    mBus->mapRange(0x3000, 0x3FFF, 0x0FFF, VRAM);
-
-    // PPU --> NameTables
-    mBus->mapRange(0x2000, 0x23FF, 1024-1, &mTables[0]);
-    mBus->mapRange(0x2400, 0x27FF, 1024-1, &mTables[1]);
-    mBus->mapRange(0x2800, 0x2BFF, 1024-1, &mTables[2]);
-    mBus->mapRange(0x2C00, 0x2FFF, 1024-1, &mTables[3]);
-
-
+//    // PPU --> NameTables
+//     ubyte *VRAM = mVRAM.data();
+//     mBus->mapRange(0x2000, 0x23FF, 1024-1, &mTables[0]);
+//     mBus->mapRange(0x2400, 0x27FF, 1024-1, &mTables[1]);
+//     mBus->mapRange(0x2800, 0x2BFF, 1024-1, &mTables[2]);
+//     mBus->mapRange(0x2C00, 0x2FFF, 1024-1, &mTables[3]);
 
 
     // mmioWrite(Reg::PPUCTRL,    0b0000'0000);

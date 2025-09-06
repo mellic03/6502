@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../hw/bus.hpp"
-#include "../hw/device.hpp
+#include "../hw/device.hpp"
 #include "../hw/clock.hpp"
 #include "../hw/memory.hpp"
 #include "../hw/mmio.hpp"
@@ -15,7 +15,7 @@ private:
 
      enum REG_: uint16_t
      {
-          REG_PPUCTRL  = 0x2000,
+          REG_PPUCTRL = 0x2000,
           REG_PPUMASK,
           REG_PPUSTATUS,
           REG_OAMADDR,
@@ -23,6 +23,7 @@ private:
           REG_PPUSCROLL,
           REG_PPUADDR,
           REG_PPUDATA,
+          REG_OAMDMA = 0x4014,
      };
 
      struct RegMMIO {

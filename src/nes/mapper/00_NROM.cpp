@@ -53,10 +53,7 @@ static void MapPpuBus( System &nes )
     auto  &ppu  = nes.mPPU;
     auto  *gpak = nes.mGPak;
 
-    printf("[MapPpuBus] gpak->mChrROM: %luK\n", gpak->mChrROM.size());
     ubyte *chrROM = gpak->mChrROM.data<ubyte>();
-    // ubyte *prgRAM = gpak->mPrgRAM.data<ubyte>();
-
 
     // | Addr      | Size | Desc        | Mapped By |
     // | ----------|------|-------------|-----------|
@@ -72,14 +69,18 @@ static void MapPpuBus( System &nes )
     // | 2FC0-2FFF | 0040 | AttrTable 3 | Cartridge |
     // ----------------------------------------------
 
-    // starting at $2000 at the top left, $2400 at the top right,
-    // $2800 at the bottom left, and $2C00 at the bottom right.
-
     // PPU --> ChrROM
     bus.mapRange(0x0000, 0x1FFF, 0x1FFF, chrROM, RWX::R);
 
     // // PPU --> ChrRAM
     // bus.mapRange(0x1000, 0x1FFF, 0x0FFF, chrRAM);
+
+    // PPU --> NameTables
+    bus.mapRange(0x2000, 0x23FF, 1024-1, &ppu.mTables[0]);
+    bus.mapRange(0x2400, 0x27FF, 1024-1, &ppu.mTables[1]);
+    bus.mapRange(0x2800, 0x2BFF, 1024-1, &ppu.mTables[2]);
+    bus.mapRange(0x2C00, 0x2FFF, 1024-1, &ppu.mTables[3]);
+
 
 }
 
