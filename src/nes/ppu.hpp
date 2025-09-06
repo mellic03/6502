@@ -25,21 +25,52 @@ private:
           REG_OAMDMA = 0x4014,
      };
 
-     struct RegMMIO {
-          uint8_t PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR;
-          uint8_t OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA;
+     struct RegMMIO
+     {
+          struct {
+               uint8_t NN :2; // X/Y Scroll
+               uint8_t I  :1; // IncrementMode
+               uint8_t S  :1; // SpriteTileSelect
+               uint8_t B  :1; // BgTileSelect
+               uint8_t H  :1; // SpriteHeight
+               uint8_t P  :1; // MstrSlaveSelect
+               uint8_t V  :1; // NMI enable
+          }  PPUCTRL;
+
+          struct {
+               uint8_t G   :1; // greyscale
+               uint8_t m   :1; // background left column enable
+               uint8_t M   :1; // sprite left column enable
+               uint8_t b   :1; // background enable
+               uint8_t s   :1; // sprite enable
+               uint8_t BGR :3; // colour emphasis
+          } PPUMASK;
+
+          struct {
+               uint8_t U :5;  // unused
+               uint8_t O :1;  // sprite overflow
+               uint8_t S :1;  // sprite 0 hit
+               uint8_t V :1;  // vblank
+          } PPUSTATUS;
+
+          uint8_t OAMADDR;    // OAM read/write address
+          uint8_t OAMDATA;    // OAM read/write data
+          uint8_t PPUSCROLL;  // 
+          uint8_t PPUADDR;    // VRAM read/write address (two writes: MSB then LSB)
+          uint8_t PPUDATA;    // VRAM read/write data
      };
 
-     struct NameTable {
-          uint8_t data[30][32];
-          uint8_t attr[8][8];
+     struct TableData
+     {
+          uint8_t nameTab[30][32];
+          uint8_t attrTab[8][8];
      };
 
 
 public:
      Memory2kRW mVRAM;
      RegMMIO   *mMMIO;
-     NameTable *mTables;
+     TableData *mTables;
 
     NesPPU( DataBus *bus = nullptr );
     virtual void tick( uint64_t dt ) final;

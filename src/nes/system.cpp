@@ -16,7 +16,7 @@ NesEmu::System::System()
     ubyte *ppuMMIO = (ubyte*)(mPPU.mMMIO);
     ubyte *apuMMIO = mAPU.data();
 
-    mBusCPU.attach(&mCPU);
+    // mBusCPU.attach(&mCPU);
     mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, cpuRAM);  // CPU --> CPU RAM, mirror every 2K
     mBusCPU.mapRange(0x2000, 0x3FFF, 0x08-1, ppuMMIO); // CPU --> PPU IO regs.
     mBusCPU.mapRange(0x4000, 0x401F, 0x001F, apuMMIO); // CPU --> NES APU and IO regs.

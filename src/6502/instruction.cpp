@@ -78,7 +78,10 @@ void cpu6502::_InstrNMI()
 {
     _IntPush();
     SSR.B = 0;
-    _IntJump(0xFFFE);
+
+    uint16_t lo = rdbus(0xFFFE);
+    uint16_t hi = rdbus(0xFFFF);
+    PC = (hi << 8) | lo;
 }
 
 void cpu6502::_InstrIRQ()

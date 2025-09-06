@@ -60,8 +60,8 @@ NesEmu::GamePak::GamePak( const std::string &path )
 
     printf("iNES::iNES\n");
     printf("--------------------------------------------\n");
-    printf("prgsz            %lu\n", mPrgROM.size());
-    printf("chrsz            %lu\n", mChrROM.size());
+    printf("prgRomSz         %lu\n", mPrgROM.size());
+    printf("chrRomSz         %lu\n", mChrROM.size());
     printf("mapper           %u\n",  mMapperNo);
 
     printf("mirroringMode    %u\n", H.f6MirroringMode);

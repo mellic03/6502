@@ -101,7 +101,7 @@ uint8_t *DataBus::getWritePtr( uint16_t addr )
     auto &[page, base, mask, rwx, in_use] = entry;
     ErrAssert(in_use == true, "Page at 0x%04X is not mapped\n", pgAddr);
     ErrAssert((page != nullptr), "Page at 0x%04X does not exist\n", pgAddr);
-    ErrAssert((rwx & RWX::W), "[getWritePtr] Page at 0x%04X has no write flag\n", pgAddr);
+    ErrAssert((rwx & RWX::W), "[getWritePtr] Page at 0x%04X is not writable\n", pgAddr);
 
     return &page[(addr - base) & mask];
 }
@@ -120,7 +120,7 @@ void DataBus::mapRange( uint16_t base, uint16_t end, uint16_t mask, void *pages,
     assert(base % 256 == 0);
     uint8_t *pMem = (uint8_t*)pages;
 
-    for (size_t addr=base; addr<end; addr+=256)
+    for (size_t addr=base; addr<=end; addr+=256)
     {
         mapPage(addr, mask, pMem, rwx);
         pMem += 256;

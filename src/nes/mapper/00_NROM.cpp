@@ -73,10 +73,13 @@ static void MapPpuBus( System &nes )
     // bus.mapRange(0x1000, 0x1FFF, 0x0FFF, chrRAM);
 
     // PPU --> NameTables
-    bus.mapRange(0x2000, 0x23FF, 1024-1, &ppu.mTables[0]);
-    bus.mapRange(0x2400, 0x27FF, 1024-1, &ppu.mTables[1]);
-    bus.mapRange(0x2800, 0x2BFF, 1024-1, &ppu.mTables[2]);
-    bus.mapRange(0x2C00, 0x2FFF, 1024-1, &ppu.mTables[3]);
+    ubyte *vRAM = ppu.mVRAM.data();
+
+    bus.mapRange(0x2000, 0x23FF, 1024-1, vRAM + 0*1024);
+    bus.mapRange(0x2400, 0x27FF, 1024-1, vRAM + 1*1024);
+
+    bus.mapRange(0x2800, 0x2BFF, 1024-1, vRAM + 0*1024);
+    bus.mapRange(0x2C00, 0x2FFF, 1024-1, vRAM + 1*1024);
 
 
 }
