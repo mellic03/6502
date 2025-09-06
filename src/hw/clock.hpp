@@ -9,20 +9,18 @@
 
 
 
-// class SignalEmitter
-// {
-// private:
-//     friend class SignalListener;
-//     std::vector<SignalListener*> listeners;
-//     uint64_t mHertz;
-//     uint64_t mNsecs;
-//     uint64_t mPeriod;
+class HwClock
+{
+private:
+    uint64_t m_hz;
+    uint64_t m_accum;
+    uint64_t m_period;
 
-// public:
-//     SignalEmitter( uint64_t hz ): mHertz(hz), mNsecs(0), mPeriod(1000000000/hz) {  }
-//     void update( uint64_t dt_msecs );
+public:
+    HwClock( uint64_t hz ): m_hz(hz), m_accum(0), m_period(1000000000/hz) {  }
+    bool tick( uint64_t dt_msecs );
 
-// };
+};
 
 
 
@@ -38,7 +36,7 @@
 //     SignalListener( uint16_t divisor )
 //     :   mDivisor(divisor), mCycleCount(0) {  };
 //     void Listen( SignalEmitter& );
-//     virtual void Tick() = 0;
+//     virtual void tick() = 0;
 // };
 
 
@@ -54,7 +52,7 @@
 //     SignalListenerExample()
 //     :   mCycleRatio(4), mCycleCount(0) {  }
 
-//     virtual void Tick() final
+//     virtual void tick() final
 //     {
 //         if (++mCycleCount >= mCycleRatio)
 //         {

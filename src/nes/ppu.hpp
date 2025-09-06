@@ -102,7 +102,7 @@ public:
 
     virtual uint8_t rd( uint16_t ) final { return 0; };
     virtual void wt( uint16_t, uint8_t ) final {  };
-    virtual void Tick() final;
+    virtual void tick() final;
 };
 
 

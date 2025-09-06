@@ -30,7 +30,7 @@ public:
         static_assert((int)Tag::NumValues == (int)Rwx::NumValues);
     }
 
-    virtual void Tick() override
+    virtual void tick() override
     {
 
     };

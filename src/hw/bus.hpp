@@ -76,6 +76,6 @@ public:
 
     uint8_t rdbus( uint16_t );
     void    wtbus( uint16_t, uint8_t );
-    virtual void Tick() = 0;
+    virtual void tick() = 0;
 };
 

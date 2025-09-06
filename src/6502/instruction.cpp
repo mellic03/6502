@@ -286,6 +286,23 @@ void cpu6502::InstrLDY()
     YR = _NZ(x);
 }
 
+void cpu6502::InstrLSR()
+{
+    if (mOpAC)
+    {
+        uint16_t x = AC;
+        AC = _NZC(x >> 1);
+    }
+
+    else
+    {
+        uint16_t x = rdbus(mOpAddr);
+        wtbus(mOpAddr, _NZC(x >> 1));
+    }
+
+    SSR.N = 0;
+}
+
 void cpu6502::InstrNOP()
 {
 

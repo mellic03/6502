@@ -31,6 +31,7 @@ int main( int argc, char **argv )
 
     uint64_t tcurr = SDL_GetTicks64();
     uint64_t tprev = tcurr;
+    uint64_t tdiff = 0;
     uint64_t accum = 0;
 
     
@@ -42,20 +43,11 @@ int main( int argc, char **argv )
     {
         D.beginFrame();
 
-        tcurr  = SDL_GetTicks64();
-        accum += tcurr - tprev;
-        tprev  = tcurr;
+        tcurr = SDL_GetTicks64();
+        tdiff = tcurr - tprev;
+        tprev = tcurr;
 
-        if (accum >= 100)
-        {
-            accum = 0;
-            nes->mBusCPU.tick();
-        }
-
-        if (nes->mCPU.mOpCount >= 500)
-        {
-            break;
-        }
+        nes->tick(tdiff);
 
         if (D.keyReleased(SDL_SCANCODE_I))
         {

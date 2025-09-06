@@ -101,7 +101,7 @@ public:
 
     // cpu6502( iDataBus *bus );
     cpu6502();
-    virtual void Tick() final;
+    virtual void tick() final;
     
     union HwPins
     {
@@ -229,6 +229,7 @@ private:
     void InstrLDA();
     void InstrLDX();
     void InstrLDY();
+    void InstrLSR();
     void InstrNOP();
     void InstrORA();
     void InstrPHA();

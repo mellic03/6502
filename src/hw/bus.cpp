@@ -33,7 +33,7 @@ void DataBus::tick()
 {
     for (HwDevice *dev: mDevices)
     {
-        dev->Tick();
+        dev->tick();
     }
 }
 

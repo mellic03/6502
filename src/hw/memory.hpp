@@ -13,7 +13,7 @@ class ioDevice: public HwDevice
 public:
     virtual uint8_t rd( uint16_t addr ) = 0;
     virtual void wt( uint16_t addr, uint8_t x ) = 0;
-    virtual void Tick() = 0;
+    virtual void tick() = 0;
 };
 
 
@@ -45,7 +45,7 @@ public:
     virtual void wt( uint16_t, uint8_t ) override;
     virtual void flash( uint8_t *src, size_t sz );
     virtual void flush();
-    virtual void Tick() override;
+    virtual void tick() override;
 };
 
 
@@ -56,7 +56,7 @@ class MemoryRO: public MemoryRW
 {
 public:
     using MemoryRW::MemoryRW;
-    virtual void Tick() final {  };
+    virtual void tick() final {  };
 };
 
 
@@ -68,5 +68,5 @@ class MemoryWO: public MemoryRW
 public:
     using MemoryRW::MemoryRW;
     virtual uint8_t rd( uint16_t ) final { return 0; };
-    virtual void Tick() final {  };
+    virtual void tick() final {  };
 };

@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 
-void NesPPU::Tick()
+void NesPPU::tick()
 {
     // printf("[PPU]\n");
 }

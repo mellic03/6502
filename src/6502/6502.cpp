@@ -55,7 +55,7 @@ void cpu6502::_execute()
 
     
 
-void cpu6502::Tick()
+void cpu6502::tick()
 {
     if (mInvalidOp)
     {
@@ -347,6 +347,11 @@ cpu6502::cpu6502()
     mFtab[0xB4] = Inst("LDY", &X::InstrLDY, &X::LoadZPGX, 4);
     mFtab[0xAC] = Inst("LDY", &X::InstrLDY, &X::LoadABS,  4);
     mFtab[0xBC] = Inst("LDY", &X::InstrLDY, &X::LoadABSX, 4);
+    mFtab[0x4A] = Inst("LSR", &X::InstrLSR, &X::LoadACC,  2);
+    mFtab[0x46] = Inst("LSR", &X::InstrLSR, &X::LoadZPG,  5);
+    mFtab[0x56] = Inst("LSR", &X::InstrLSR, &X::LoadZPGX, 6);
+    mFtab[0x4E] = Inst("LSR", &X::InstrLSR, &X::LoadABS,  6);
+    mFtab[0x5E] = Inst("LSR", &X::InstrLSR, &X::LoadABSX, 7);
 
     mFtab[0xEA] = Inst("NOP",  &X::InstrNOP, &X::LoadIMP,  2);
 

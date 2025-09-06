@@ -27,7 +27,7 @@ void MemoryRW::flush()
     memcpy(mFront, mBack, mSize);
 }
 
-void MemoryRW::Tick()
+void MemoryRW::tick()
 {
     flush();
 }

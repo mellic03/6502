@@ -7,6 +7,7 @@
 // hwtimer(1'790'000)
 
 NesEmu::System::System()
+:   mClock(1'790'000)
 {
     mBusCPU.attach(&mCPU);
 
@@ -41,13 +42,15 @@ void NesEmu::System::LoadROM( GamePak *cart )
 
 
 
-void NesEmu::System::Tick()
+void NesEmu::System::tick( uint64_t dt )
 {
-    mBusCPU.tick();
-
-    mBusPPU.tick();
-    mBusPPU.tick();
-    mBusPPU.tick();
+    if (mClock.tick(dt))
+    {
+        mBusCPU.tick();
+        mBusPPU.tick();
+        mBusPPU.tick();
+        mBusPPU.tick(); 
+    }
 }
 
 // void NesEmu::System::LoadROM( uint8_t *rom )

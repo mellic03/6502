@@ -37,7 +37,7 @@ public:
         mBack[i] = x;
     }
 
-    virtual void Tick() override
+    virtual void tick() override
     {
         memcpy(mFront, mBack, mSize);
     }
@@ -60,7 +60,7 @@ template <size_t mSize>
 class TMemoryRO: public TMemoryRW<mSize>
 {
 public:
-    virtual void Tick() final {  };
+    virtual void tick() final {  };
 };
 
 

@@ -38,7 +38,7 @@ private:
     using Rwx = NesPPU_Rwx;
 
 public:
-    virtual void Tick() final {  };
+    virtual void tick() final {  };
 };
 
 

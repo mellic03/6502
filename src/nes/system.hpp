@@ -2,6 +2,7 @@
 
 #include "../6502/6502.hpp"
 #include "../hw/bus.hpp"
+#include "../hw/clock.hpp"
 #include "../hw/tmemory.hpp"
 #include "./ppu.hpp"
 #include "./apu.hpp"
@@ -33,9 +34,10 @@ namespace NesEmu
     }
 
 
-class NesEmu::System: public HwDevice
+class NesEmu::System
 {
 public:
+    HwClock  mClock;
     MemRW2K  wRAM;
     MemRW2K  vRAM;
     DataBus  mBusCPU;
@@ -48,7 +50,7 @@ public:
     System();
     void LoadRAW( uint8_t *rom );
     void LoadROM( GamePak* );
-    virtual void Tick() final;
+    void tick( uint64_t dt );
 
 };
 
