@@ -2,8 +2,7 @@
 #include <cassert>
 
 
-
-HwDevice::HwDevice( DataBus *bus=nullptr )
+HwDevice::HwDevice( DataBus *bus )
 :   mBus(bus)
 {
     if (mBus)

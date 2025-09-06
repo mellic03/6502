@@ -11,10 +11,10 @@ NesEmu::System::System()
     mCPU(&mBusCPU),
     mPPU(&mBusPPU)
 {
-    ubyte *cpuRAM  = mCPU.mRAM.data<ubyte>();
-    ubyte *ppuRAM  = mPPU.mRAM.data<ubyte>();
-    ubyte *ppuMMIO = mPPU.mMMIO.data<ubyte>();
-    ubyte *apuMMIO = mAPU.data<ubyte>();
+    ubyte *cpuRAM  = mCPU.mRAM.data();
+    ubyte *ppuVRAM = mPPU.mVRAM.data();
+    ubyte *ppuMMIO = (ubyte*)(mPPU.mMMIO);
+    ubyte *apuMMIO = mAPU.data();
 
     mBusCPU.attach(&mCPU);
     mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, cpuRAM);  // CPU --> CPU wRAM,  mirror 2K banks until to 0x1FFF

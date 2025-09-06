@@ -36,7 +36,7 @@ public:
     template <typename T>
     T *data() { return static_cast<T*>(mData); }
 
-    void  *data() { return mData; };
+    ubyte *data() { return (ubyte*)mData; };
     size_t size() { return mSize; };
     ubyte &operator[](uint16_t i);
 

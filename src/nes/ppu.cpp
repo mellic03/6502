@@ -28,14 +28,10 @@
 */
 
 NesPPU::NesPPU( DataBus *bus )
-:   HwDevice(bus),
-    ioDevice(new ubyte[2048])
+:   HwDevice(bus)
 {
-    sizeof(DataPPU);
-    mTables  = data<NameTable>();
-    mRegMMIO = (RegisterMMIO*)(mMMIO.data());
-
-
+    mMMIO   = (RegMMIO*)(mVRAM.data() + 0);
+    mTables = (NameTable*)(mVRAM.data() + sizeof(RegMMIO));
 
     // | Addr      | Size | Desc        | Mapped By |
     // | ----------|------|-------------|-----------|
@@ -50,6 +46,35 @@ NesPPU::NesPPU( DataBus *bus )
     // | 2C00-2FBF | 03c0 | Nametable 3 | Cartridge |
     // | 2FC0-2FFF | 0040 | AttrTable 3 | Cartridge |
     // ----------------------------------------------
+
+    /*
+        - The NES has 2kB of RAM dedicated to the PPU, usually mapped to the
+          nametable address space from $2000-$2FFF, but this can be rerouted
+          through custom cartridge wiring. The mappings above are the addresses
+          from which the PPU uses to fetch data during rendering. The actual
+          devices that the PPU fetches pattern, name table and attribute table
+          data from is configured by the cartridge.
+
+        - 0000-1FFF normally mapped by the cartridge to a CHR-ROM or CHR-RAM,
+          often with a bank switching mechanism.
+
+        - 2000-2FFF normally mapped to the 2kB NES internal VRAM, providing 2
+          nametables with a mirroring configuration controlled by the cartridge,
+          but it can be partly or fully remapped to ROM or RAM on the cartridge,
+          allowing up to 4 simultaneous nametables.
+
+        - 3000-3EFF usually a mirror of the 2kB region from $2000-2EFF. The PPU
+          does not render from this address range, so this space has negligible
+          utility.
+
+        - 3F00-3FFF not configurable, always mapped to the internal palette control.
+
+    */
+
+    ubyte *VRAM = mVRAM.data();
+
+    mBus->mapRange(0x2000, 0x2FFF, 0x0FFF, VRAM);
+    mBus->mapRange(0x3000, 0x3FFF, 0x0FFF, VRAM);
 
     // PPU --> NameTables
     mBus->mapRange(0x2000, 0x23FF, 1024-1, &mTables[0]);

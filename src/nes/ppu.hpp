@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../hw/bus.hpp"
+#include "../hw/device.hpp
 #include "../hw/clock.hpp"
 #include "../hw/memory.hpp"
 #include "../hw/mmio.hpp"
@@ -8,37 +9,20 @@
 #include "../rwx.hpp"
 
 
-
-struct NesPPU_AttrTable
-{
-    uint8_t data[64];
-};
-
-// The NES has four logical nametables, arranged in a 2x2 pattern.
-// Each occupies a 1 KiB chunk of PPU address space, starting at $2000
-// at the top left, $2400 at the top right, $2800 at the bottom left,
-// and $2C00 at the bottom right.
-
-// enum class NesPPU_Reg: uint8_t
-// {
-//     PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR,
-//     OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA,
-//     NumValues
-// };
-// using Reg = NesPPU_Reg;
-// static constexpr uint8_t RegRWX[int(Reg::NumValues)]
-// {
-//     RWX::W,  RWX::W,   RWX::R,   RWX::W,
-//     RWX::RW, RWX::Wx2, RWX::Wx2, RWX::RW,
-// };
-
-
-class NesPPU: public HwDevice, public ioDevice
+class NesPPU: public HwDevice
 {
 private:
-     struct NameTable {
-          uint8_t data[30][32];
-          uint8_t attr[8][8];
+
+     enum REG_: uint16_t
+     {
+          REG_PPUCTRL  = 0x2000,
+          REG_PPUMASK,
+          REG_PPUSTATUS,
+          REG_OAMADDR,
+          REG_OAMDATA,
+          REG_PPUSCROLL,
+          REG_PPUADDR,
+          REG_PPUDATA,
      };
 
      struct RegMMIO {
@@ -46,17 +30,16 @@ private:
           uint8_t OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA;
      };
 
-     struct DataPPU
-     {
-          RegMMIO   mmio;
-          NameTable tables[4];
+     struct NameTable {
+          uint8_t data[30][32];
+          uint8_t attr[8][8];
      };
 
+
 public:
-     DataBus *mBus;
-     DataPPU *mDataPPU;
-     // NameTable *mTables;
-     // RegMMIO   *mMMIO;
+     Memory2kRW mVRAM;
+     RegMMIO   *mMMIO;
+     NameTable *mTables;
 
     NesPPU( DataBus *bus = nullptr );
     virtual void tick( uint64_t dt ) final;
