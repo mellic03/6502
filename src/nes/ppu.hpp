@@ -33,37 +33,34 @@ struct NesPPU_AttrTable
 // };
 
 
-class NesPPU: public HwDevice
+class NesPPU: public HwDevice, public ioDevice
 {
 private:
-    struct NameTable {
-        uint8_t data[30][32];
-        uint8_t attr[8][8];
-    };
+     struct NameTable {
+          uint8_t data[30][32];
+          uint8_t attr[8][8];
+     };
 
-    struct RegisterMMIO {
-        uint8_t PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR;
-        uint8_t OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA;
-    };
+     struct RegMMIO {
+          uint8_t PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR;
+          uint8_t OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA;
+     };
+
+     struct DataPPU
+     {
+          RegMMIO   mmio;
+          NameTable tables[4];
+     };
 
 public:
-    DataBus      *mBus;
-    Memory2kRW    mRAM;
-    Memory1pRW    mMMIO;
-    NameTable    *mNameTables;
-    RegisterMMIO *mRegMMIO;
+     DataBus *mBus;
+     DataPPU *mDataPPU;
+     // NameTable *mTables;
+     // RegMMIO   *mMMIO;
 
     NesPPU( DataBus *bus = nullptr );
     virtual void tick( uint64_t dt ) final;
 };
-
-
-
-// struct MMapPPU {
-//     uint8_t PtrnTab[0x2000]; // 0x0000 -> 0x2000
-//     uint8_t NameTab[0x1F00]; // 0x2000 -> 0x3F00
-//     uint8_t Colours[0x0100]; // 0x3F00 -> 0x4000
-// } *mMap;
 
 
 /*

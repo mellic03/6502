@@ -15,11 +15,50 @@
 
     ? = unknown, x = irrelevant, + = often set, U = unchanged
 */
+
+
+/*
+    - Horizontal arrangement: $2000 and $2800 contain the first nametable,
+      and $2400 and $2C00 contain the second nametable (e.g. Super Mario Bros.),
+      accomplished by connecting CIRAM A10 to PPU A10.
+
+    - Vertical arrangement: $2000 and $2400 contain the first nametable,
+      and $2800 and $2C00 contain the second nametable (e.g. Kid Icarus),
+      accomplished by connecting CIRAM A10 to PPU A11.
+*/
+
 NesPPU::NesPPU( DataBus *bus )
-:   HwDevice(bus)
+:   HwDevice(bus),
+    ioDevice(new ubyte[2048])
 {
-    mNameTables = (NameTable*)(mRAM.data());
-    mRegMMIO    = (RegisterMMIO*)(mMMIO.data());
+    sizeof(DataPPU);
+    mTables  = data<NameTable>();
+    mRegMMIO = (RegisterMMIO*)(mMMIO.data());
+
+
+
+    // | Addr      | Size | Desc        | Mapped By |
+    // | ----------|------|-------------|-----------|
+    // | 0000-0FFF | 1000 | PtrnTable 0 | Cartridge |
+    // | 1000-1FFF | 1000 | PtrnTable 1 | Cartridge |
+    // | 2000-23BF | 03C0 | NameTable 0 | Cartridge |
+    // | 23C0-23FF | 0040 | AttrTable 0 | Cartridge |
+    // | 2400-27BF | 03c0 | Nametable 1 | Cartridge |
+    // | 27C0-27FF | 0040 | AttrTable 1 | Cartridge |
+    // | 2800-2BBF | 03c0 | Nametable 2 | Cartridge |
+    // | 2BC0-2BFF | 0040 | AttrTable 2 | Cartridge |
+    // | 2C00-2FBF | 03c0 | Nametable 3 | Cartridge |
+    // | 2FC0-2FFF | 0040 | AttrTable 3 | Cartridge |
+    // ----------------------------------------------
+
+    // PPU --> NameTables
+    mBus->mapRange(0x2000, 0x23FF, 1024-1, &mTables[0]);
+    mBus->mapRange(0x2400, 0x27FF, 1024-1, &mTables[1]);
+    mBus->mapRange(0x2800, 0x2BFF, 1024-1, &mTables[2]);
+    mBus->mapRange(0x2C00, 0x2FFF, 1024-1, &mTables[3]);
+
+
+
 
     // mmioWrite(Reg::PPUCTRL,    0b0000'0000);
     // mmioWrite(Reg::PPUMASK,    0b0000'0000);

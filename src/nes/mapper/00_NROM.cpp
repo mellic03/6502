@@ -81,13 +81,6 @@ static void MapPpuBus( System &nes )
     // // PPU --> ChrRAM
     // bus.mapRange(0x1000, 0x1FFF, 0x0FFF, chrRAM);
 
-    // PPU --> NameTables
-    auto *table = ppu.mNameTables;
-    bus.mapRange(0x2000, 0x23FF, 1024-1, &table[0]);
-    bus.mapRange(0x2400, 0x27FF, 1024-1, &table[1]);
-    bus.mapRange(0x2800, 0x2BFF, 1024-1, &table[2]);
-    bus.mapRange(0x2C00, 0x2FFF, 1024-1, &table[3]);
-
 }
 
 

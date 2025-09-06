@@ -49,13 +49,13 @@ NesEmu::GamePak::GamePak( const std::string &path )
     uint8_t *cursor = data<uint8_t>() + 0x10;
     cursor += (H.f6Trainer512byte == 1) ? 512 : 0;
 
-    mPrgROM = MemoryRO(cursor, 16*1024 * H.prgRomSz);
+    mPrgROM = MemoryRO(cursor, 0x4000 * H.prgRomSz);
     cursor += mPrgROM.size();
 
-    mChrROM = MemoryRO(cursor, 8*1024 * H.chrRomSz);
+    mChrROM = MemoryRO(cursor, 0x2000 * H.chrRomSz);
     cursor += mChrROM.size();
 
-    mPrgRAM = MemoryRW(cursor, 8*1024 * ((H.prgRamSz==0) ? 1 : H.prgRamSz));
+    mPrgRAM = MemoryRW(cursor, 0x2000 * ((H.prgRamSz==0) ? 1 : H.prgRamSz));
     cursor += mPrgRAM.size();
 
     printf("iNES::iNES\n");

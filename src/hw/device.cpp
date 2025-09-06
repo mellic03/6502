@@ -2,6 +2,17 @@
 #include <cassert>
 
 
+
+HwDevice::HwDevice( DataBus *bus=nullptr )
+:   mBus(bus)
+{
+    if (mBus)
+    {
+        mBus->attach(this);
+    }
+}
+
+
 ubyte HwDevice::busRead( uint16_t i )
 {
     if (!mBus) return 0;
