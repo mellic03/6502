@@ -42,8 +42,8 @@ public:
     const uint8_t *getReadPtr( uint16_t addr );
     uint8_t *getWritePtr( uint16_t addr );
 
-    void     mapPage( uint16_t addr, uint16_t mask, uint8_t rwx, uint8_t *page );
-    void     mapRange( uint16_t addr, uint16_t end, uint16_t mask, uint8_t rwx, uint8_t *pages );
+    void     mapPage( uint16_t addr, uint16_t mask, uint8_t rwx, void *page );
+    void     mapRange( uint16_t addr, uint16_t end, uint16_t mask, uint8_t rwx, void *pages );
 
     uint8_t  read( uint16_t addr );
     void     write( uint16_t addr, uint8_t byte );

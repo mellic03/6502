@@ -47,18 +47,10 @@ void HwMapper00_NROM::map( System &nes, GamePak *cart )
     else            bus0.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX::RW, pgrom);
 
 
-    /*
-        $0000-$0FFF	$1000	Pattern table 0	Cartridge
-        $1000-$1FFF	$1000	Pattern table 1	Cartridge
-        $2000-$23BF	$03c0	Nametable 0	Cartridge
-        $23C0-$23FF	$0040	Attribute table 0	Cartridge
-    */
-
-    // PPU --> CHR ROM
-    bus1.mapRange(0x0000, 0x0FFF, 0x0FFF-0x0000, RWX::R, chrom);
-
     // | Addr      | Size | Desc        | Mapped By |
     // | ----------|------|-------------|-----------|
+    // | 0000-0FFF | 1000 | PtrnTable 0 | Cartridge |
+    // | 1000-1FFF | 1000 | PtrnTable 1 | Cartridge |
     // | 2000-23BF | 03C0 | NameTable 0 | Cartridge |
     // | 23C0-23FF | 0040 | AttrTable 0 | Cartridge |
     // | 2400-27BF | 03c0 | Nametable 1 | Cartridge |
@@ -69,12 +61,21 @@ void HwMapper00_NROM::map( System &nes, GamePak *cart )
     // | 2FC0-2FFF | 0040 | AttrTable 3 | Cartridge |
     // ----------------------------------------------
 
+    // PPU --> CHR ROM
+    bus1.mapRange(0x0000, 0x0FFF, 0x0FFF, RWX::R, chrom);
+    bus1.mapRange(0x1000, 0x1FFF, 0x0FFF, RWX::R, chrom);
 
-    // GET BACK TO THIS WHEN YOU RETURN BOYO
-    // bus1.mapRange(0x2000, 0x23FF, 0x03C0, RWX::RW, ppu.mNameTables[0]);
-    // bus1.mapRange(0x2400, 0x27FF, 1024-1, RWX::RW, ppu.mNameTables[1]);
-    // bus1.mapRange(0x2800, 0x2BFF, 1024-1, RWX::RW, ppu.mNameTables[1]);
-    // bus1.mapRange(0x2C00, 0x2FFF, 1024-1, RWX::RW, ppu.mNameTables[1]);
+    // PPU --> NameTables
+
+    // 0x2000: 0b00
+    // 0x2400: 0b01
+    // 0x2800: 0b10
+    // 0x2C00: 0b11
+
+    bus1.mapRange(0x2000, 0x23FF, 1024-1, RWX::RW, &(ppu.mTables[0]));
+    bus1.mapRange(0x2400, 0x27FF, 1024-1, RWX::RW, &(ppu.mTables[1]));
+    bus1.mapRange(0x2800, 0x2BFF, 1024-1, RWX::RW, &(ppu.mTables[2]));
+    bus1.mapRange(0x2C00, 0x2FFF, 1024-1, RWX::RW, &(ppu.mTables[3]));
 
     // starting at $2000 at the top left, $2400 at the top right,
     // $2800 at the bottom left, and $2C00 at the bottom right.

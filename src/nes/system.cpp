@@ -15,10 +15,10 @@ NesEmu::System::System()
     mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, RWX::RW, wRAM.data());
 
     // CPU --> PPU mmio registers.
-    mBusCPU.mapRange(0x2000, 0x4000, 8-1, RWX::RW, mPPU.data());
+    mBusCPU.mapRange(0x2000, 0x4000, 8-1, RWX::RW, mPPU.io_base());
 
     // CPU --> NES APU and IO registers.
-    mBusCPU.mapPage(0x4000, 32-1, RWX::RW, mAPU.data());
+    // mBusCPU.mapPage(0x4000, 32-1, RWX::RW, mAPU.data());
 
     // mBusPPU.attach(&mPPU);
     // mBusPPU.mapPage(0x2000, 32-1, RWX::RW, mAPU.data());

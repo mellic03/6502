@@ -35,11 +35,12 @@ NesEmu::GamePak::GamePak( const std::string &path )
     mSize = stream.tellg();
 
     stream.seekg(0, std::ifstream::beg);
-    mData = new uint8_t[mSize];
-    stream.read(reinterpret_cast<char*>(mData), mSize);
+    mData = std::unique_ptr<uint8_t[]>(new uint8_t[mSize]);
+    mBase = mData.get();
+    stream.read(reinterpret_cast<char*>(mBase), mSize);
 
-    mFmt   = rdFmt(mData);
-    miNES  = new NesFile::iNES(mData, mSize);
+    mFmt   = rdFmt(mBase);
+    miNES  = new NesFile::iNES(mBase, mSize);
     mNES20 = nullptr;
 
     // mHead   = mData.get();
@@ -70,7 +71,7 @@ NesEmu::GamePak::GamePak( const std::string &path )
 
 uint8_t NesEmu::GamePak::rd( uint16_t addr )
 {
-    return 0;
+    return mBase[addr];
 }
 
 void NesEmu::GamePak::wt( uint16_t addr, uint8_t byte )

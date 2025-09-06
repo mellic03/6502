@@ -16,6 +16,7 @@
     ? = unknown, x = irrelevant, + = often set, U = unchanged
 */
 NesPPU::NesPPU()
+:   mTables(new NameTable[4])
 {
     mmio_write(Reg::PPUCTRL,    0b0000'0000);
     mmio_write(Reg::PPUMASK,    0b0000'0000);
