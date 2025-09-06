@@ -17,7 +17,7 @@ NesEmu::System::System()
     ubyte *apuMMIO = mAPU.data();
 
     mBusCPU.attach(&mCPU);
-    mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, cpuRAM);  // CPU --> CPU wRAM,  mirror 2K banks until to 0x1FFF
+    mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, cpuRAM);  // CPU --> CPU RAM, mirror every 2K
     mBusCPU.mapRange(0x2000, 0x3FFF, 0x08-1, ppuMMIO); // CPU --> PPU IO regs.
     mBusCPU.mapRange(0x4000, 0x401F, 0x001F, apuMMIO); // CPU --> NES APU and IO regs.
 
@@ -36,7 +36,7 @@ void NesEmu::System::LoadRAW( uint8_t *rom )
 void NesEmu::System::LoadROM( GamePak *gpak )
 {
     mGPak = gpak;
-    NesEmu::callMapper(gpak->mMapperNo, *this);
+    NesEmu::ExecuteMapper(gpak->mMapperNo, *this);
 
     mCPU.PC = (mBusCPU[0xFFFD] << 8) | mBusCPU[0xFFFC];
     printf("Reset vector: 0x%04X\n", mCPU.PC);

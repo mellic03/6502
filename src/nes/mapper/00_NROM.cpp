@@ -67,7 +67,7 @@ static void MapPpuBus( System &nes )
     // ----------------------------------------------
 
     // PPU --> ChrROM
-    bus.mapRange(0x0000, 0x1FFF, 0x1FFF, chrROM, RWX::R);
+    bus.mapRange(0x0000, 0x1FFF, 0xFFFF, chrROM, RWX::R);
 
     // // PPU --> ChrRAM
     // bus.mapRange(0x1000, 0x1FFF, 0x0FFF, chrRAM);
