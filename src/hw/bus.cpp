@@ -29,11 +29,11 @@ DataBus::DataBus()
     // mPageFuncs.push_back({nullptr, nullptr, nullptr, nullptr});
 }
 
-void DataBus::tick()
+void DataBus::tick( uint64_t dt )
 {
     for (HwDevice *dev: mDevices)
     {
-        dev->tick();
+        dev->tick(dt);
     }
 }
 

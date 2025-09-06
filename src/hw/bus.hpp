@@ -36,7 +36,7 @@ private:
 public:
     DataBus();
 
-    void tick();
+    void tick( uint64_t dt );
     void attach( HwDevice* );
 
     const uint8_t *getReadPtr( uint16_t addr );

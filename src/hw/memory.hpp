@@ -33,7 +33,7 @@ public:
     virtual void wt( uint16_t, uint8_t ) override;
     virtual void flash( uint8_t *src, size_t sz );
     virtual void flush();
-    virtual void tick() override;
+    virtual void tick( uint64_t dt ) override;
 };
 
 
@@ -44,7 +44,7 @@ class MemoryRO: public MemoryRW
 {
 public:
     using MemoryRW::MemoryRW;
-    virtual void tick() final {  };
+    virtual void tick( uint64_t dt ) final {  };
 };
 
 
@@ -56,5 +56,5 @@ class MemoryWO: public MemoryRW
 public:
     using MemoryRW::MemoryRW;
     virtual uint8_t rd( uint16_t ) final { return 0; };
-    virtual void tick() final {  };
+    virtual void tick( uint64_t dt ) final {  };
 };

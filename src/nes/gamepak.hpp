@@ -36,7 +36,7 @@ public:
 
     virtual uint8_t rd( uint16_t ) override;
     virtual void wt( uint16_t, uint8_t ) override;
-    virtual void tick() final {  };
+    virtual void tick( uint64_t dt ) final {  };
 
 };
 

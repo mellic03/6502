@@ -17,7 +17,6 @@ private:
     uint8_t mFront[mSize];
 
 public:
-
     uint8_t *data() { return &mBack[0]; }
     size_t   size() { return mSize; } 
 
@@ -37,7 +36,7 @@ public:
         mBack[i] = x;
     }
 
-    virtual void tick() override
+    virtual void tick( uint64_t dt ) override
     {
         memcpy(mFront, mBack, mSize);
     }
@@ -60,7 +59,7 @@ template <size_t mSize>
 class TMemoryRO: public TMemoryRW<mSize>
 {
 public:
-    virtual void tick() final {  };
+    virtual void tick( uint64_t dt ) final {  };
 };
 
 

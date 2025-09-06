@@ -27,7 +27,7 @@ void MemoryRW::flush()
     memcpy(mFront, mBack, mSize);
 }
 
-void MemoryRW::tick()
+void MemoryRW::tick( uint64_t dt )
 {
     flush();
 }

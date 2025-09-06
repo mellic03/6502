@@ -29,17 +29,53 @@ void HwMapper00_NROM::map( System &nes, GamePak *cart )
 {
     using namespace NesFile;
 
-    auto &bus = nes.mBusCPU;
-    auto *pak = nes.mGamePak;
+    auto &bus0 = nes.mBusCPU;
+    auto &bus1 = nes.mBusPPU;
+    auto &ppu  = nes.mPPU;
+    auto *pak  = nes.mGamePak;
 
     iNES *file  = pak->miNES;
     auto *pgrom = file->mPrgROM.data();
+    auto *chrom = file->mChrROM.data();
     auto &H     = file->mHead;
 
-    // CPU --> ROM,  First 16KB of ROM
-    bus.mapRange(0x8000, 0xBFFF, 0xBFFF-0x8000, RWX::RW, pgrom);
+    // CPU --> PRG ROM,  First 16KB of ROM
+    bus0.mapRange(0x8000, 0xBFFF, 0xBFFF-0x8000, RWX::RW, pgrom);
 
-    // CPU --> ROM,  Mirror of 8000-BFFF (NROM-128) or final 16KB of ROM (NROM-256)
-    if (H.prgsz==2) bus.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX::RW, pgrom + 0x4000);
-    else            bus.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX::RW, pgrom);
+    // CPU --> PRG ROM,  Mirror of 8000-BFFF (NROM-128) or final 16KB of ROM (NROM-256)
+    if (H.prgsz==2) bus0.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX::RW, pgrom + 0x4000);
+    else            bus0.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX::RW, pgrom);
+
+
+    /*
+        $0000-$0FFF	$1000	Pattern table 0	Cartridge
+        $1000-$1FFF	$1000	Pattern table 1	Cartridge
+        $2000-$23BF	$03c0	Nametable 0	Cartridge
+        $23C0-$23FF	$0040	Attribute table 0	Cartridge
+    */
+
+    // PPU --> CHR ROM
+    bus1.mapRange(0x0000, 0x0FFF, 0x0FFF-0x0000, RWX::R, chrom);
+
+    // | Addr      | Size | Desc        | Mapped By |
+    // | ----------|------|-------------|-----------|
+    // | 2000-23BF | 03C0 | NameTable 0 | Cartridge |
+    // | 23C0-23FF | 0040 | AttrTable 0 | Cartridge |
+    // | 2400-27BF | 03c0 | Nametable 1 | Cartridge |
+    // | 27C0-27FF | 0040 | AttrTable 1 | Cartridge |
+    // | 2800-2BBF | 03c0 | Nametable 2 | Cartridge |
+    // | 2BC0-2BFF | 0040 | AttrTable 2 | Cartridge |
+    // | 2C00-2FBF | 03c0 | Nametable 3 | Cartridge |
+    // | 2FC0-2FFF | 0040 | AttrTable 3 | Cartridge |
+    // ----------------------------------------------
+
+
+    // GET BACK TO THIS WHEN YOU RETURN BOYO
+    // bus1.mapRange(0x2000, 0x23FF, 0x03C0, RWX::RW, ppu.mNameTables[0]);
+    // bus1.mapRange(0x2400, 0x27FF, 1024-1, RWX::RW, ppu.mNameTables[1]);
+    // bus1.mapRange(0x2800, 0x2BFF, 1024-1, RWX::RW, ppu.mNameTables[1]);
+    // bus1.mapRange(0x2C00, 0x2FFF, 1024-1, RWX::RW, ppu.mNameTables[1]);
+
+    // starting at $2000 at the top left, $2400 at the top right,
+    // $2800 at the bottom left, and $2C00 at the bottom right.
 }

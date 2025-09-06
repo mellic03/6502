@@ -6,43 +6,32 @@
 #include "../rwx.hpp"
 
 
+template <typename EnumType>
 struct mmioDevice: public ioDevice
 {
 private:
     // struct mmio_entry_t { uint8_t val, rwx; };
-    uint8_t *mPage;
 
 public:
 
-    RegisterMMIO()
-    :   mPage(new uint8_t[256])
-    {
-        // static_assert((int)Tag::NumValues == (int)Rwx::NumValues);
-    }
-
-    virtual void tick() override
+    virtual void tick( uint64_t dt ) override
     {
 
     };
 
-    uint8_t *data()
-    {
-        return mPage;
-    }
-
-    uint8_t rdmmio( Tag tag )
+    uint8_t mmio_read( EnumType tag )
     {
         uint8_t idx = (uint8_t)tag;
         if (idx & RWX::R)
-            return mPage[idx];
+            return iobuf()[idx];
         return 0;
     }
 
-    void wtmmio( Tag tag, uint8_t value )
+    void mmio_write( EnumType tag, uint8_t value )
     {
         uint8_t idx = (uint8_t)tag;
         if (idx & RWX::W)
-            mPage[idx] = value;
+            iobuf()[idx] = value;
         return;
     }
 };

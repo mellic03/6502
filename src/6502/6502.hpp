@@ -3,8 +3,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "../hw/bus.hpp"
+#include "../hw/device.hpp"
 #include "../hw/tmemory.hpp"
-
 
 /**
  * - Break (B) Changes when SSR is pushed/popped. When pushed, it will
@@ -101,7 +101,7 @@ public:
 
     // cpu6502( iDataBus *bus );
     cpu6502();
-    virtual void tick() final;
+    virtual void tick( uint64_t dt ) final;
     
     union HwPins
     {

@@ -14,45 +14,43 @@ struct NesPPU_AttrTable
     uint8_t data[64];
 };
 
-
+// The NES has four logical nametables, arranged in a 2x2 pattern.
+// Each occupies a 1 KiB chunk of PPU address space, starting at $2000
+// at the top left, $2400 at the top right, $2800 at the bottom left,
+// and $2C00 at the bottom right.
 union NesPPU_NameTable
 {
     uint8_t data[1024];
     
-    struct {
-        uint8_t dat0[1024-64];
-        uint8_t attr[64];
-    };
 };
 
 
-// enum class NesPPU_Reg: uint8_t
-// {
-//     PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR,
-//     OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA,
-//     NumValues
-// };
-
-// static constexpr
-// uint8_t NesPPU_Acs[(uint8_t)NesPPU_Reg::NumValues] = {
-//     RWX::W,  RWX::W,   RWX::R,   RWX::W,
-//     RWX::RW, RWX::Wx2, RWX::Wx2, RWX::RW,
-// };
-
-
-
-class NesPPU: public HwDevice
+class NesPPU: public mmioDevice<NesPPU::Reg>
 {
 private:
-    uint8_t mPage[0x0100];
+    enum class Reg: uint8_t
+    {
+        PPUCTRL, PPUMASK,   PPUSTATUS, OAMADDR,
+        OAMDATA, PPUSCROLL, PPUADDR,   PPUDATA,
+        NumValues
+    };
+
+    static constexpr uint8_t RegRWX[int(Reg::NumValues)]
+    {
+        RWX::W,  RWX::W,   RWX::R,   RWX::W,
+        RWX::RW, RWX::Wx2, RWX::Wx2, RWX::RW,
+    };
 
 public:
+    uint8_t mNameTables[4][1024];
+
     NesPPU();
 
     virtual uint8_t rd( uint16_t ) final { return 0; };
     virtual void wt( uint16_t, uint8_t ) final {  };
-    virtual void tick() final;
+    virtual void tick( uint64_t dt ) final;
 };
+
 
 
 // struct MMapPPU {
@@ -72,6 +70,7 @@ public:
     chunk of PPU address space, starting at $2000 at the top left, $2400 at the top right,
     $2800 at the bottom left, and $2C00 at the bottom right. 
 */
+
 
 /*
     |Name      | Addr  | Bits                | Type |

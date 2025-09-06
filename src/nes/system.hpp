@@ -40,6 +40,7 @@ public:
     HwClock  mClock;
     MemRW2K  wRAM;
     MemRW2K  vRAM;
+
     DataBus  mBusCPU;
     DataBus  mBusPPU;
     cpu6502  mCPU;
