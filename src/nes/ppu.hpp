@@ -4,8 +4,8 @@
 #include "../hw/memory.hpp"
 #include "../hw/tmemory.hpp"
 #include "../hw/clock.hpp"
+#include "../rwx.hpp"
 #include "mmio.hpp"
-#include "rwx.hpp"
 
 
 
@@ -47,61 +47,40 @@
 // };
 
 
-template <size_t mNumRegs>
-struct NesMMIO
+enum class NesPPU_Reg: uint8_t
 {
-    struct mmio_entry_t { uint8_t val, rwx; };
-    mmio_entry_t mRegs[mNumRegs];
+    PPUCTRL,
+    PPUMASK,
+    PPUSTATUS,
+    OAMADDR,
+    OAMDATA,
+    PPUSCROLL,
+    PPUADDR,
+    PPUDATA,
+    NumValues
+};
 
-    void wt( uint8_t idx, uint8_t val )
-    {
-        if (mRegs[idx].rwx & RWX::W)
-            mRegs[idx].val = val;
-    }
+enum class NesPPU_Rwx: uint8_t
+{
+    RWX_PPUCTRL   = RWX::W,
+    RWX_PPUMASK   = RWX::W,
+    RWX_PPUSTATUS = RWX::R,
+    RWX_OAMADDR   = RWX::W,
+    RWX_OAMDATA   = RWX::RW,
+    RWX_PPUSCROLL = RWX::Wx2,
+    RWX_PPUADDR   = RWX::Wx2,
+    RWX_PPUDATA   = RWX::RW,
+    NumValues     = 8
 };
 
 
-class NesPPU: public ioDevice
+class NesPPU: public NesEmu::RegisterMMIO<NesPPU_Reg, NesPPU_Rwx>
 {
 private:
-    enum class regPPU: uint8_t {
-        REG_PPUCTRL,
-        REG_PPUMASK,
-        REG_PPUSTATUS,
-        REG_OAMADDR,
-        REG_OAMDATA,
-        REG_PPUSCROLL,
-        REG_PPUADDR,
-        REG_PPUDATA,
-        NumValues
-    };
-
-    enum class rwxPPU: uint8_t {
-        RWX_PPUCTRL   = RWX::W,
-        RWX_PPUMASK   = RWX::W,
-        RWX_PPUSTATUS = RWX::R,
-        RWX_OAMADDR   = RWX::W,
-        RWX_OAMDATA   = RWX::RW,
-        RWX_PPUSCROLL = RWX::Wx2,
-        RWX_PPUADDR   = RWX::Wx2,
-        RWX_PPUDATA   = RWX::RW,
-        NumValues     = 8
-    };
+    using Reg = NesPPU_Reg;
+    using Rwx = NesPPU_Rwx;
 
 public:
-    struct mmio_t 
-    {
-        uint8_t PPUCTRL;
-        uint8_t PPUMASK;
-        uint8_t PPUSTATUS;
-        uint8_t OAMADDR;
-        uint8_t OAMDATA;
-        uint8_t PPUSCROLL;
-        uint8_t PPUADDR;
-        uint8_t PPUDATA;
-        // uint8_t OAMDMA; 
-    };
-
     struct AttrTable
     {
         uint8_t data[64];
@@ -117,41 +96,12 @@ public:
         };
     };
 
-    
-    static constexpr uint8_t REG_R   = 0b00'01;
-    static constexpr uint8_t REG_W   = 0b00'10;
-    static constexpr uint8_t REG_RW  = 0b00'11;
+    // NesEmu::RegisterMMIO<Reg, Rwx> mRegs;
+    // uint8_t rd( Reg r ) { return mRegs.rd(r); };
+    // void    wt( Reg r, uint8_t v ) { mRegs.wt(r, v); };
 
-    static constexpr uint8_t REG_x2  = 0b01'00;
-    static constexpr uint8_t REG_Rx2 = REG_R  | REG_x2;
-    static constexpr uint8_t REG_Wx2 = REG_W  | REG_x2;
-
-    union
-    {
-        uint8_t mRegArray[8];
-
-        struct
-        {
-            uint8_t PPUCTRL;
-            uint8_t PPUMASK;
-            uint8_t PPUSTATUS;
-            uint8_t OAMADDR;
-            uint8_t OAMDATA;
-            uint8_t PPUSCROLL;
-            uint8_t PPUADDR;
-            uint8_t PPUDATA;
-        };
-    };
-
-    const uint8_t mRegAccess[8] = {
-        REG_W,  REG_W,   REG_R,   REG_W,
-        REG_RW, REG_Wx2, REG_Wx2, REG_RW,
-    };
-
-
-    NesPPU();
-    virtual uint8_t rd( uint16_t ) final;
-    virtual void wt( uint16_t, uint8_t ) final;
+    virtual uint8_t rd( uint16_t ) final { return 0; };
+    virtual void wt( uint16_t, uint8_t ) final {  };
     virtual void Tick() final;
 };
 

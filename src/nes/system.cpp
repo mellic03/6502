@@ -8,52 +8,19 @@
 
 NesEmu::System::System()
 {
-    static constexpr auto AAA = 0x4000/256;
-    static constexpr auto CCC = 0x4017/256;
-
-    static constexpr auto DAA = 0x4017;
-    static constexpr auto DCC = 0x2000/256;
-
-    using iBD = iBusDevice;
-    using Sys = System;
-    using u08 = uint8_t;
-    using u16 = uint16_t;
-
     mBusCPU.attach(&mCPU);
 
-    mBusCPU.map(&wRAM, 0x0000, 0x1FFF, // CPU --> CPU working RAM.
-        DC_FUNC(         return addr % 2048;    ),
-        RD_FUNC(MemRW2K, return dev->rd(addr);  ),
-        WT_FUNC(MemRW2K, dev->wt(addr, byte);   )
-    );
+    // CPU --> CPU wRAM,  2KB mirrored to 0x1FFF
+    mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, RWX::RW, wRAM.data());
 
-    mBusCPU.map(&mPPU, 0x2000, 0x3FFF, // CPU --> PPU mmio registers.
-        DC_FUNC(        return 0x2000 + (addr % 8); ),
-        RD_FUNC(NesPPU, return dev->rd(addr);  ),
-        WT_FUNC(NesPPU, dev->wt(addr, byte);  )
-    );
+    // CPU --> PPU mmio registers.
+    mBusCPU.mapRange(0x2000, 0x4000, 8-1, RWX::RW, mPPU.data());
 
-    mBusCPU.map(&mAPU, 0x4000, 0x4017, // CPU --> NES APU and IO registers.
-        DC_FUNC(        return 0x4000 + (addr % 0x18);  ),
-        RD_FUNC(NesAPU, return dev->mTestMem[addr];     ),
-        WT_FUNC(NesAPU, dev->mTestMem[addr] = byte;     )
-    );
+    // CPU --> NES APU and IO registers.
+    mBusCPU.mapPage(0x4000, 32-1, RWX::RW, mAPU.data());
 
-    // [0x4020, 0xFFFF] --> Up to mapper.
-    //     [0x6000, 0x7FFF] --> Usually GamePak RAM, when present. 
-    //     [0x8000, 0xFFFF] --> Usually GamePak ROM and mapper registers.
-
-    mBusPPU.attach(&mPPU);
-
-    // mBusPPU.map(&XXXXXX, 0x2000, 0x2FFF, // PPU --> XXXXXX
-    //     DC_FUNC(        return 0x2000 + (addr % 0x08);  ),
-    //     RD_FUNC(XXXXXX, return 0;       ),
-    //     WT_FUNC(XXXXXX, byte = byte;    )
-    // );
-
-    mCPU.rdbus = [=](uint16_t x) { return mBusCPU.read(x); };
-    mCPU.wtbus = [=](uint16_t x, uint8_t v) { mBusCPU.write(x, v); };
-
+    // mBusPPU.attach(&mPPU);
+    // mBusPPU.mapPage(0x2000, 32-1, RWX::RW, mAPU.data());
 }
 
 

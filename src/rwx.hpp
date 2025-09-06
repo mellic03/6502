@@ -4,6 +4,7 @@
 struct RWX
 {
     enum {
+        Z   = 0b000,
         R   = 0b001,
         W   = 0b010,
         RW  = 0b011,

@@ -19,21 +19,21 @@ namespace NesEmu
     [](uint16_t addr) -> uint16_t { Content }
 
 #define RD_FUNC(Tp, Content) \
-    [](iBusDevice *ibd, uint16_t addr) -> uint8_t \
+    [](HwDevice *ibd, uint16_t addr) -> uint8_t \
     {\
         Tp *dev = static_cast<Tp*>(ibd);\
         Content\
     }
 
 #define WT_FUNC(Tp, Content) \
-    [](iBusDevice *ibd, uint16_t addr, uint8_t byte) \
+    [](HwDevice *ibd, uint16_t addr, uint8_t byte) \
     {\
         Tp *dev = static_cast<Tp*>(ibd);\
         Content\
     }
 
 
-class NesEmu::System: public iBusDevice
+class NesEmu::System: public HwDevice
 {
 public:
     MemRW2K  wRAM;

@@ -63,10 +63,11 @@ Byte    |   Contents
 */
 struct NesFile::iNES: public NesFile::Base
 {
-    struct FileHeader {
+    struct FileHead
+    {
         char    signature[4];
-        uint8_t prgNo16kBanks; // size of PRG ROM in 16 KB units
-        uint8_t chrNo8kBanks;  // Board uses CHR RAM if zero.
+        uint8_t prgsz; // size of PRG ROM in 16 KB units
+        uint8_t chrsz; // Board uses CHR RAM if zero.
 
         union {
             uint8_t flags6;
@@ -144,8 +145,9 @@ struct NesFile::iNES: public NesFile::Base
     
         FileInfo( uint8_t *data, size_t size );
     } __attribute__((packed));
-    FileInfo mInfo;
 
+    FileInfo mInfo;
+    FileHead mHead;
     MemoryRO mPrgROM;
     MemoryRO mChrROM;
 

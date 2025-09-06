@@ -66,23 +66,11 @@ struct cpu6502RegisterSSR
 
 
 // https://www.nesdev.org/wiki/CPU_power_up_state
-struct cpu6502: public iBusDevice
+struct cpu6502: public HwDevice
 {
 public:
-    std::function<uint8_t(uint16_t)>       rdbus = [](uint16_t) { return 0; };
-    std::function<void(uint16_t, uint8_t)> wtbus = [](uint16_t, uint8_t) {  };
-
-    // uint8_t rdbus( uint16_t addr )
-    // {
-    //     if (!mBus) return 0;
-    //     return mBus->read(addr);
-    // }
-
-    // void wtbus( uint16_t addr, uint8_t byte )
-    // {
-    //     if (!mBus) return;
-    //     mBus->write(addr, byte);
-    // }
+    // std::function<uint8_t(uint16_t)>       rdbus = [](uint16_t) { return 0; };
+    // std::function<void(uint16_t, uint8_t)> wtbus = [](uint16_t, uint8_t) {  };
 
     DataBus *mBus;
     uint8_t  mInvalidOp;

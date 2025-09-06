@@ -8,7 +8,7 @@
 /**
  * Read/write memory.
  */
-class ioDevice: public iBusDevice
+class ioDevice: public HwDevice
 {
 public:
     virtual uint8_t rd( uint16_t addr ) = 0;
@@ -38,7 +38,8 @@ public:
         mFront = new uint8_t[sz];
     }
 
-    size_t size() { return mSize; }
+    uint8_t *data() { return mBack; }
+    size_t   size() { return mSize; }
 
     virtual uint8_t rd( uint16_t ) override;
     virtual void wt( uint16_t, uint8_t ) override;

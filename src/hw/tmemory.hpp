@@ -10,13 +10,17 @@
  * Read/write memory.
  */
 template <size_t mSize>
-class TMemoryRW: public iBusDevice
+class TMemoryRW: public HwDevice
 {
 private:
     uint8_t mBack[mSize];
     uint8_t mFront[mSize];
 
 public:
+
+    uint8_t *data() { return &mBack[0]; }
+    size_t   size() { return mSize; } 
+
     virtual uint8_t rd( uint16_t i )
     {
         if (!(i < mSize))
