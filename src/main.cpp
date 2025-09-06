@@ -33,7 +33,6 @@ int main( int argc, char **argv )
     uint64_t tprev = tcurr;
     uint64_t tdiff = 0;
     uint64_t accum = 0;
-
     
     NesEmu::System *nes = new NesEmu::System();
     nes->LoadROM(&gpak);

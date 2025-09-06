@@ -2,7 +2,7 @@
 using namespace NesEmu;
 
 
-void HwMapper02_UxROM::map( System &nes, GamePak *cart )
+void HwMapper02_UxROM( System &nes )
 {
 
 }

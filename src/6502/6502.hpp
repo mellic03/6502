@@ -70,7 +70,7 @@ struct cpu6502: public HwDevice
 {
 public:
     DataBus   *mBus;
-    Memory2kRW wRAM;
+    Memory2kRW mRAM;
 
     uint8_t  mInvalidOp;
     uint8_t  mCurrOp;
@@ -101,7 +101,9 @@ public:
     // cpu6502( iDataBus *bus );
     cpu6502();
     virtual void tick( uint64_t dt ) final;
-    
+    ubyte rdbus( uint16_t i ) { return busRead(i); }
+    void  wtbus( uint16_t i, ubyte v ) { busWrite(i, v); };
+
     union HwPins
     {
         uint8_t byte;
@@ -156,8 +158,6 @@ private:
     // -----------------------------------------------------------------------------------------
 
     // -----------------------------------------------------------------------------------------
-    ubyte rdbus( uint16_t i ) { return busRead(i); }
-    void  wtbus( uint16_t i, ubyte v ) { busWrite(i, v); };
 
     uint8_t _N( uint16_t );
     uint8_t _NZ( uint16_t );

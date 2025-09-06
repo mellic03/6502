@@ -19,19 +19,19 @@ void HwDevice::busWrite( uint16_t i, ubyte v )
 ubyte &ioDevice::operator[]( uint16_t i )
 {
     assert(i < mSize);
-    return mData[i];
+    return mBytes[i];
 }
 
 
 ubyte ioDevice::ioRead( uint16_t i )
 {
     assert(i < mSize);
-    return mData[i];
+    return mBytes[i];
 }
 
 void ioDevice:: ioWrite( uint16_t i, ubyte v )
 {
     assert(i < mSize);
-    mData[i] = v;
+    mBytes[i] = v;
 }
 

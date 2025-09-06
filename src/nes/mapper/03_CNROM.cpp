@@ -2,7 +2,7 @@
 using namespace NesEmu;
 
 
-void HwMapper03_CNROM::map( System &nes, GamePak *cart )
+void HwMapper03_CNROM( System &nes )
 {
 
 }

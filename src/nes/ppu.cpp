@@ -17,8 +17,8 @@
 */
 NesPPU::NesPPU()
 {
-    mNameTables = (NameTable*)(&mRAM[0]);
-    mRegMMIO    = (RegisterMMIO*)(&mMMIO[0]);
+    mNameTables = (NameTable*)(mRAM.data());
+    mRegMMIO    = (RegisterMMIO*)(mMMIO.data());
 
     // mmioWrite(Reg::PPUCTRL,    0b0000'0000);
     // mmioWrite(Reg::PPUMASK,    0b0000'0000);

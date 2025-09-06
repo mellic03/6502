@@ -107,22 +107,22 @@ uint8_t *DataBus::getWritePtr( uint16_t addr )
 }
 
 
-void DataBus::mapPage( uint16_t addr, uint16_t mask, uint8_t rwx, void *page )
+void DataBus::mapPage( uint16_t addr, uint16_t mask, void *page, uint8_t rwx )
 {
     auto &entry = mPageTables[addr >> 8];
     ErrAssert(!entry.in_use, "Cannot map page at 0x%04X: page already mapped\n", addr);
-    entry = PageTableEntry(addr, mask, rwx, (uint8_t*)page);
+    entry = PageTableEntry(addr, mask, (uint8_t*)page, rwx);
 }
 
 
-void DataBus::mapRange( uint16_t base, uint16_t end, uint16_t mask, uint8_t rwx, void *pages )
+void DataBus::mapRange( uint16_t base, uint16_t end, uint16_t mask, void *pages, uint8_t rwx )
 {
     assert(base % 256 == 0);
     uint8_t *pMem = (uint8_t*)pages;
 
     for (size_t addr=base; addr<end; addr+=256)
     {
-        mapPage(addr, mask, rwx, pMem);
+        mapPage(addr, mask, pMem, rwx);
         pMem += 256;
     }
 }

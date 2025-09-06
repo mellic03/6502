@@ -9,23 +9,24 @@
 NesEmu::System::System()
 :   mClock(1'790'000)
 {
-    auto &wRAM  = mCPU.wRAM;
-    auto &vRAM  = mPPU.vRAM;
-    auto &vMMIO = mPPU.vMMIO;
+    ubyte *cpuRAM  = mCPU.mRAM.data<ubyte>();
+    ubyte *ppuRAM  = mPPU.mRAM.data<ubyte>();
+    ubyte *ppuMMIO = mPPU.mMMIO.data<ubyte>();
+    ubyte *apuMMIO = mAPU.data<ubyte>();
 
     mBusCPU.attach(&mCPU);
 
-    // CPU --> CPU wRAM,  2KB mirrored to 0x1FFF
-    mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, RWX::RW, &wRAM[0]);
+    // CPU --> CPU wRAM,  mirror 2K banks until to 0x1FFF
+    mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, cpuRAM);
 
     // CPU --> PPU mmio registers.
-    mBusCPU.mapRange(0x2000, 0x4000, 8-1, RWX::RW, &vRAM[0]);
+    mBusCPU.mapRange(0x2000, 0x4000, 8-1, ppuMMIO);
 
     // CPU --> NES APU and IO registers.
-    // mBusCPU.mapPage(0x4000, 32-1, RWX::RW, mAPU.data());
+    mBusCPU.mapPage(0x4000, 32-1, apuMMIO);
 
-    // mBusPPU.attach(&mPPU);
-    // mBusPPU.mapPage(0x2000, 32-1, RWX::RW, mAPU.data());
+    mBusPPU.attach(&mPPU);
+    mBusPPU.mapPage(0x2000, 32-1, mAPU.data(), RWX::RW);
 }
 
 
@@ -38,9 +39,9 @@ void NesEmu::System::LoadRAW( uint8_t *rom )
 void NesEmu::System::LoadROM( GamePak *gpak )
 {
     mGPak = gpak;
-    NesEmu::getMapper(gpak->miNES->mInfo.mapperNo)->map(*this, gpak);
+    NesEmu::callHwMapper(gpak->mMapperNo, *this);
 
-    mCPU.PC = ((uint16_t)mBusCPU.read(0xFFFD) << 8) | mBusCPU.read(0xFFFC);
+    mCPU.PC = (mBusCPU[0xFFFD] << 8) | mBusCPU[0xFFFC];
     printf("Reset vector: 0x%04X\n", mCPU.PC);
 }
 

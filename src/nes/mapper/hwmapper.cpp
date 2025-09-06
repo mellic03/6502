@@ -1,27 +1,23 @@
 #include "hwmapper.hpp"
 #include <cassert>
 
+using namespace NesEmu;
+using HwMapperFunc = void (*)(NesEmu::System&);
 
-static NesEmu::HwMapper **InitHwMappers()
+static HwMapperFunc HwMapTable[]
 {
-    using namespace NesEmu;
-    using Fmt = NesEmu::GamePak::Fmt;
-
-    auto **ftab = new HwMapper*[Fmt::NumFmt];
-    ftab[Fmt::iNES]  = new HwMapper00_NROM();
-    ftab[Fmt::NES20] = new HwMapper01_MMC1();
-    ftab[Fmt::OTHER] = new HwMapper02_UxROM();
-    return ftab;
-}
-static NesEmu::HwMapper **HwMapTable = InitHwMappers();
+    HwMapper00_NROM,
+    HwMapper01_MMC1,
+    HwMapper02_UxROM,
+    HwMapper03_CNROM
+};
 
 
-
-NesEmu::HwMapper *NesEmu::getMapper( int idx )
+void NesEmu::callHwMapper( int idx, NesEmu::System &nes )
 {
     using Fmt = NesEmu::GamePak::Fmt;
-    assert(0<=idx && idx<=Fmt::NumFmt);
-    return HwMapTable[idx];
+    assert(0<=idx && idx<=3);
+    (HwMapTable[idx])(nes);
 }
 
 

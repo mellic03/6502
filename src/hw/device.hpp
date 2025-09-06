@@ -1,7 +1,6 @@
 #pragma once
 
 #include "bus.hpp"
-using ubyte = uint8_t;
 
 class DataBus;
 
@@ -21,13 +20,23 @@ public:
 class ioDevice
 {
 protected:
-    ubyte   *mData;
-    uint16_t mSize;
+    union {
+        void  *mData;
+        ubyte *mBytes;
+    };
+    size_t mSize;
 
 public:
-    ioDevice(void *p, uint16_t s): mData((uint8_t*)p), mSize(s) {  };
+    template <typename T>
+    ioDevice(T *p): mData(p), mSize(sizeof(T)) {  };
+    ioDevice(void *p, uint16_t s): mData(p), mSize(s) {  };
     ioDevice(): ioDevice(nullptr, 0) {  };
-    ubyte *data() { return mData; };
+
+    template <typename T>
+    T *data() { return static_cast<T*>(mData); }
+
+    void  *data() { return mData; };
+    size_t size() { return mSize; };
     ubyte &operator[](uint16_t i);
 
     virtual ubyte ioRead( uint16_t );

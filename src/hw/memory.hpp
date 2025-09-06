@@ -11,8 +11,8 @@
 class MemoryRW: public ioDevice
 {
 public:
-    MemoryRW(void *p, uint16_t s): ioDevice(p, s) {  };
     MemoryRW(): MemoryRW(nullptr, 0) {  };
+    MemoryRW(void *p, uint16_t s): ioDevice(p, s) {  };
 };
 
 
@@ -24,7 +24,7 @@ class MemoryRO: public MemoryRW
 public:
     using MemoryRW::MemoryRW;
     virtual void ioWrite(uint16_t, ubyte) final;
-    ubyte operator[](uint16_t i) { return mData[i]; }
+    ubyte operator[](uint16_t i) { return mBytes[i]; }
 };
 
 

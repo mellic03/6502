@@ -24,7 +24,8 @@ static uint8_t rdFmt( uint8_t *rom )
 NesEmu::GamePak::GamePak( const std::string &path )
 :   ioDevice(nullptr, 0),
     mPrgROM(nullptr, 0),
-    mChrROM(nullptr, 0)
+    mChrROM(nullptr, 0),
+    mChrRAM(nullptr, 0)
 {
     std::ifstream stream(path, std::ifstream::binary);
 
@@ -41,12 +42,37 @@ NesEmu::GamePak::GamePak( const std::string &path )
     mData = new uint8_t[mSize];
     stream.read((char*)mData, mSize);
 
-    mFmt   = rdFmt(mData);
-    miNES  = new NesFile::iNES(mData, mSize);
-    mNES20 = nullptr;
+    auto &H = *data<iNES_File>();
+    mMapperNo = (uint8_t(H.MapperHi4) << 4) | H.MapperLo4;
+    mFile     = data<iNES_File>();
 
-    mPrgROM = MemoryRO(mData + miNES->prgOff, miNES->prgSz);
-    mChrROM = MemoryRO(mData + miNES->chrOff, miNES->chrSz);
+    uint8_t *cursor = data<uint8_t>() + 0x10;
+    cursor += (H.f6Trainer512byte == 1) ? 512 : 0;
+
+    mPrgROM = MemoryRO(cursor, 16*1024 * H.prgRomSz);
+    cursor += mPrgROM.size();
+
+    mChrROM = MemoryRO(cursor, 8*1024 * H.chrRomSz);
+    cursor += mChrROM.size();
+
+    mChrRAM = MemoryRW(cursor, 8*1024 * ((H.chrRamSz==0) ? 1 : H.chrRamSz));
+    cursor += mChrRAM.size();
+
+    printf("iNES::iNES\n");
+    printf("--------------------------------------------\n");
+    printf("prgsz            %lu\n", mPrgROM.size());
+    printf("chrsz            %lu\n", mChrROM.size());
+    printf("mapper           %u\n",  mMapperNo);
+
+    printf("mirroringMode    %u\n", H.f6MirroringMode);
+    printf("batteryBackedRAM %u\n", H.f6BatteryBackedRAM);
+    printf("trainer512byte   %u\n", H.f6Trainer512byte);
+    printf("fourScreenVRAM   %u\n", H.f6FourScreenVRAM);
+
+    printf("chrRamSz         %lu\n", mChrRAM.size());
+    printf("isPAL            %u\n",  H.f9IsPAL);
+    printf("--------------------------------------------\n\n");
+
 }
 
 

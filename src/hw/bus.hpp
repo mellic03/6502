@@ -6,8 +6,13 @@
 #include <vector>
 #include <functional>
 
+using ubyte = uint8_t;
+using uword = uint16_t;
+using MemoryPage = uint8_t[256];
+
 #include "device.hpp"
 #include "../rwx.hpp"
+
 
 class HwDevice;
 
@@ -26,8 +31,8 @@ private:
         PageTableEntry()
         :   page(nullptr), base(0x0000), mask(0x0000), rwx(0), in_use(10) {  }
 
-        PageTableEntry( uint8_t b, uint8_t m, uint8_t r, uint8_t *p )
-        :   page(p), base(b), mask(m), rwx(r), in_use(1) {  }
+        PageTableEntry( uint8_t bse, uint8_t msk, uint8_t *pge, uint8_t rxwx )
+        :   page(pge), base(bse), mask(msk), rwx(rxwx), in_use(1) {  }
     };
 
     std::set<HwDevice*> mDevices;
@@ -39,14 +44,16 @@ public:
     void tick( uint64_t dt );
     void attach( HwDevice* );
 
-    const uint8_t *getReadPtr( uint16_t addr );
-    uint8_t *getWritePtr( uint16_t addr );
+    const ubyte *getReadPtr( uword addr );
+    ubyte *getWritePtr( uword addr );
 
-    void     mapPage( uint16_t addr, uint16_t mask, uint8_t rwx, void *page );
-    void     mapRange( uint16_t addr, uint16_t end, uint16_t mask, uint8_t rwx, void *pages );
+    void mapPage( uword addr, uword mask, void *page, ubyte rwx=RWX::RW );
+    void mapRange( uword addr, uword end, uword mask, void *pages, ubyte rwx=RWX::RW );
 
-    uint8_t  read( uint16_t addr );
-    void     write( uint16_t addr, uint8_t byte );
+    ubyte read( uword );
+    void  write( uword, ubyte );
+    uword operator[](uint16_t i) { return (uword)read(i); };
+
 };
 
 
