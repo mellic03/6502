@@ -151,7 +151,8 @@ void MOS6502::InstrBEQ()
 
 void MOS6502::InstrBIT()
 {
-    MOS_6502::RegSSR tmp = {rdbus(mOpAddr)};
+    using namespace MOS_6502;
+    RegSSR tmp = { rdbus(mOpAddr) };
     SSR.N = tmp.N;
     SSR.V = tmp.V;
 }
