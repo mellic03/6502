@@ -7,10 +7,10 @@ void MOS6502::InstrUnimp()
 
 /*
     Carry Flag:
-        - When addition result is 0 to 255, C=0.
-        - When addition result is greater than 255, C=1.
-        - When subtraction result is 0 to 255, C=1.
-        - When subtraction result is less than 0, C=0.
+        - C=0 when addition result is 0 to 255.
+        - C=1 when addition result is greater than 255.
+        - C=1 when subtraction result is 0 to 255.
+        - C=0 when subtraction result is less than 0.
 */
 uint8_t MOS6502::_N(uint16_t x)
 {
@@ -32,27 +32,40 @@ uint8_t MOS6502::_NZC(uint16_t x)
 
 uint8_t MOS6502::_NVZC(uint16_t x, uint8_t a, uint8_t b)
 {
-    SSR.V = ((a ^ x) & (b ^ x) & 0x80) ? 1 : 0;
+    SSR.V = ((~(a^b)) & (a^x)) & 0x80;
     return _NZC(x);
 }
 
-#define SET_NZ(x, a, op, b)                    \
-    uint16_t Tmp = uint16_t(a) op uint16_t(b); \
-    SSR.N = (Tmp & (1 << 7)) ? 1 : 0;          \
-    SSR.Z = (Tmp == 0) ? 1 : 0;
 
-#define SET_NZC(x, a, op, b)                   \
-    uint16_t Tmp = uint16_t(a) op uint16_t(b); \
-    SSR.N = (Tmp & (1 << 7)) ? 1 : 0;          \
-    SSR.Z = (Tmp == 0) ? 1 : 0;                \
-    SSR.C = (Tmp & (1 << 8)) ? 1 : 0;
+template <typename T, typename U>
+T &cast_assign( T &a, U b ) { a=T(b); return a; }
 
-#define SET_NVZC(x, a, op, b)                       \
-    uint16_t Tmp = uint16_t(a) op uint16_t(b);      \
-    SSR.N = (Tmp & (1 << 7)) ? 1 : 0;               \
-    SSR.V = ((a ^ Tmp) & (b ^ Tmp) & 0x80) ? 1 : 0; \
-    SSR.Z = (Tmp == 0) ? 1 : 0;                     \
-    SSR.C = (Tmp & (1 << 8)) ? 1 : 0;
+#define SET_NZ(Dst, a, op, b)       \
+    int32_t ValA = int32_t(a);      \
+    int32_t ValB = int32_t(b);      \
+    int32_t AopB = ValA op ValB;    \
+    SSR.N = AopB < 0;               \
+    SSR.Z = AopB == 0;              \
+    Dst = cast_assign(Dst, AopB);
+
+#define SET_NZC(Dst, a, op, b)          \
+    int32_t ValA = int32_t(a);          \
+    int32_t ValB = int32_t(b);          \
+    int32_t AopB = ValA op ValB;        \
+    SSR.N = AopB < 0;                   \
+    SSR.Z = AopB == 0;                  \
+    SSR.C = (AopB & (1 << 8)) ? 1 : 0;  \
+    Dst = cast_assign(Dst, AopB);
+
+#define SET_NVZC(Dst, a, op, b)         \
+    int32_t ValA = int32_t(a);          \
+    int32_t ValB = int32_t(b);          \
+    int32_t AopB = ValA op ValB;        \
+    SSR.N = AopB < 0;                   \
+    SSR.V = !(-128<=AopB && AopB<=127); \
+    SSR.Z = AopB == 0;                  \
+    SSR.C = (AopB & (1 << 8)) ? 1 : 0;  \
+    Dst = cast_assign(Dst, AopB);
 
 void MOS6502::_IntPush()
 {
@@ -74,10 +87,7 @@ void MOS6502::_InstrNMI()
 {
     _IntPush();
     SSR.B = 0;
-
-    uint16_t lo = rdbus(0xFFFE);
-    uint16_t hi = rdbus(0xFFFF);
-    PC = (hi << 8) | lo;
+    _IntJump(0xFFFA);
 }
 
 void MOS6502::_InstrIRQ()
@@ -88,18 +98,12 @@ void MOS6502::_InstrIRQ()
     }
 
     _IntPush();
-    _IntJump(0xFFFA);
+    _IntJump(0xFFFE);
 }
 
 void MOS6502::_InstrADC(uint8_t b)
 {
-    static constexpr uint16_t BIT_7 = (1 << 7);
-    static constexpr uint16_t BIT_8 = (1 << 8);
-
-    uint16_t a = (uint16_t)AC;
-    // uint16_t x = a + b + SSR.C;
-    SET_NVZC(AC, a, +, b);
-    // AC = _NVZC(x, a, b);
+    SET_NVZC(AC, AC, +, b);
 }
 
 void MOS6502::InstrADC()
@@ -109,8 +113,8 @@ void MOS6502::InstrADC()
 
 void MOS6502::InstrAND()
 {
-    uint16_t x = AC & rdbus(mOpAddr);
-    AC = _NZ(x);
+    // uint16_t x = AC & rdbus(mOpAddr);
+    SET_NZ(AC, AC, &, rdbus(mOpAddr));
 }
 
 void MOS6502::InstrASL()
@@ -118,7 +122,7 @@ void MOS6502::InstrASL()
     if (mOpAC)
     {
         uint16_t x = (uint16_t)AC;
-        AC = _NZC(x << 1);
+        SET_NZC(AC, AC, <<, 1);
     }
     else
     {
@@ -214,8 +218,9 @@ void MOS6502::InstrCPY()
 
 void MOS6502::InstrDEC()
 {
-    uint16_t x = (uint16_t)rdbus(mOpAddr) - 1;
-    wtbus(mOpAddr, _NZ(x));
+    ubyte res = 0;
+    SET_NZ(res, rdbus(mOpAddr), -, 1);
+    wtbus(mOpAddr, res);
 }
 
 void MOS6502::InstrDEX()
@@ -384,9 +389,9 @@ void MOS6502::InstrRTS()
 
 void MOS6502::InstrSBC()
 {
-    uint8_t onecomp = ~(rdbus(mOpAddr));
-    uint8_t twocomp = onecomp + 1;
-    _InstrADC(twocomp);
+    uint8_t onecomp = ~rdbus(mOpAddr);
+    // uint8_t twocomp = onecomp + 1;
+    _InstrADC(onecomp);
 }
 
 void MOS6502::InstrSEC() { SSR.C = 1; }
