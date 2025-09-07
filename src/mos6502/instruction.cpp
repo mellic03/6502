@@ -159,20 +159,17 @@ void MOS6502::InstrBIT()
 
 void MOS6502::InstrBMI()
 {
-    if (SSR.N == 1)
-        PC = mOpAddr;
+    if (SSR.N == 1) PC = mOpAddr;
 }
 
 void MOS6502::InstrBNE()
 {
-    if (SSR.Z == 0)
-        PC = mOpAddr;
+    if (SSR.Z == 0) PC = mOpAddr;
 }
 
 void MOS6502::InstrBPL()
 {
-    if (SSR.N == 0)
-        PC = mOpAddr;
+    if (SSR.N == 0) PC = mOpAddr;
 }
 
 // BRK not affected by I
@@ -184,14 +181,12 @@ void MOS6502::InstrBRK()
 
 void MOS6502::InstrBVC()
 {
-    if (SSR.V == 0)
-        PC = mOpAddr;
+    if (SSR.V == 0) PC = mOpAddr;
 }
 
 void MOS6502::InstrBVS()
 {
-    if (SSR.V == 1)
-        PC = mOpAddr;
+    if (SSR.V == 1) PC = mOpAddr;
 }
 
 void MOS6502::InstrCLC() { SSR.C = 0; }
@@ -201,20 +196,20 @@ void MOS6502::InstrCLV() { SSR.V = 0; }
 
 void MOS6502::InstrCMP()
 {
-    uint16_t x = (uint16_t)AC - rdbus(mOpAddr);
-    _NZC(x);
+    ubyte x = 0;
+    SET_NZC(x, AC, -, rdbus(mOpAddr));
 }
 
 void MOS6502::InstrCPX()
 {
-    uint16_t x = (uint16_t)XR - rdbus(mOpAddr);
-    _NZC(x);
+    ubyte x = 0;
+    SET_NZC(x, XR, -, rdbus(mOpAddr));
 }
 
 void MOS6502::InstrCPY()
 {
-    uint16_t x = (uint16_t)YR - rdbus(mOpAddr);
-    _NZC(x);
+    ubyte x = 0;
+    SET_NZC(x, YR, -, rdbus(mOpAddr));
 }
 
 void MOS6502::InstrDEC()
