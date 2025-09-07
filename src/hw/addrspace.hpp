@@ -1,34 +1,41 @@
 #pragma once
+
 #include "../types.hpp"
+#include <set>
+
 
 namespace Emu
 {
     struct Page;
+    class AddrSpace;
+    class HwModule;
 }
+
 
 struct Emu::Page
 {
     uint8_t *page; // page base pointer.
     uint16_t base; // base address of mapping. Eg 0x2000-0x2FFF -> base=0x2000.
     uint16_t mask; // wrap-around mask, generally size-1 unless mirroring. Eg 8-1 == addr%8
-
     Page(void *p, uword b, uword m): page((ubyte*)p), base(b), mask(m) {  };
     Page(): Page(nullptr, 0, 0) {  };
-
     uint8_t &operator[](int i) { return page[i]; }
 };
 
 
-class AddrSpace
+class Emu::AddrSpace
 {
 private:
     static constexpr size_t PAGE_SIZE = 0x0100;
+    std::set<HwModule*> mHwModules;
 
 public:
     Emu::Page mRdPages[0x0100];
     Emu::Page mWtPages[0x0100];
 
     AddrSpace();
+    void tick();
+    void attach(HwModule*);
 
     ubyte read( uint16_t );
     void write( uint16_t, uint8_t );

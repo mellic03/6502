@@ -1,7 +1,8 @@
 #include "addrspace.hpp"
+#include "hwmodule.hpp"
 #include <memory>
 
-using EADS = AddrSpace;
+using EADS = Emu::AddrSpace;
 
 
 EADS::AddrSpace()
@@ -11,6 +12,21 @@ EADS::AddrSpace()
     mapWtRange(0x0000, 0xFFFF, 0xFFFF, dummy.get());
 
     sizeof(Emu::Page);
+}
+
+
+void EADS::tick()
+{
+    for (HwModule *hw: mHwModules)
+    {
+        hw->tick();
+    }
+}
+
+
+void EADS::attach( Emu::HwModule *hw )
+{
+    mHwModules.insert(hw);
 }
 
 

@@ -1,9 +1,14 @@
 #include "apu.hpp"
 
 
-NesAPU::NesAPU()
-:   ioDevice(new MemoryPage())
+void NesAPU::tick()
 {
-    mMMIO = data<ApuMMIO>();
+
+}
+
+
+void NesAPU::reset()
+{
+
 }
 
