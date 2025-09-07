@@ -6,7 +6,7 @@ namespace MOS_6502
 {
     union RegPC;
     union RegSSR;
-    union SignalPins;
+    union SigPins;
 }
 
 
@@ -36,7 +36,7 @@ union MOS_6502::RegSSR
 }; // 0b00100100
 
 
-union MOS_6502::SignalPins
+union MOS_6502::SigPins
 {
     ubyte byte;
     struct {

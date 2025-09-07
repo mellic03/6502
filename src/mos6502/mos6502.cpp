@@ -25,7 +25,7 @@ void MOS6502::_execute()
     (this->*mCurrInstr.fA)();
 
     printf("%04X\t", (mOpAC) ? AC : mOpAddr);
-    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X ", AC, XR, YR, SSR_byte, SP);
+    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X ", AC, XR, YR, SSR.byte, SP);
     printf("PPU: %u,%u CYC:%lu\n", 0, 0, mCycles );
 
     (this->*mCurrInstr.fE)();
@@ -55,38 +55,38 @@ void MOS6502::_execute()
 
     
 
-void MOS6502::tick( uint64_t dt )
+void MOS6502::tick()
 {
     if (mInvalidOp)
     {
         return;
     }
 
-    if (m_pins.nmi != m_pins_prev.nmi)
+    if (mSigCurr.nmi != mSigPrev.nmi)
     {
-        m_pins.nmi = m_pins_prev.nmi;
-        m_wai = false;
+        mSigCurr.nmi = mSigPrev.nmi;
+        mSigCurr.wai = 0;
         _InstrNMI();
     }
 
-    if (m_pins.res == 0)
+    if (mSigCurr.res == 0)
     {
-        m_pins.res = 1;
-        m_wai = false;
+        mSigCurr.res = 1;
+        mSigCurr.wai = 0;
         _InstrRES();
         return;
     }
 
-    if (m_pins.irq == 0)
+    if (mSigCurr.irq == 0)
     {
-        m_pins.irq = 1;
-        m_wai = false;
+        mSigCurr.irq = 1;
+        mSigCurr.wai = 0;
         _InstrIRQ();
     }
 
-    m_pins_prev = m_pins;
+    mSigPrev = mSigCurr;
 
-    if (m_wai)
+    if (mSigCurr.wai == 1)
     {
         return;
     }
@@ -168,7 +168,7 @@ void MOS6502::tick( uint64_t dt )
 
 //     printf(
 //         "A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%lu\n",
-//         AC, XR, YR, SSR_byte, SP, mCycles
+//         AC, XR, YR, SSR.byte, SP, mCycles
 //     );
 
 //     // printf("0x%04X  %s 0x%04X\n", mCurrPC, mFtab[mCurrOp].label, *(uint16_t*)(&mBus[PC]));
@@ -216,8 +216,8 @@ uint16_t MOS6502::pop16()
 }
 
 
-MOS6502::MOS6502( DataBus *bus )
-:   HwDevice(bus),
+MOS6502::MOS6502( Emu::AddrSpace &bus )
+:   HwModule(bus),
     mInvalidOp(0),
     mCurrOp(0),
     mCycles(0),

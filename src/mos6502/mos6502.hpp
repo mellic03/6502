@@ -1,4 +1,6 @@
 #pragma once
+
+#include "component.hpp"
 #include "../hw/hwmodule.hpp"
 
 
@@ -31,29 +33,19 @@ private:
         } __attribute__((packed));
     };
 
-    union {
-        ubyte byte;
-        struct {
-            ubyte C :1;
-            ubyte Z :1;
-            ubyte I :1;
-            ubyte D :1;
-            ubyte U :1;
-            ubyte B :1;
-            ubyte V :1;
-            ubyte N :1;
-        } __attribute__((packed));
-    } SSR = { 0b00100100 };
+    MOS_6502::RegSSR  SSR = { 0b00100100 };
+    MOS_6502::SigPins mSigCurr = { 0b0011 };
+    MOS_6502::SigPins mSigPrev = { 0b0011 };
 
-    union {
-        uint8_t byte;
-        struct {
-            uint8_t irq :1;
-            uint8_t res :1;
-            uint8_t nmi :1;
-            uint8_t wai :1;
-        };
-    } mPinsCurr={0b0011}, mPinsPrev={0b0011};
+    // union {
+    //     uint8_t byte;
+    //     struct {
+    //         uint8_t irq :1;
+    //         uint8_t res :1;
+    //         uint8_t nmi :1;
+    //         uint8_t wai :1;
+    //     };
+    // } mPinsCurr={0b0011}, mPinsPrev={0b0011};
 
     // Inst mCurrInstr;
     // Inst mFtab[256];

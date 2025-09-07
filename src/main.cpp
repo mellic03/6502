@@ -49,6 +49,12 @@ int main( int argc, char **argv )
         // nes->tick(tdiff);
         nes->tick();
 
+        if (D.keyReleased(SDL_SCANCODE_SPACE))
+        {
+            printf("Key I --> IRQ\n");
+            nes->mCPU.m_wai = !nes->mCPU.m_wai;
+        }
+
         if (D.keyReleased(SDL_SCANCODE_I))
         {
             printf("Key I --> IRQ\n");
