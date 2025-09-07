@@ -7,11 +7,11 @@
 namespace NesEmu
 {
     struct Bank;
-    struct MapperNROM;  // 00
-    struct MapperMMC1;  // 01
-    struct MapperUxROM; // 02
-    struct MapperCNROM; // 03
-    struct MapperMMC3;  // 04
+    // struct MapperNROM;  // 00
+    // struct MapperMMC1;  // 01
+    // struct MapperUxROM; // 02
+    // struct MapperCNROM; // 03
+    // struct MapperMMC3;  // 04
 }
 
 // struct NesEmu::Bank
@@ -35,7 +35,7 @@ namespace NesEmu
 // };
 
 
-struct NesEmu::MapperNROM final: public Emu::HwMapper
+struct MapperNROM final: public Emu::HwMapper
 {
     std::vector<uint8_t> &mPrgROM;
     std::vector<uint8_t> &mChrROM;
@@ -50,10 +50,13 @@ struct NesEmu::MapperNROM final: public Emu::HwMapper
 };
 
 
-struct NesEmu::MapperMMC1 final: public Emu::HwMapper
+struct MapperMMC1 final: public Emu::HwMapper
 {
+    std::vector<uint8_t> &mPrgROM;
+    std::vector<uint8_t> &mChrROM;
+
     MapperMMC1( std::vector<uint8_t> &prgROM, std::vector<uint8_t> &chrROM )
-    :   HwMapper(prgROM, chrROM) {  };
+    :   mPrgROM(prgROM), mChrROM(chrROM) {  };
 };
 
 

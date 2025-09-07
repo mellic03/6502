@@ -22,10 +22,6 @@ static uint8_t rdFmt( uint8_t *rom )
 
 
 NesEmu::GamePak::GamePak( const std::string &path )
-:   ioDevice(nullptr, 0),
-    mPrgROM(nullptr, 0),
-    mPrgRAM(nullptr, 0),
-    mChrROM(nullptr, 0)
 {
     std::ifstream stream(path, std::ifstream::binary);
 
@@ -36,11 +32,10 @@ NesEmu::GamePak::GamePak( const std::string &path )
     }
 
     stream.seekg(0, std::ifstream::end);
-    mSize = stream.tellg();
+    mRawFile.resize(stream.tellg());
 
     stream.seekg(0, std::ifstream::beg);
-    mData = new uint8_t[mSize];
-    stream.read((char*)mData, mSize);
+    stream.read((char*)(mRawFile.data()), mRawFile.size());
 
     auto &H = *data<iNES_File>();
     mMapperNo = (uint8_t(H.MapperHi4) << 4) | H.MapperLo4;

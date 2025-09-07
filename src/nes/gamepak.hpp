@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <memory>
 
 #include "../hw/memory.hpp"
@@ -13,25 +14,21 @@
 namespace NesEmu
 {
     class GamePak;
-    class System;
-    struct FileU;
 }
 
 
-class NesEmu::GamePak: public ioDevice
+class NesEmu::GamePak
 {
 public:
+    std::vector<ubyte> mRawFile;
+    uint32_t mMapperNo;
+
     struct Fmt { enum { iNES, NES20, OTHER, NumFmt }; };
-
-    MemoryRO mPrgROM;
-    MemoryRW mPrgRAM;
-    MemoryRO mChrROM;
-    // MemoryRW mChrRAM;
-    uint8_t  mMapperNo;
-    iNES_File *mFile;
-
+    // MemoryRO mPrgROM;
+    // MemoryRW mPrgRAM;
+    // MemoryRO mChrROM;
+    // iNES_File *mFile;
 
     GamePak( const std::string &path );
-    bool is_bad() { return (mData == nullptr); }
 };
 
