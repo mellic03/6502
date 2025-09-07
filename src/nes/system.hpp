@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../6502/6502.hpp"
+#include "../hw/addrspace.hpp"
 #include "../hw/bus.hpp"
 #include "../hw/clock.hpp"
 #include "../hw/tmemory.hpp"
@@ -41,6 +42,7 @@ public:
     // Memory2kRW  wRAM;
     // Memory2kRW  vRAM;
 
+    AddrSpace mBusOTH;
     DataBus  mBusCPU;
     DataBus  mBusPPU;
     cpu6502  mCPU;

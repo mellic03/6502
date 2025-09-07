@@ -87,6 +87,7 @@
         "variant": "cpp",
         "stdlib.h": "c",
         "cassert": "cpp",
-        "cerrno": "cpp"
+        "cerrno": "cpp",
+        "strstream": "cpp"
     }
 }

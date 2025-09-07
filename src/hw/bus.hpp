@@ -1,17 +1,13 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#include "../types.hpp"
 #include <set>
 #include <vector>
 #include <functional>
 
-using ubyte = uint8_t;
-using uword = uint16_t;
-using MemoryPage = uint8_t[256];
-
 #include "device.hpp"
 #include "../rwx.hpp"
+using MemoryPage = uint8_t[256];
 
 
 class HwDevice;
