@@ -34,7 +34,7 @@
 */
 
 
-struct iNES_File
+struct iNES_Header
 {
     char    signature[4];
     uint8_t prgRomSz; // size of PRG ROM in 16 KB units
@@ -67,7 +67,7 @@ struct iNES_File
     uint8_t flags10;    // Reserved, zero.
     uint8_t unused[5];  // Reserved, zero.
 
-    uint8_t FileBody[];
+//     uint8_t FileBody[];
 };
 
 

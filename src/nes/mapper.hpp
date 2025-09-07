@@ -2,61 +2,80 @@
 
 #include "../hw/addrspace.hpp"
 #include "../hw/hwmapper.hpp"
+#include "file/ines.hpp"
 #include <vector>
+
 
 namespace NesEmu
 {
     struct Bank;
-    // struct MapperNROM;  // 00
-    // struct MapperMMC1;  // 01
-    // struct MapperUxROM; // 02
-    // struct MapperCNROM; // 03
-    // struct MapperMMC3;  // 04
+    class Mapper;
+    Mapper *CreateMapper( int mapno, uint8_t *fileptr ); 
 }
 
-// struct NesEmu::Bank
-// {
-//     uint8_t *page;
-//     uint16_t base;
-//     uint16_t mask;
 
-//     Bank( uint8_t *pge, uint16_t bse, uint16_t msk )
-//     :   page(pge), base(bse), mask(msk) {  };
-
-//     ubyte read( uint16_t i ) const
-//     {
-//         return page[(i - base) & mask];
-//     }
-
-//     void write( uint16_t i, uint8_t v )
-//     {
-//         page[(i - base) & mask] = v;
-//     }
-// };
-
-
-struct MapperNROM final: public Emu::HwMapper
+struct NesEmu::Mapper: public Emu::HwMapper
 {
-    std::vector<uint8_t> &mPrgROM;
-    std::vector<uint8_t> &mChrROM;
+protected:
+    struct iNES_File {
+        iNES_Header header;
+        uint8_t     data[];
+    } *mFile;
 
+public:
+    Mapper( uint8_t *fileptr );
+    
+};
+
+
+class MapperNROM final: public NesEmu::Mapper
+{
+private:
+    // std::vector<uint8_t> &mPrgROM;
+    // std::vector<uint8_t> &mChrROM;
     struct {
         Emu::Page prgLo, prgHi;
         Emu::Page chrLo, chrHi;
     } mBanks;
 
-    MapperNROM( std::vector<uint8_t> &prgROM, std::vector<uint8_t> &chrROM )
-    :   mPrgROM(prgROM), mChrROM(chrROM) {  };
+public:
+    using Mapper::Mapper;
+    // MapperNROM( std::vector<uint8_t> &prgROM, std::vector<uint8_t> &chrROM )
+    // :   mPrgROM(prgROM), mChrROM(chrROM) {  };
 };
 
 
-struct MapperMMC1 final: public Emu::HwMapper
+class MapperMMC1 final: public NesEmu::Mapper
 {
-    std::vector<uint8_t> &mPrgROM;
-    std::vector<uint8_t> &mChrROM;
-
-    MapperMMC1( std::vector<uint8_t> &prgROM, std::vector<uint8_t> &chrROM )
-    :   mPrgROM(prgROM), mChrROM(chrROM) {  };
+private:
+    // std::vector<uint8_t> &mPrgROM;
+    // std::vector<uint8_t> &mChrROM;
+public:
+    using Mapper::Mapper;
+    // MapperMMC1( std::vector<uint8_t> &prgROM, std::vector<uint8_t> &chrROM )
+    // :   mPrgROM(prgROM), mChrROM(chrROM) {  };
 };
 
 
+class MapperUxROM final: public NesEmu::Mapper
+{
+public:
+    using Mapper::Mapper;
+
+};
+
+
+class MapperCNROM final: public NesEmu::Mapper
+{
+public:
+    using Mapper::Mapper;
+
+};
+
+
+class MapperMMC3 final: public NesEmu::Mapper
+{
+public:
+    using Mapper::Mapper;
+
+};

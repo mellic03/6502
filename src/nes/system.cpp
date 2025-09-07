@@ -37,7 +37,7 @@ void NesEmu::System::LoadRAW( uint8_t *rom )
 void NesEmu::System::LoadROM( GamePak *gpak )
 {
     mGPak = gpak;
-    NesEmu::ExecuteMapper(gpak->mMapperNo, *this);
+    NesEmu::ExecuteMapper(gpak->mMapNo, *this);
 
     mCPU.PC = (mBusCPU.read(0xFFFD) << 8) | mBusCPU.read(0xFFFC);
     printf("Reset vector: 0x%04X\n", mCPU.PC);

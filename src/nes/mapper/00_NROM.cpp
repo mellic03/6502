@@ -29,9 +29,9 @@ static void MapCpuBus( System &nes )
 
     auto  &bus    = nes.mBusCPU;
     auto  *gpak   = nes.mGPak;
-    auto  *fh     = gpak->mFile;
-    ubyte *prgROM = gpak->mPrgROM.data<ubyte>();
-    ubyte *chrROM = gpak->mChrROM.data<ubyte>();
+    auto  *fh     = gpak->mHeader;
+    ubyte *prgROM = gpak->mPrgROM.data();
+    ubyte *chrROM = gpak->mChrROM.data();
 
     // CPU --> PRG ROM,  First 16KB of ROM
     bus.mapRdRange(0x8000, 0xBFFF, 0xBFFF-0x8000, prgROM);
@@ -50,7 +50,7 @@ static void MapPpuBus( System &nes )
     auto  &ppu  = nes.mPPU;
     auto  *gpak = nes.mGPak;
 
-    ubyte *chrROM = gpak->mChrROM.data<ubyte>();
+    ubyte *chrROM = gpak->mChrROM.data();
 
     // | Addr      | Size | Desc        | Mapped By |
     // | ----------|------|-------------|-----------|

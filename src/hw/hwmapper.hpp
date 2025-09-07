@@ -10,8 +10,8 @@ namespace Emu
 class Emu::HwMapper
 {
 public:
-    virtual void write(uword, ubyte) = 0;
     virtual void tick() { };
-    virtual bool irqAsserted() const { return false; }
+    // virtual void write(uword, ubyte) = 0;
+    // virtual bool irqAsserted() const { return false; }
 
 };

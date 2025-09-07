@@ -22,49 +22,61 @@ static uint8_t rdFmt( uint8_t *rom )
 
 
 NesEmu::GamePak::GamePak( const std::string &path )
+:   mFile(0)
 {
     std::ifstream stream(path, std::ifstream::binary);
-
-    if (!stream.is_open())
-    {
-        mData = nullptr;
-        return;
-    }
+    if (!stream.is_open()) return;
 
     stream.seekg(0, std::ifstream::end);
-    mRawFile.resize(stream.tellg());
+    mFile.resize(stream.tellg());
 
     stream.seekg(0, std::ifstream::beg);
-    stream.read((char*)(mRawFile.data()), mRawFile.size());
+    stream.read((char*)(mFile.data()), mFile.size());
 
-    auto &H = *data<iNES_File>();
-    mMapperNo = (uint8_t(H.MapperHi4) << 4) | H.MapperLo4;
-    mFile     = data<iNES_File>();
+    mHeader  = (iNES_Header*)(mFile.data());
+    mData    = mFile.data() + sizeof(iNES_Header);
+    auto &H  = *mHeader;
 
-    uint8_t *cursor = data<uint8_t>() + 0x10;
-    cursor += (H.f6Trainer512byte == 1) ? 512 : 0;
 
-    mPrgROM = MemoryRO(cursor, 0x4000 * H.prgRomSz);
-    cursor += mPrgROM.size();
+    ubyte *fbeg = mFile.data();
+    ubyte *fend = fbeg + mFile.size();
+    ubyte *fpos = fbeg + 0x10;
 
-    mChrROM = MemoryRO(cursor, 0x2000 * H.chrRomSz);
-    cursor += mChrROM.size();
+    mPrgROM.resize(0x4000 * H.prgRomSz);
+    std::memcpy(&mPrgROM[0], fpos, mPrgROM.size());
+    fpos += mPrgROM.size();
 
-    mPrgRAM = MemoryRW(cursor, 0x2000 * ((H.prgRamSz==0) ? 1 : H.prgRamSz));
-    cursor += mPrgRAM.size();
+    mChrROM.resize(0x2000 * H.chrRomSz);
+    std::memcpy(&mChrROM[0], fpos, mChrROM.size());
+    fpos += mChrROM.size();
+
+    printf("Remaining: %lu\n",  fend - fpos);
+
+    mMapNo = (uint8_t(H.MapperHi4) << 4) | H.MapperLo4;
+    mMapper = NesEmu::CreateMapper(mMapNo, mFile.data());
+
+
+    // mPrgROM = MemoryRO(ptr, 0x4000 * H.prgRomSz);
+    // ptr += mPrgROM.size();
+
+    // mChrROM = MemoryRO(ptr, 0x2000 * H.chrRomSz);
+    // ptr += mChrROM.size();
+
+    // mPrgRAM = MemoryRW(ptr, 0x2000 * ((H.prgRamSz==0) ? 1 : H.prgRamSz));
+    // ptr += mPrgRAM.size();
 
     printf("iNES::iNES\n");
     printf("--------------------------------------------\n");
     printf("prgRomSz         %lu\n", mPrgROM.size());
     printf("chrRomSz         %lu\n", mChrROM.size());
-    printf("mapper           %u\n",  mMapperNo);
+    printf("mapper           %u\n",  mMapNo);
 
     printf("mirroringMode    %u\n", H.f6MirroringMode);
     printf("batteryBackedRAM %u\n", H.f6BatteryBackedRAM);
     printf("trainer512byte   %u\n", H.f6Trainer512byte);
     printf("fourScreenVRAM   %u\n", H.f6FourScreenVRAM);
 
-    printf("prgRamSz         %lu\n", mPrgRAM.size());
+    // printf("prgRamSz         %lu\n", mPrgRAM.size());
     printf("isPAL            %u\n",  H.f9IsPAL);
     printf("--------------------------------------------\n\n");
 
