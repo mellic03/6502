@@ -1,12 +1,17 @@
 #pragma once
 
 #include "../hw/addrspace.hpp"
+#include "../hw/hwmapper.hpp"
 #include <vector>
 
 namespace NesEmu
 {
     struct Bank;
-    struct Mapper00_NROM;
+    struct MapperNROM;  // 00
+    struct MapperMMC1;  // 01
+    struct MapperUxROM; // 02
+    struct MapperCNROM; // 03
+    struct MapperMMC3;  // 04
 }
 
 // struct NesEmu::Bank
@@ -30,25 +35,24 @@ namespace NesEmu
 // };
 
 
-struct Emu::HwMapper
+struct NesEmu::MapperNROM final: public Emu::HwMapper
 {
     std::vector<uint8_t> &mPrgROM;
     std::vector<uint8_t> &mChrROM;
 
     struct {
-        Page prgLo, prgHi;
-        Page chrLo, chrHi;
+        Emu::Page prgLo, prgHi;
+        Emu::Page chrLo, chrHi;
     } mBanks;
 
-    HwMapper( std::vector<uint8_t> &prgROM, std::vector<uint8_t> &chrROM )
+    MapperNROM( std::vector<uint8_t> &prgROM, std::vector<uint8_t> &chrROM )
     :   mPrgROM(prgROM), mChrROM(chrROM) {  };
 };
 
 
-
-struct HwMapperNROM final: public Emu::HwMapper
+struct NesEmu::MapperMMC1 final: public Emu::HwMapper
 {
-    HwMapperNROM( std::vector<uint8_t> &prgROM, std::vector<uint8_t> &chrROM )
+    MapperMMC1( std::vector<uint8_t> &prgROM, std::vector<uint8_t> &chrROM )
     :   HwMapper(prgROM, chrROM) {  };
 };
 
