@@ -27,8 +27,8 @@
       accomplished by connecting CIRAM A10 to PPU A11.
 */
 
-NesPPU::NesPPU( DataBus *bus )
-:   HwDevice(bus)
+NesPPU::NesPPU( Emu::AddrSpace &bus )
+:   HwModule(bus)
 {
     mMMIO   = (RegMMIO*)(mVRAM.data() + 0);
     mTables = (TableData*)(mVRAM.data() + sizeof(RegMMIO));
@@ -79,12 +79,16 @@ NesPPU::NesPPU( DataBus *bus )
 //     mBus->mapRange(0x2400, 0x27FF, 1024-1, &mTables[1]);
 //     mBus->mapRange(0x2800, 0x2BFF, 1024-1, &mTables[2]);
 //     mBus->mapRange(0x2C00, 0x2FFF, 1024-1, &mTables[3]);
-
 }
 
 
-void NesPPU::tick( uint64_t dt )
+void NesPPU::tick()
 {
-    // printf("[PPU]\n");
+    return;
+}
+
+void NesPPU::reset()
+{
+    return;
 }
 

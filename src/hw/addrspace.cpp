@@ -52,6 +52,12 @@ void EADS::mapWtPage( uint16_t addr, uint16_t mask, void *page )
     mWtPages[addr>>8] = Emu::Page(page, addr, mask);
 }
 
+void EADS::mapRdWtPage( uint16_t addr, uint16_t mask, void *pagebase )
+{
+    mapRdPage(addr, mask, pagebase);
+    mapWtPage(addr, mask, pagebase);
+}
+
 
 void EADS::mapRdRange( uint16_t start, uint16_t end, uint16_t mask, void *pagebase )
 {
@@ -75,6 +81,11 @@ void EADS::mapWtRange( uint16_t start, uint16_t end, uint16_t mask, void *pageba
     }
 }
 
+void EADS::mapRdWtRange( uint16_t start, uint16_t end, uint16_t mask, void *pagebase )
+{
+    mapRdRange(start, end, mask, pagebase);
+    mapWtRange(start, end, mask, pagebase);
+}
 
 
 

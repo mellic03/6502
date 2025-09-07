@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "../hw/bus.hpp"
-#include "../hw/device.hpp"
+#include "../hw/hwmodule.hpp"
 #include "../hw/memory.hpp"
 
 /**
@@ -66,7 +66,7 @@ struct cpu6502RegisterSSR
 
 
 // https://www.nesdev.org/wiki/CPU_power_up_state
-struct cpu6502: public HwDevice
+struct cpu6502: public Emu::HwModule
 {
 public:
     Memory2kRW mRAM;
@@ -98,10 +98,11 @@ public:
     };
 
     // cpu6502( iDataBus *bus );
-    cpu6502( DataBus *bus = nullptr );
-    virtual void tick( uint64_t dt ) final;
-    ubyte rdbus( uint16_t i ) { return busRead(i); }
-    void  wtbus( uint16_t i, ubyte v ) { busWrite(i, v); };
+    cpu6502( Emu::AddrSpace& );
+    virtual void tick() final;
+    virtual void reset() final;
+    // ubyte rdbus( uint16_t i ) { return busRead(i); }
+    // void  wtbus( uint16_t i, ubyte v ) { busWrite(i, v); };
 
     union HwPins
     {
@@ -180,7 +181,6 @@ private:
     void    _IntJump( uint16_t addr );
     void    _InstrNMI();
     void    _InstrIRQ();
-    void    _InstrRES();
     void    _InstrADC( uint8_t );
 
     int LoadACC();

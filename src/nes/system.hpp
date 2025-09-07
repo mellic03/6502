@@ -42,9 +42,10 @@ public:
     // Memory2kRW  wRAM;
     // Memory2kRW  vRAM;
 
-    AddrSpace mBusOTH;
-    DataBus  mBusCPU;
-    DataBus  mBusPPU;
+    Emu::AddrSpace mBusCPU;
+    Emu::AddrSpace mBusPPU;
+    // DataBus  mBusCPU;
+    // DataBus  mBusPPU;
     cpu6502  mCPU;
     NesPPU   mPPU;
     NesAPU   mAPU;
@@ -53,7 +54,7 @@ public:
     System();
     void LoadRAW( uint8_t *rom );
     void LoadROM( GamePak* );
-    void tick( uint64_t dt );
+    void tick();
 
 };
 

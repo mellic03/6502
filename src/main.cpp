@@ -36,7 +36,7 @@ int main( int argc, char **argv )
     
     NesEmu::System *nes = new NesEmu::System();
     nes->LoadROM(&gpak);
-    // nes->mCPU.PC = 0xC000;
+    nes->mCPU.PC = 0xC000;
 
     while (!nes->mCPU.mInvalidOp)
     {
@@ -46,7 +46,8 @@ int main( int argc, char **argv )
         tdiff = tcurr - tprev;
         tprev = tcurr;
 
-        nes->tick(tdiff);
+        // nes->tick(tdiff);
+        nes->tick();
 
         if (D.keyReleased(SDL_SCANCODE_I))
         {

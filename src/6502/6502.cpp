@@ -55,7 +55,7 @@ void cpu6502::_execute()
 
     
 
-void cpu6502::tick( uint64_t dt )
+void cpu6502::tick()
 {
     if (mInvalidOp)
     {
@@ -73,7 +73,7 @@ void cpu6502::tick( uint64_t dt )
     {
         m_pins.res = 1;
         m_wai = false;
-        _InstrRES();
+        this->reset();
         return;
     }
 
@@ -100,6 +100,13 @@ void cpu6502::tick( uint64_t dt )
         printf("Invalid opcode (0x%02X)\n", mCurrOp);
         return;
     }
+}
+
+
+void cpu6502::reset()
+{
+    _IntPush();
+    _IntJump(0xFFFC);
 }
 
 
@@ -216,8 +223,8 @@ uint16_t cpu6502::pop16()
 }
 
 
-cpu6502::cpu6502( DataBus *bus )
-:   HwDevice(bus),
+cpu6502::cpu6502( Emu::AddrSpace &bus )
+:   HwModule(bus),
     mInvalidOp(0),
     mCurrOp(0),
     mCycles(0),

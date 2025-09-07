@@ -9,7 +9,7 @@
 Emu::HwModule::HwModule( Emu::AddrSpace &bus )
 :   mBus(bus)
 {
-
+    mBus.attach(this);
 }
 
 

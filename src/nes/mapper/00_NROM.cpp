@@ -34,11 +34,11 @@ static void MapCpuBus( System &nes )
     ubyte *chrROM = gpak->mChrROM.data<ubyte>();
 
     // CPU --> PRG ROM,  First 16KB of ROM
-    bus.mapRange(0x8000, 0xBFFF, 0xBFFF-0x8000, prgROM, RWX::R);
+    bus.mapRdRange(0x8000, 0xBFFF, 0xBFFF-0x8000, prgROM);
 
     // CPU --> PRG ROM,  Mirror of 8000-BFFF (NROM-128) or final 16KB of ROM (NROM-256)
     uint16_t off = (fh->prgRomSz == 2) ? 0x4000 : 0x0000;
-    bus.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, prgROM+off, RWX::R);
+    bus.mapRdRange(0xC000, 0xFFFF, 0xFFFF-0xC000, prgROM+off);
 
 }
 
@@ -67,19 +67,19 @@ static void MapPpuBus( System &nes )
     // ----------------------------------------------
 
     // PPU --> ChrROM
-    bus.mapRange(0x0000, 0x1FFF, 0xFFFF, chrROM, RWX::R);
+    bus.mapRdRange(0x0000, 0x1FFF, 0xFFFF, chrROM);
 
     // // PPU --> ChrRAM
-    // bus.mapRange(0x1000, 0x1FFF, 0x0FFF, chrRAM);
+    // bus.mapRdWtRange(0x1000, 0x1FFF, 0x0FFF, chrRAM);
 
     // PPU --> NameTables
     ubyte *vRAM = ppu.mVRAM.data();
 
-    bus.mapRange(0x2000, 0x23FF, 1024-1, vRAM + 0*1024);
-    bus.mapRange(0x2400, 0x27FF, 1024-1, vRAM + 1*1024);
+    bus.mapRdWtRange(0x2000, 0x23FF, 1024-1, vRAM + 0*1024);
+    bus.mapRdWtRange(0x2400, 0x27FF, 1024-1, vRAM + 1*1024);
 
-    bus.mapRange(0x2800, 0x2BFF, 1024-1, vRAM + 0*1024);
-    bus.mapRange(0x2C00, 0x2FFF, 1024-1, vRAM + 1*1024);
+    bus.mapRdWtRange(0x2800, 0x2BFF, 1024-1, vRAM + 0*1024);
+    bus.mapRdWtRange(0x2C00, 0x2FFF, 1024-1, vRAM + 1*1024);
 
 
 }

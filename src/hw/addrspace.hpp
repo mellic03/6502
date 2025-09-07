@@ -42,9 +42,11 @@ public:
 
     void mapRdPage( uint16_t addr, uint16_t mask, void *page );
     void mapWtPage( uint16_t addr, uint16_t mask, void *page );
+    void mapRdWtPage( uint16_t, uint16_t, void* );
 
     void mapRdRange( uint16_t start, uint16_t end, uint16_t mask, void *pages );
     void mapWtRange( uint16_t start, uint16_t end, uint16_t mask, void *pages );
+    void mapRdWtRange( uint16_t, uint16_t, uint16_t, void* );
 
     void unmapRdPage( uint8_t pageno );
     void unmapWtPage( uint8_t pageno );

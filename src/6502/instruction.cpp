@@ -95,12 +95,6 @@ void cpu6502::_InstrIRQ()
     _IntJump(0xFFFA);
 }
 
-void cpu6502::_InstrRES()
-{
-    _IntPush();
-    _IntJump(0xFFFC);
-}
-
 
 void cpu6502::_InstrADC( uint8_t b )
 {
