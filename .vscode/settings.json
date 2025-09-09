@@ -89,5 +89,8 @@
         "cassert": "cpp",
         "cerrno": "cpp",
         "strstream": "cpp"
-    }
+    },
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/include/"
+    ]
 }

@@ -1,4 +1,4 @@
-#include "ppu.hpp"
+#include <memu/nes/ppu.hpp>
 #include <stdio.h>
 
 
@@ -27,7 +27,7 @@
       accomplished by connecting CIRAM A10 to PPU A11.
 */
 
-NesPPU::NesPPU( Emu::AddrSpace &bus )
+NesPPU::NesPPU( memu::AddrSpace &bus )
 :   HwModule(bus)
 {
     mMMIO   = (RegMMIO*)(mVRAM.data() + 0);

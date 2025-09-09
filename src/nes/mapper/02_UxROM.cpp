@@ -1,4 +1,4 @@
-#include "mapper.hpp"
+#include "types.hpp"
 using namespace NesEmu;
 
 

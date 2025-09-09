@@ -1,29 +1,24 @@
-#include "mapper.hpp"
+#include <memu/nes/mapper.hpp>
+#include <memu/log.hpp>
+#include "mapper/types.hpp"
+#include <vector>
+#include <cstdio>
 
-// struct MapperNROM;  // 00
-// struct MapperMMC1;  // 01
-// struct MapperUxROM; // 02
-// struct MapperCNROM; // 03
-// struct MapperMMC3;  // 04
 
-NesEmu::Mapper *NesEmu::CreateMapper( int mapno, uint8_t *fileptr )
+NesEmu::Mapper *NesEmu::Mapper::MapGamePak( NesEmu::System &nes, GamePak *gpak )
 {
-    switch (mapno)
-    {
-        default: break;;
-        case 0: return new MapperNROM(fileptr);
-        case 1: return new MapperMMC1(fileptr);
-        case 2: return new MapperUxROM(fileptr);
-        case 3: return new MapperCNROM(fileptr);
-        case 4: return new MapperMMC3(fileptr);
-    }
-    return nullptr;
-} 
+    using ctor_t = Mapper* (*)(System&, GamePak*);
 
+    #define X(Tp) [](System &n, GamePak *p) -> Mapper* { return new Tp(n, p); },
+    static std::vector<ctor_t> ftab = { NESEMU_MAPPER_TYPES };
+    #undef X
 
-NesEmu::Mapper::Mapper( ubyte *ptr )
-:   mFile((iNES_File*)ptr)
-{
+    auto  *fh = (iNES_File*)(gpak->data());
+    size_t idx = (fh->MapperHi4 << 4) | fh->MapperLo4;
 
+    // logasrt(idx < ftab.size(), "hi4=%u, lo4=%u", fh->MapperHi4, fh->MapperLo4);
+    logasrt(idx < ftab.size(), "idx=%lu, ftab=fptr[%lu]", idx, ftab.size());
+
+    return (ftab[idx])(nes, gpak);
 }
 
