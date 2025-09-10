@@ -13,31 +13,31 @@ void m6502::InstrUnimp()
         - C=1 when subtraction result is 0 to 255.
         - C=0 when subtraction result is less than 0.
 */
-uint8_t m6502::_N(uint16_t x)
+uint8_t m6502::_N(uint8_t x)
 {
     SSR.N = (x & (1 << 7)) ? 1 : 0;
-    return (uint8_t)x;
+    return x;
 }
 
-uint8_t m6502::_Z(uint16_t x)
+uint8_t m6502::_Z(uint8_t x)
 {
     SSR.Z = (x == 0) ? 1 : 0;
-    return (uint8_t)x;
+    return x;
 }
 
-uint8_t m6502::_NZ(uint16_t x)
+uint8_t m6502::_NZ(uint8_t x)
 {
     _N(x); _Z(x);
-    return (uint8_t)x;
+    return x;
 }
 
-uint8_t m6502::_NZC(uint16_t x)
+uint8_t m6502::_NZC(uint8_t x)
 {
     SSR.C = (x & (1 << 8)) ? 1 : 0;
     return _NZ(x);
 }
 
-uint8_t m6502::_NVZC(uint16_t x, uint8_t a, uint8_t b)
+uint8_t m6502::_NVZC(uint8_t x, uint8_t a, uint8_t b)
 {
     SSR.V = ((~(a^b)) & (a^x)) & 0x80;
     return _NZC(x);
@@ -144,7 +144,9 @@ void m6502::InstrBPL()
 // BRK not affected by I
 void m6502::InstrBRK()
 {
-    _IntPush();
+    push16(PC + 1);
+    push08(SSR.as_byte);
+    SSR.I = 1;
     _IntJump(0xFFFA);
 }
 

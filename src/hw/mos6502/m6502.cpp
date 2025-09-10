@@ -1,4 +1,5 @@
 #include <memu/hw/mos6502.hpp>
+#include <memu/addrspace.hpp>
 #include <stdio.h>
 #include <string.h>
 #include <SDL2/SDL.h>
@@ -135,12 +136,14 @@ m6502::m6502( memu::AddrSpace &bus )
     mCycles(0),
     mOpCount(0)
 {
+    bus.mapRange(0x0000, 0x1FFF, 2048-1, memu::RWX_RW, mRAM.data());
+
     using X = m6502;
 
     mFtab = new Inst[256];
     for (int i=0; i<256; i++)
     {
-        mFtab[i] = Inst("Unimp",   &X::InstrUnimp, &X::LoadACC, 1);
+        mFtab[i] = Inst("Unimp", &X::InstrUnimp, &X::LoadACC, 1);
     }
 
     mFtab[0x69] = Inst("ADC", &X::InstrADC, &X::LoadIMM,  2);

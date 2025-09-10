@@ -1,4 +1,5 @@
 #include "types.hpp"
+#include <memu/rwx.hpp>
 #include <cstdio>
 
 
@@ -59,11 +60,10 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
 
     // CPU Mapping
     {
+        using namespace memu;
         auto &bus = nes.mBusCPU;
-        auto &cpu  = nes.mCPU;
-
-        bus.mapRdRange(0x8000, 0xBFFF, 0xBFFF-0x8000, mPrgRom[0].base);
-        bus.mapRdRange(0xC000, 0xFFFF, 0xFFFF-0xC000, mPrgRom[1].base);
+        bus.mapRange(0x8000, 0xBFFF, 0xBFFF-0x8000, RWX_RW, mPrgRom[0].base);
+        bus.mapRange(0xC000, 0xFFFF, 0xFFFF-0xC000, RWX_RW, mPrgRom[1].base);
     }
 
     // // PPU Mapping

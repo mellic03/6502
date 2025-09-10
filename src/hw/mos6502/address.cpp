@@ -131,6 +131,10 @@ int m6502::LoadINDX()
  */
 int m6502::LoadINDY()
 {
+    uint16_t lo = rdbus(PC++);
+    uint16_t hi = rdbus(PC++);
+    uint16_t p  = (hi << 8) | lo;
+
     uint16_t ind_lo  = fetch08() & 0x00FF;
     uint16_t ind_hi  = fetch08() & 0x00FF;
     uint16_t ptr_ind = (ind_hi << 8) | ind_lo;
@@ -173,8 +177,6 @@ int m6502::LoadREL()
  */
 int m6502::LoadZPG()
 {
-    // constexpr auto reee = GetAddr(0x00, 0x01);
-    // mOpAddr = (uint16_t)fetch08() & 0x00FF;
     mOpAddr = rdbus(PC++);
     return 0;
 }
