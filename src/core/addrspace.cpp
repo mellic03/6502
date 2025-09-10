@@ -7,11 +7,8 @@ using EADS = memu::AddrSpace;
 
 EADS::AddrSpace()
 {
-    static auto dummy = std::unique_ptr<ubyte[]>(new ubyte[256]);
-    mapRdRange(0x0000, 0xFFFF, 0xFFFF, dummy.get());
-    mapWtRange(0x0000, 0xFFFF, 0xFFFF, dummy.get());
-
-    sizeof(memu::Page);
+    static uint8_t *dummy = new uint8_t[256];
+    mapRange(0x0000, 0xFFFF, 0xFFFF, RWX_RW, dummy);
 }
 
 
