@@ -77,6 +77,9 @@ using namespace NesEmu;
 static uint8_t CpuRdPpu(memu::HwModule*, addr_t);
 static void CpuWtPpu(memu::HwModule*, addr_t, ubyte);
 
+static uint8_t CpuRdIO(memu::HwModule*, addr_t);
+static void CpuWtIO(memu::HwModule*, addr_t, ubyte);
+
 
 
 Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
@@ -124,10 +127,11 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
         bus.mapRangeTiny(0x2000, 0x3FFF, &ppu, CpuRdPpu, CpuWtPpu);
 
         // CPU --> APU and IO registers. 4000 - 401F
-        bus.mapRange(0x4000, 0x40FF, 0x00FF, memu::RWX_RW, &(cpu.mApuMMIO));
+        // bus.mapRange(0x4000, 0x40FF, 0x00FF, memu::RWX_RW, &(cpu.mApuMMIO));
+        bus.mapRangeTiny(0x4000, 0x40FF, &cpu, CpuRdIO, CpuWtIO);
 
         // CPU --> PRG RAM
-        bus.mapRWRange(0x6000, 0x7FFF, mPrgRam.base);
+        bus.mapRange(0x6000, 0x7FFF, 0x7FFF-0x6000, RWX_RW, mPrgRam.base);
 
         // CPU --> PRG ROM
         bus.mapRdRange(0x8000, 0xBFFF, mPrgRom.base);
@@ -181,8 +185,6 @@ static uint8_t CpuRdPpu( memu::HwModule *dev, addr_t addr )
 
     switch (idx)
     {
-        default: break;
-
         case REG_PPUSTATUS:
             // ppu->STATUS.V = 1;
             data = (ppu->STATUS.byte & 0xE0) | (ppu->mData & 0x1F);
@@ -194,6 +196,9 @@ static uint8_t CpuRdPpu( memu::HwModule *dev, addr_t addr )
         case REG_PPUDATA:
             data = ppu->MMIO[idx];
             break;
+
+        default:
+            break;
     }
 
     return data;
@@ -203,13 +208,11 @@ static uint8_t CpuRdPpu( memu::HwModule *dev, addr_t addr )
 static void CpuWtPpu( memu::HwModule *dev, addr_t addr, ubyte data )
 {
     uint8_t  idx = addr % 8;
-    NesPPU  *ppu = (NesPPU*)dev;
-    uint8_t *dst = ppu->MMIO + idx;
+    NesPPU  &ppu = *(NesPPU*)dev;
+    uint8_t *dst = ppu.MMIO + idx;
 
     switch (idx)
     {
-        default: break;
-
         case REG_PPUCTRL:
         case REG_PPUMASK:
         case REG_OAMADDR:
@@ -218,17 +221,66 @@ static void CpuWtPpu( memu::HwModule *dev, addr_t addr, ubyte data )
             break;
 
         case REG_PPUDATA:
-            ppu->mBus.write(ppu->mAddr.value, data);
-            ppu->mAddr.value += 1;
+            ppu.mBus.write(ppu.mAddr.value, data);
+            ppu.mAddr.value += 1;
             break;
 
         case REG_PPUSCROLL:
-            ppu->mScrl.write(data);
+            ppu.mScrl.write(data);
             break;
 
         case REG_PPUADDR:
-            ppu->mAddr.write(data);
+            ppu.mAddr.write(data);
+            break;
+
+        default:
             break;
     }
 }
+
+
+
+static uint8_t CpuRdIO( memu::HwModule *dev, addr_t addr )
+{
+    auto  &cpu = *(NesCPU*)dev;
+    ubyte data = 0;
+
+    switch (addr)
+    {
+        case 0x4016:
+            data = cpu.mStdCtl0.read();
+            break;
+
+        case 0x4017:
+            data = cpu.mStdCtl1.read();
+            break;
+
+        default:
+            break;
+    }
+
+    return data;
+}
+
+
+static void CpuWtIO( memu::HwModule *dev, addr_t addr, ubyte data )
+{
+    auto &cpu = *(NesCPU*)dev;
+
+    if (addr == 0x4016)
+    {
+        if (data & 0x01)
+        {
+            cpu.mStdCtl0.hi();
+            cpu.mStdCtl1.hi();
+        }
+
+        else
+        {
+            cpu.mStdCtl0.lo();
+            cpu.mStdCtl1.lo(); 
+        }
+    }
+}
+
 

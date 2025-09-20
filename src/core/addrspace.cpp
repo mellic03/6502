@@ -25,22 +25,24 @@ void EADS::attach( memu::HwModule *hw )
 ubyte EADS::read( uint16_t i )
 {
     auto &pg = mRdPages[i>>8];
-    LogAsrt(pg.used, "Cannot read %04X (page %04X not read-mapped)\n", i, (i>>8)<<8);
+    // LogAsrt(pg.used, "Cannot read %04X (page %04X not read-mapped)\n", i, (i>>8)<<8);
 
     uint8_t idx = (i & pg.mask) & 0x00FF;
-    if (pg.rdfn) return pg.rdfn(pg.dev, idx);
-    else         return pg.page[idx];
+    if (!pg.used) return 0;
+    if (pg.rdfn)  return pg.rdfn(pg.dev, idx);
+    else          return pg.page[idx];
 }
 
 
 void EADS::write( uint16_t i, ubyte v )
 {
     auto &pg = mWtPages[i>>8];
-    LogAsrt(pg.used, "Cannot write %04X (page %04X not write-mapped)\n", i, (i>>8)<<8);
+    // LogAsrt(pg.used, "Cannot write %04X (page %04X not write-mapped)\n", i, (i>>8)<<8);
 
     uint8_t idx = (i & pg.mask) & 0x00FF;
-    if (pg.wtfn) pg.wtfn(pg.dev, idx, v);
-    else         pg.page[idx] = v;
+    if (!pg.used) return;
+    if (pg.wtfn)  pg.wtfn(pg.dev, idx, v);
+    else          pg.page[idx] = v;
 }
 
 

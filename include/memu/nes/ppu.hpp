@@ -1,19 +1,16 @@
 #pragma once
 #include <memu/hw/ricoh/2C02.hpp>
 
-class EmuWindow;
+class EmuFramebuffer;
 
 
 class NesPPU: public memu::Ricoh2C02
 {
 public:
      using Ricoh2C02::Ricoh2C02;
-     void drawPatternTile( EmuWindow*, ivec2 dpos, int tx, int ty );
-     void drawPatternTable( EmuWindow*, int palNo, ivec2 dpos, ivec2 spos, ivec2 ssp );
+     void drawPatternTable( EmuFramebuffer*, int palNo, ivec2 spos );
 
 };
-
-
 
 
 

@@ -31,8 +31,55 @@ using uword = uint16_t;
 
 
 
-struct ivec1        { union { int x, r; }; };
-struct ivec2: ivec1 { union { int y, g; }; };
-struct ivec3: ivec2 { union { int z, b; }; };
-struct ivec4: ivec3 { union { int w, a; }; };
+struct ivec1
+{
+    union { int x, r; };
+    // int &operator[](int) { return x; }
+};
+
+
+struct ivec2: ivec1
+{
+    union { int y, g; };
+    // int &operator[](int i)
+    // {
+    //     switch (i)
+    //     {
+    //         default: return ivec1::operator[](i);
+    //         case 1: return y;
+    //     }
+    // }
+};
+
+
+struct ivec3: ivec2
+{
+    union { int z, b; };
+    // int &operator[](int i)
+    // {
+    //     switch (i)
+    //     {
+    //         default: return ivec2::operator[](i);
+    //         case 2: return z;
+    //     }
+    // }
+};
+
+
+struct ivec4: ivec3
+{
+    union { int w, a; };
+
+    int &operator[](int i)
+    {
+        switch (i)
+        {
+            default: return x;
+            case 0: return x;
+            case 1: return y;
+            case 2: return z;
+            case 3: return w;
+        }
+    }
+};
 

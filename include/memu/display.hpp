@@ -5,18 +5,57 @@
 #include <vector>
 
 
-class EmuWindow
+class EmuFramebuffer
+{
+public:
+    ivec2 mSp;
+    SDL_Surface *mSurface;
+
+    EmuFramebuffer( int w, int h )
+    :   mSp{w, h}, mSurface(SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
+    {
+        
+    }
+
+    void blit( EmuFramebuffer *fb, ivec2 dstpos, float S=1.0f )
+    {
+        SDL_Rect src = { 0, 0, fb->mSp.x, fb->mSp.y };
+        SDL_Rect dst = { dstpos.x, dstpos.y, int(S*fb->mSp.x), int(S*fb->mSp.y) };
+        SDL_BlitScaled(fb->mSurface, &src, mSurface, &dst);
+    }
+
+    void pixel( int x, int y, uint8_t r, uint8_t g, uint8_t b )
+    {
+        x %= mSp.x;
+        y %= mSp.y;
+
+        auto &ms   = mSurface;
+        auto pitch = ms->pitch;
+        auto bpp   = ms->format->BytesPerPixel;
+
+        *((Uint8*)(ms->pixels) + (pitch*y + bpp*x) + 0) = b;
+        *((Uint8*)(ms->pixels) + (pitch*y + bpp*x) + 1) = g;
+        *((Uint8*)(ms->pixels) + (pitch*y + bpp*x) + 2) = r;
+    }
+
+    void pixel( int x, int y, uint8_t c=255 )
+    {
+        pixel(x, y, c, c, c);
+    }
+};
+
+
+class EmuWindow: public EmuFramebuffer
 {
 public:
     SDL_Window  *mWin;
-    SDL_Surface *mSurface;
-    SDL_Surface *mSurfaceScaled;
-    ivec2        sp;
+    SDL_Surface *mWinSurface;
     int          mScale;
 
     EmuWindow( const char *title, int w, int h, int scale )
+    :   EmuFramebuffer(w, h)
     {
-        sp = { w, h };
+        mSp    = { w, h };
         mScale = scale;
 
         mWin = SDL_CreateWindow(
@@ -28,58 +67,28 @@ public:
             0
         );
 
-        mSurfaceScaled = SDL_GetWindowSurface(mWin);
-        mSurface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
+        mWinSurface = SDL_GetWindowSurface(mWin);
     }
 
-    void endFrame()
+    void flush()
     {
-        SDL_Rect src;
-        src.x = 0;
-        src.y = 0;
-        src.w = sp.x;
-        src.h = sp.y;
-
-        SDL_Rect dest;
-        dest.x = 0;
-        dest.y = 0;
-        dest.w = mScale * sp.x;
-        dest.h = mScale * sp.y;
-
-        SDL_BlitScaled(mSurface, &src, mSurfaceScaled, &dest);
-
+        SDL_Rect src = { 0, 0, mSp.x, mSp.y };
+        SDL_Rect dst = { 0, 0, mScale*mSp.x, mScale*mSp.y };
+        SDL_BlitScaled(mSurface, &src, mWinSurface, &dst);
         SDL_UpdateWindowSurface(mWin);
     }
-
-    void pixel( int x, int y, uint8_t r, uint8_t g, uint8_t b )
-    {
-        x %= sp.x;
-        y %= sp.y;
-
-        auto &ms = mSurface;
-        *((Uint8*)(ms->pixels) + (y*ms->pitch + x*ms->format->BytesPerPixel) + 0) = b;
-        *((Uint8*)(ms->pixels) + (y*ms->pitch + x*ms->format->BytesPerPixel) + 1) = g;
-        *((Uint8*)(ms->pixels) + (y*ms->pitch + x*ms->format->BytesPerPixel) + 2) = r;
-    }
-
-    void pixel( int x, int y, uint8_t value=255 )
-    {
-        pixel(x, y, value, value, value);
-    }
-
 };
 
 
-class Display
+class EmuIO
 {
 private:
 public:
-    std::vector<EmuWindow*> mWindows;
     bool  mRunning;
     Uint8 mKeyCurr[512];
     Uint8 mKeyPrev[512];
 
-    Display()
+    EmuIO()
     {
         mRunning = true;
         memset(mKeyCurr, 0, 512);
@@ -87,18 +96,18 @@ public:
         SDL_Init(SDL_INIT_VIDEO);
     }
 
-    EmuWindow *addWindow( EmuWindow *win )
-    {
-        mWindows.push_back(win);
-        return mWindows.back();
-    }
+    // EmuWindow *addWindow( EmuWindow *win )
+    // {
+    //     mWindows.push_back(win);
+    //     return mWindows.back();
+    // }
 
     bool keyReleased( int k )
     {
         return (mKeyPrev[k] == 1) && (mKeyCurr[k] == 0);
     }
 
-    void beginFrame()
+    void updateEvents()
     {
         int numkeys = 0;
         auto *state = SDL_GetKeyboardState(&numkeys);
@@ -122,13 +131,4 @@ public:
 
         SDL_PumpEvents();
     }
-
-    void endFrame()
-    {
-        for (auto *win: mWindows)
-        {
-            win->endFrame();
-        }
-    }
-
 };

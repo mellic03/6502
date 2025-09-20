@@ -7,6 +7,7 @@
 
 namespace memu
 {
+    class ShiftRegister;
     class MemoryRW;
     class MemoryRO;
     class MemoryWO;
@@ -53,6 +54,15 @@ namespace memu
 
 //     }
 // };
+
+
+class memu::ShiftRegister
+{
+private:
+
+public:
+    
+};
 
 
 

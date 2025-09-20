@@ -23,9 +23,7 @@ int m6502::LoadACC()
 // OPC $LLHH - operand is address $HHLL *
 int m6502::LoadABS()
 {
-    uint16_t lo = rdbus(PC++);
-    uint16_t hi = rdbus(PC++);
-    mOpAddr = (hi << 8) | lo;
+    mOpAddr = fetch16();
     return 0;
 }
 
@@ -33,9 +31,7 @@ int m6502::LoadABS()
 // effective address is address incremented by X with carry **
 int m6502::LoadABSX()
 {
-    uint16_t lo = rdbus(PC++);
-    uint16_t hi = rdbus(PC++);
-    mOpAddr = ((hi << 8) | lo) + XR;
+    mOpAddr = fetch16() + XR;
     return 0;
 }
 
@@ -177,7 +173,7 @@ int m6502::LoadREL()
  */
 int m6502::LoadZPG()
 {
-    mOpAddr = rdbus(PC++);
+    mOpAddr = fetch08();
     return 0;
 }
 
@@ -187,7 +183,7 @@ int m6502::LoadZPG()
  */
 int m6502::LoadZPGX()
 {
-    mOpAddr = rdbus(PC++) + XR;
+    mOpAddr = fetch08() + XR;
     return 0;
 }
 
@@ -197,7 +193,7 @@ int m6502::LoadZPGX()
  */
 int m6502::LoadZPGY()
 {
-    mOpAddr = rdbus(PC++) + YR;
+    mOpAddr = fetch08() + YR;
     return 0;
 }
 

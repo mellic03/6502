@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(nesemu LANGUAGES CXX)
-set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g" )
+set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")
+set(CMAKE_CXX_STANDARD "20")
 set(MEMU_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build/NesEmu")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${MEMU_OUTPUT_DIR})
 
@@ -30,9 +31,7 @@ target_link_libraries(
 
 file(
     COPY
-        "${CMAKE_SOURCE_DIR}/data/palette"
-        "${CMAKE_SOURCE_DIR}/data/rom"
-        "${CMAKE_SOURCE_DIR}/data/boot.conf"
+        "${CMAKE_SOURCE_DIR}/data/"
     DESTINATION
         "${MEMU_OUTPUT_DIR}/"
 )

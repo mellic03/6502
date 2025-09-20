@@ -5,65 +5,72 @@
 using namespace memu;
 
 
-static const char *skipch( const char *str, char ch )
-{
-    while (*str == ch)
-        str++;
-    return str;
-}
-
-
-static std::vector<char> bbuf;
 static int iidx;
 static int lline;
 static int ccol;
 
+
+void ConfigParser::skip( char )
+{
+    char ch = mBuf[iidx];
+
+    while (iidx < mBuf.size() && ch && (ch==' '))
+    {
+        ch = mBuf[iidx++];
+    }
+
+    if (iidx >= mBuf.size() - 1)
+    {
+        iidx = mBuf.size() - 1;
+    }
+}
+
+
 char ConfigParser::peek()
 {
-    if (iidx >= bbuf.size() - 1)
+    skip(' ');
+
+    if (iidx >= mBuf.size() - 1)
     {
-        iidx = bbuf.size() - 1;
+        iidx = mBuf.size() - 1;
         return '\0';
     }
-    return bbuf[iidx];
+    return mBuf[iidx];
 }
+
 
 char ConfigParser::advance()
 {
-    if (iidx >= bbuf.size() - 1)
+    char ch = peek();
+    if (!ch) return ch;
+
+    iidx += 1;
+    ccol += 1;
+
+    if (ch == '\n')
     {
-        iidx = bbuf.size() - 1;
-        ccol += 1;
-        return '\0';
+        lline += 1;
+        ccol = 1;
     }
-    return bbuf[iidx++];
+
+    return ch;
 }
 
-char ConfigParser::check( char ch )
+
+char ConfigParser::retreat()
+{
+    iidx -= 1;
+    return peek();
+}
+
+
+char ConfigParser::match( char ch )
 {
     if (peek() == ch)
         return advance();
     return '\0';    
 }
 
-
-std::string ConfigParser::_readSection()
-{
-    std::string str = "";
-
-    advance();
-    while (char ch = advance())
-    {
-        if (ch==']')
-            break;
-        str.push_back(ch);
-    }
-    printf("[_readSection] str=\"%s\"\n", str.c_str());
-
-    while (check(' ')) {  }
-
-    return str;
-}
 
 
 std::string ConfigParser::_readLabel()
@@ -72,132 +79,91 @@ std::string ConfigParser::_readLabel()
 
     while (char ch = advance())
     {
-        if (!isalpha(ch))
+        if (ch=='=')
+            break;
+        if (!isalnum(ch))
             break;
         str.push_back(ch);
     }
-    printf("[_readLabel] str=\"%s\"\n", str.c_str());
-
-    while (check(' ')) {  }
-    LogAsrt(
-        peek()=='=',
-        "Invalid syntax, expected \'=\', received \'%c\'. (line %d col %d, \"%s\")\n",
-        peek(), lline, ccol, mPath
-    );
 
     return str;
 }
 
-std::string ConfigParser::_readLabelValue()
-{
-    std::string label = _readLabel();
 
-    while (char ch = advance())
-    {
-        
-    }
-
-    std::string value = _readValue();
-
-    // while (char ch = advance())
-    // {
-    //     if (ch=='\n')
-    //     {
-    //         lline += 1;
-    //         ccol = 1;
-    //         continue;
-    //     }
-
-    //     if (ch==' ')
-    //     {
-    //         continue;
-    //     }
-    
-    //     else if (ch=='[')
-    //     {
-    //         std::string name = _readSection();
-    //     }
-    
-    //     else if (isalpha(ch))
-    //     {
-    //         std::string label = _readLabel();
-    //         std::string value = _readValue();
-
-    //         mConf[label] = value;
-    //     }
-    // }
-}
-
-
-std::string ConfigParser::_readValue()
+std::string ConfigParser::_readTo( char stop )
 {
     std::string str = "";
-
-    bool first = true;
-
     while (char ch = advance())
     {
-        if (ch=='\"' && !first)
-            break;
-
-        else if (ch=='\n')
-            break;
-
-        first = false;
-
+        if (ch==stop) break;
         str.push_back(ch);
     }
-    printf("[_readValue] str=\"%s\"\n", str.c_str());
-
-    while (check(' ')) {  }
-
     return str;
 }
-
 
 
 ConfigParser::ConfigParser( const char *path )
 :   mPath(path), mIdx(0)
 {
     std::ifstream stream(path, std::ifstream::binary);
-    LogAsrt(stream.is_open(), "Could not open file \"%s\"", path);
+    LogAsrt(stream.is_open(), "Could not open file \"%s\"\n", path);
 
+    std::vector<char> bbuf;
     stream.seekg(0, std::ifstream::end);
     bbuf.resize(stream.tellg());
 
     stream.seekg(0, std::ifstream::beg);
     stream.read(bbuf.data(), bbuf.size());
 
+    for (char ch: bbuf)
+    {
+        if (ch != ' ')
+        {
+            mBuf.push_back(ch);
+        }
+    }
+
     iidx  = 0;
     lline = 1;
     ccol  = 1;
+
+    std::string section = "GLOBAL";
 
     while (char ch = peek())
     {
         if (ch=='\n')
         {
-            lline += 1;
-            ccol = 1;
-            continue;
+            advance();
         }
 
-        if (ch==' ')
+        else if (match('['))
         {
-            continue;
-        }
-    
-        else if (ch=='[')
-        {
-            std::string name = _readSection();
+            section = _readTo(']');
         }
     
         else if (isalpha(ch))
         {
-            std::string label = _readLabel();
-            std::string value = _readValue();
+            std::string key = _readLabel();
 
-            mConf[label] = value;
+            if (match('\"'))
+                mConf[section][key] = _readTo('\"');
+            else
+                mConf[section][key] = _readTo('\n');
         }
     }
 }
 
+
+
+void ConfigParser::print()
+{
+    for (auto &[section, keyval]: mConf)
+    {
+        syslog log("Section %s", section.c_str());
+
+        for (auto &[key, value]: keyval)
+        {
+            log("%s = \"%s\"", key.c_str(), value.c_str());
+        }
+    }
+}

@@ -3,42 +3,42 @@
 #include <memu/display.hpp>
 
 
-void NesPPU::drawPatternTile( EmuWindow *win, ivec2 dpos, int tx, int ty )
+// void NesPPU::drawPatternTile( EmuWindow *win, ivec2 dpos, int tx, int ty )
+// {
+//     auto &B = mBus;
+//     int ptabno = 0;
+
+//     int tileOffset = 256*ty + 16*tx;
+
+//     for (int row=0; row<8; row++)
+//     {
+//         ubyte lsb = B[ptabno*0x1000 + tileOffset + row+0];
+//         ubyte msb = B[ptabno*0x1000 + tileOffset + row+8];
+
+//         for (int col=0; col; col++)
+//         {
+//             ubyte pxl = (msb & 0x01) + (lsb & 0x01);
+//             ubyte off = 0x3F00 + 4*pxl;
+
+//             int x = 8*tx + (7-col);
+//             int y = 8*tx + (7-col);
+
+//             win->pixel(dpos.x+x, dpos.y+y, 8*B[off+0], 8*B[off+1], 8*B[off+2]);
+
+//             lsb >>= 1;
+//             msb >>= 1;
+//         }
+//     }
+// }
+
+
+void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 spos )
 {
     auto &B = mBus;
-    int ptabno = 0;
 
-    int tileOffset = 256*ty + 16*tx;
-
-    for (int row=0; row<8; row++)
+    for (int i=0; i<128; i++)
     {
-        ubyte lsb = B[ptabno*0x1000 + tileOffset + row+0];
-        ubyte msb = B[ptabno*0x1000 + tileOffset + row+8];
-
-        for (int col=0; col; col++)
-        {
-            ubyte pxl = (msb & 0x01) + (lsb & 0x01);
-            ubyte off = 0x3F00 + 4*pxl;
-
-            int x = 8*tx + (7-col);
-            int y = 8*tx + (7-col);
-
-            win->pixel(dpos.x+x, dpos.y+y, 8*B[off+0], 8*B[off+1], 8*B[off+2]);
-
-            lsb >>= 1;
-            msb >>= 1;
-        }
-    }
-}
-
-
-void NesPPU::drawPatternTable( EmuWindow *win, int palNo, ivec2 dpos, ivec2 spos, ivec2 ssp )
-{
-    auto &B = mBus;
-
-    for (int i=0; i<ssp.y; i++)
-    {
-        for (int j=0; j<ssp.x; j++)
+        for (int j=0; j<128; j++)
         {
             int y = spos.y + i;
             int x = spos.x + j;
@@ -53,7 +53,7 @@ void NesPPU::drawPatternTable( EmuWindow *win, int palNo, ivec2 dpos, ivec2 spos
             // ubyte off = 0x3F00 + 4*pxl;
             // ubyte spriteOffset = 0x3F10 + 4*pxl;
 
-            win->pixel(dpos.x+j, dpos.y+i, CL[0], CL[1], CL[2]);
+            fb->pixel(j, i, CL[0], CL[1], CL[2]);
         }
     }
 }

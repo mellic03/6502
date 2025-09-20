@@ -102,44 +102,26 @@ void m6502::InstrAND() { AC = _NZ(AC & rdbus(mOpAddr)); }
 
 void m6502::InstrASL()
 {
-    if (mOpAC)
-    {
-        AC = _NZC(AC << 1);
-    }
-    else
-    {
-        uint16_t x = (uint16_t)rdbus(mOpAddr);
-        wtbus(mOpAddr, _NZC(x << 1));
-    }
+    if (mOpAC) AC = _NZC(AC << 1);
+    else       wtbus(mOpAddr, _NZC(rdbus(mOpAddr) << 1));
 }
-void m6502::InstrBCC() { if (SSR.C) PC = mOpAddr; }
-void m6502::InstrBCS() { if (SSR.C) PC = mOpAddr; }
-void m6502::InstrBEQ() { if (SSR.Z) PC = mOpAddr; }
+
+void m6502::InstrBCC() { if (SSR.C==0) PC = mOpAddr; }
+void m6502::InstrBCS() { if (SSR.C==1) PC = mOpAddr; }
+void m6502::InstrBEQ() { if (SSR.Z==1) PC = mOpAddr; }
 
 void m6502::InstrBIT()
 {
     static auto tmp = SSR;
-
     tmp.as_byte = rdbus(mOpAddr);
     SSR.N = tmp.N;
     SSR.V = tmp.V;
     _Z(AC & tmp.as_byte);
 }
 
-void m6502::InstrBMI()
-{
-    if (SSR.N == 1) PC = mOpAddr;
-}
-
-void m6502::InstrBNE()
-{
-    if (SSR.Z == 0) PC = mOpAddr;
-}
-
-void m6502::InstrBPL()
-{
-    if (SSR.N == 0) PC = mOpAddr;
-}
+void m6502::InstrBMI() { if (SSR.N==1) PC = mOpAddr; }
+void m6502::InstrBNE() { if (SSR.Z==0) PC = mOpAddr; }
+void m6502::InstrBPL() { if (SSR.N==0) PC = mOpAddr; }
 
 // BRK not affected by I
 void m6502::InstrBRK()
@@ -150,15 +132,8 @@ void m6502::InstrBRK()
     _IntJump(0xFFFA);
 }
 
-void m6502::InstrBVC()
-{
-    if (SSR.V == 0) PC = mOpAddr;
-}
-
-void m6502::InstrBVS()
-{
-    if (SSR.V == 1) PC = mOpAddr;
-}
+void m6502::InstrBVC() { if (SSR.V==0) PC = mOpAddr; }
+void m6502::InstrBVS() { if (SSR.V==1) PC = mOpAddr; }
 
 void m6502::InstrCLC() { SSR.C = 0; }
 void m6502::InstrCLD() { SSR.D = 0; }

@@ -14,19 +14,26 @@ class memu::ConfigParser
 private:
     const char       *mPath;
     int               mIdx;
-    // std::vector<char> mBuf;
-    std::map<std::string, std::string> mConf;
+    std::vector<char> mBuf;
+
+    using KeyVal = std::map<std::string, std::string>;
+    std::map<std::string, KeyVal> mConf;
 
     std::string _readSection();
     std::string _readLabel();
+    std::string _readTo(char);
+    std::string _readString();
     std::string _readValue();
-    std::string _readLabelValue();
 
+    void skip(char);
     char peek();
     char advance();
-    char check(char);
+    char retreat();
+    char match(char);
 
 public:
     ConfigParser(const char *filepath);
+    void print();
+    KeyVal &operator[]( const std::string &S ) { return mConf[S]; }
 };
 

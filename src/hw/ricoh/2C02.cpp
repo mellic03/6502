@@ -1,5 +1,7 @@
 #include <memu/hw/ricoh/2C02.hpp>
 #include <memu/addrspace.hpp>
+#include <memu/file.hpp>
+#include <memu/log.hpp>
 
 using namespace memu;
 
@@ -54,6 +56,13 @@ void Ricoh2C02::reset()
 
 }
 
+
+void Ricoh2C02::loadPalette( const std::string &path )
+{
+    size_t bufsz = sizeof(mPalette);
+    size_t res = loadFileRaw(path, mPalette, bufsz);
+    LogAsrt(res==bufsz, "Failed reading .pal file \"%s\"\n", path.c_str());
+}
 
 
 /*

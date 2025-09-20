@@ -17,35 +17,29 @@ int main( int argc, char **argv )
     int opts = argc - 2; // name, FILE
 
     memu::ConfigParser conf("boot.conf");
-
-    printf("argc: %d\n", argc);
-    if (argc<2 || (opts % 2) != 0)
-    {
-        printf("Usage: nesemu FILE [OPTIONS]\n\n");
-        printf(" Option         Long option          Meaning\n");
-        printf(" -j <addr>      --jump <addr>        Jump to address\n");
-        return 1;
-    }
+    for (int i=1; i<argc-1; i+=2)
+        if (std::string(argv[i]) == "--conf")
+            conf = memu::ConfigParser(argv[i+1]);
+    conf.print();
 
     auto *nes = new NesEmu::System();
-    nes->loadGamePak(new NesEmu::GamePak(argv[1]));
-    
-    for (int i=2; i<argc-1; i+=2)
-    {
-        if (std::string(argv[i]) == "--jump")
-        {
-            nes->mCPU.PC = (uint16_t)strtol(argv[i+1], NULL, 16);
-        }
-    }
+    nes->loadGamePak(new NesEmu::GamePak(conf["BOOT"]["rom"]));
+    nes->mPPU.loadPalette(conf["NTSC"]["palette"]);
 
-    Display D;
+    if (conf["BOOT"].contains("jump"))
+    {
+        nes->mCPU.PC = (uint16_t)strtol(conf["BOOT"]["jump"].c_str(), NULL, 16);
+    }
 
     auto *fh = (NesEmu::iNES_File*)(nes->mGPak->data());
     std::string title0 = std::string("NesEmu ") + (fh->IsPAL ? "[PAL]" : "[NTSC]");
 
-    auto *win0 = D.addWindow(new EmuWindow(title0.c_str(), 256, 240, 4));
-    auto *win1 = D.addWindow(new EmuWindow("CHR Pattern Tables", 256, 128, 4));
-    // auto *win2 = D.addWindow(new EmuWindow("CHR-ROM 2", 128, 128, 4));
+    EmuIO io;
+    auto *win0   = new EmuWindow(title0.c_str(), 256+128, 240, 4);
+    auto *fbgame = new EmuFramebuffer(256, 240);
+    auto *fbpal  = new EmuFramebuffer(128, 256);
+    auto *fbpal0 = new EmuFramebuffer(128, 128);
+    auto *fbpal1 = new EmuFramebuffer(128, 128);
 
     int palNo = 0;
     uint64_t tcurr = SDL_GetTicks64();
@@ -55,7 +49,7 @@ int main( int argc, char **argv )
 
     while (!nes->mCPU.mInvalidOp)
     {
-        D.beginFrame();
+        io.updateEvents();
 
         tcurr = SDL_GetTicks64();
         tdiff = tcurr - tprev;
@@ -63,50 +57,53 @@ int main( int argc, char **argv )
 
         nes->tick();
 
-        if (D.keyReleased(SDL_SCANCODE_SPACE))
+        if (io.keyReleased(SDL_SCANCODE_SPACE))
         {
             printf("Key SPACE --> WAI\tI:%u B%u\n", nes->mCPU.SSR.I, nes->mCPU.SSR.B);
             nes->mCPU.sigFlip(m6502::PIN_WAI);
         }
 
-        if (D.keyReleased(SDL_SCANCODE_I))
+        if (io.keyReleased(SDL_SCANCODE_I))
         {
             printf("Key I --> IRQ\n");
             nes->mCPU.SSR.I = 0;
             nes->mCPU.sigLow(m6502::PIN_IRQ);
         }
 
-        if (D.keyReleased(SDL_SCANCODE_R))
+        if (io.keyReleased(SDL_SCANCODE_R))
         {
             printf("Key R --> RESET\n");
             nes->mCPU.sigHigh(m6502::PIN_RES);
         }
 
-        if (D.keyReleased(SDL_SCANCODE_N))
+        if (io.keyReleased(SDL_SCANCODE_N))
         {
             printf("Key N --> NMI\n");
             nes->mCPU.sigFlip(m6502::PIN_NMI);
         }
 
-        if (D.keyReleased(SDL_SCANCODE_ESCAPE))
+        if (io.keyReleased(SDL_SCANCODE_ESCAPE))
         {
             break;
         }
 
-        if (D.keyReleased(SDL_SCANCODE_LEFT))
+        if (io.keyReleased(SDL_SCANCODE_LEFT))
         {
             palNo = (palNo-1) % 12;
         }
 
-        if (D.keyReleased(SDL_SCANCODE_RIGHT))
+        if (io.keyReleased(SDL_SCANCODE_RIGHT))
         {
             palNo = (palNo+1) % 12;
         }
 
-        nes->mPPU.drawPatternTable(win1, palNo, {0, 0}, {0, 0}, {128, 128});
-        nes->mPPU.drawPatternTable(win1, palNo, {128, 0}, {0, 128}, {128, 128});
+        nes->mPPU.drawPatternTable(fbpal0, palNo, {0, 0});
+        nes->mPPU.drawPatternTable(fbpal1, palNo, {0, 128});
+        win0->blit(fbpal0, {256, 0});
+        win0->blit(fbpal1, {256, 128});
+        win0->blit(fbgame, {0, 0});
 
-        D.endFrame();
+        win0->flush();
     }
 
     return 0;
