@@ -72,7 +72,7 @@ struct NesEmu::iNES_File
         uint8_t BankNo8K; // Number of 8K banks, assume 1x8K if zero.
     } __attribute__((packed));
     struct {
-        uint8_t IsPAL    :1; // assume 1x8kB RAM page if zero
+        uint8_t IsPAL      :1; // assume 1x8kB RAM page if zero
         uint8_t f9Reserved :7;
     } __attribute__((packed));
     uint8_t Flags10;    // Reserved, zero.

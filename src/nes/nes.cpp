@@ -55,23 +55,25 @@ void NesEmu::System::tick()
     static int prev  = 0;
     static int accum = 0;
 
-    mBusCPU.tick();
     mBusPPU.tick();
-
+    mBusPPU.tick();
+    mBusPPU.tick();
     mBusCPU.tick();
 
-    curr = mCPU.clockTime();
-    accum += curr - prev;
-    prev = curr;
+    // mBusCPU.tick();
 
-    if (accum >= 3)
-    {
-        while (accum > 0)
-        {
-            mBusPPU.tick();
-            accum -= 1;
-        }
-    }
+    // curr = mCPU.clockTime();
+    // accum += curr - prev;
+    // prev = curr;
+
+    // if (accum >= 3)
+    // {
+    //     while (accum > 0)
+    //     {
+    //         mBusPPU.tick();
+    //         accum -= 1;
+    //     }
+    // }
 
     accum = std::max(accum, 0);
 }

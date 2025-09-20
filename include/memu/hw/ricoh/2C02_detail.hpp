@@ -64,24 +64,29 @@ public:
         } __attribute__((packed));
     };
 
-    template <typename T>
     class DataLatch
     {
     private:
         bool mLatch = false;
-        T    mData;
 
     public:
+        uint16_t value;
+
+        void reset()
+        {
+            mLatch = false;
+        }
+
         void write( uint8_t v )
         {
-            if (!mLatch) mData = (mData & 0xFF00) | (v << 8);
-            else         mData = (mData & 0x00FF) | v;
+            if (mLatch) value = (value & 0xFF00) | (v << 8);
+            else        value = (value & 0x00FF) | v;
             mLatch = !mLatch;
         }
     };
 
-    DataLatch<uint16_t> mScrl;
-    DataLatch<uint16_t> mAddr;
-    uint8_t             mData;
+    DataLatch mScrl;
+    DataLatch mAddr;
+    uint8_t   mData;
 
 };

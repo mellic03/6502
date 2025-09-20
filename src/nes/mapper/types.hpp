@@ -30,6 +30,7 @@ private:
         int32_t  size;
     };
 
+    PakBank mPrgRam;
     PakBank mPrgRom;
     PakBank mChrRom;
 

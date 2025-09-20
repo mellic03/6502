@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.5)
 
 project(nesemu LANGUAGES CXX)
 set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g" )
+set(MEMU_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build/NesEmu")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${MEMU_OUTPUT_DIR})
+
 find_package(SDL2 REQUIRED)
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
@@ -22,4 +25,14 @@ target_link_libraries(
     memu_core
     memu_hw
     memu_nes
+)
+
+
+file(
+    COPY
+        "${CMAKE_SOURCE_DIR}/data/palette"
+        "${CMAKE_SOURCE_DIR}/data/rom"
+        "${CMAKE_SOURCE_DIR}/data/boot.conf"
+    DESTINATION
+        "${MEMU_OUTPUT_DIR}/"
 )

@@ -97,6 +97,8 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
         // log::Info("PAL/NTSC: %s\n", (fh->IsPAL) ? "PAL" : "NTSC");
     }
 
+    mPrgRam = {new ubyte[8*1024], 8*1024};
+
     mPrgRom = {fpos, fh->PrgRomNo16K * 16*1024};
     fpos += mPrgRom.size;
 
@@ -113,10 +115,10 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
         auto &bus = nes.mBusCPU;
 
         // CPU --> CPU RAM.
-        bus.mapRange(0x0000, 0x0800-1, 2047, memu::RWX_RW, cpuRAM);
-        bus.mapRange(0x0800, 0x1000-1, 2047, memu::RWX_RW, cpuRAM);
-        bus.mapRange(0x1000, 0x1800-1, 2047, memu::RWX_RW, cpuRAM);
-        bus.mapRange(0x1800, 0x2000-1, 2047, memu::RWX_RW, cpuRAM);
+        bus.mapRWRange(0x0000, 0x07FF, cpuRAM);
+        bus.mapRWRange(0x0800, 0x0FFF, cpuRAM);
+        bus.mapRWRange(0x1000, 0x17FF, cpuRAM);
+        bus.mapRWRange(0x1800, 0x1FFF, cpuRAM);
 
         // CPU --> PPU MMIO registers.
         bus.mapRangeTiny(0x2000, 0x3FFF, &ppu, CpuRdPpu, CpuWtPpu);
@@ -124,7 +126,10 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
         // CPU --> APU and IO registers. 4000 - 401F
         bus.mapRange(0x4000, 0x40FF, 0x00FF, memu::RWX_RW, &(cpu.mApuMMIO));
 
-        // CPU --> PGR ROM
+        // CPU --> PRG RAM
+        bus.mapRWRange(0x6000, 0x7FFF, mPrgRam.base);
+
+        // CPU --> PRG ROM
         bus.mapRdRange(0x8000, 0xBFFF, mPrgRom.base);
 
         uint8_t sz = fh->PrgRomNo16K;
@@ -172,18 +177,26 @@ static uint8_t CpuRdPpu( memu::HwModule *dev, addr_t addr )
 {
     uint8_t idx = addr % 8;
     NesPPU *ppu = (NesPPU*)dev;
+    uint8_t data = 0;
 
     switch (idx)
     {
         default: break;
 
         case REG_PPUSTATUS:
+            // ppu->STATUS.V = 1;
+            data = (ppu->STATUS.byte & 0xE0) | (ppu->mData & 0x1F);
+            ppu->STATUS.V = 0;
+            ppu->mAddr.reset();
+            break;
+
         case REG_OAMDATA:
         case REG_PPUDATA:
-            return ppu->MMIO[idx];
+            data = ppu->MMIO[idx];
+            break;
     }
 
-    return 0;
+    return data;
 }
 
 
@@ -201,8 +214,12 @@ static void CpuWtPpu( memu::HwModule *dev, addr_t addr, ubyte data )
         case REG_PPUMASK:
         case REG_OAMADDR:
         case REG_OAMDATA:
-        case REG_PPUDATA:
             *dst = data;
+            break;
+
+        case REG_PPUDATA:
+            ppu->mBus.write(ppu->mAddr.value, data);
+            ppu->mAddr.value += 1;
             break;
 
         case REG_PPUSCROLL:

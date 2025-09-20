@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <memu/configparser.hpp>
 #include <memu/display.hpp>
 #include <memu/nes/mapper.hpp>
 #include <memu/nes/nes.hpp>
@@ -15,6 +16,8 @@ int main( int argc, char **argv )
 {
     int opts = argc - 2; // name, FILE
 
+    memu::ConfigParser conf("boot.conf");
+
     printf("argc: %d\n", argc);
     if (argc<2 || (opts % 2) != 0)
     {
@@ -23,7 +26,6 @@ int main( int argc, char **argv )
         printf(" -j <addr>      --jump <addr>        Jump to address\n");
         return 1;
     }
-
 
     auto *nes = new NesEmu::System();
     nes->loadGamePak(new NesEmu::GamePak(argv[1]));
@@ -37,10 +39,15 @@ int main( int argc, char **argv )
     }
 
     Display D;
-    auto *win0 = D.addWindow(new EmuWindow("NES Emulation", 256, 240, 4));
+
+    auto *fh = (NesEmu::iNES_File*)(nes->mGPak->data());
+    std::string title0 = std::string("NesEmu ") + (fh->IsPAL ? "[PAL]" : "[NTSC]");
+
+    auto *win0 = D.addWindow(new EmuWindow(title0.c_str(), 256, 240, 4));
     auto *win1 = D.addWindow(new EmuWindow("CHR Pattern Tables", 256, 128, 4));
     // auto *win2 = D.addWindow(new EmuWindow("CHR-ROM 2", 128, 128, 4));
 
+    int palNo = 0;
     uint64_t tcurr = SDL_GetTicks64();
     uint64_t tprev = tcurr;
     uint64_t tdiff = 0;
@@ -86,8 +93,18 @@ int main( int argc, char **argv )
             break;
         }
 
-        nes->mPPU.drawPatternTable(win1, {0, 0}, {0, 0}, {128, 128});
-        nes->mPPU.drawPatternTable(win1, {128, 0}, {0, 128}, {128, 128});
+        if (D.keyReleased(SDL_SCANCODE_LEFT))
+        {
+            palNo = (palNo-1) % 12;
+        }
+
+        if (D.keyReleased(SDL_SCANCODE_RIGHT))
+        {
+            palNo = (palNo+1) % 12;
+        }
+
+        nes->mPPU.drawPatternTable(win1, palNo, {0, 0}, {0, 0}, {128, 128});
+        nes->mPPU.drawPatternTable(win1, palNo, {128, 0}, {0, 128}, {128, 128});
 
         D.endFrame();
     }

@@ -1,9 +1,6 @@
 #!/bin/bash
 
-mkdir -p ./build
-
-cd ./build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-# cmake -DCMAKE_BUILD_TYPE=Release ..
+mkdir -p ./build/CMake
+cd ./build/CMake
+cmake -DCMAKE_BUILD_TYPE=Debug ../../
 make -j6
-mv ./nesemu ../nesemu

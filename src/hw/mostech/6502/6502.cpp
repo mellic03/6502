@@ -26,10 +26,8 @@ void m6502::_execute()
     (this->*mCurrInstr->fA)();
 
     printf("%04X\t", (mOpAC) ? AC : mOpAddr);
-
     printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X ", AC, XR, YR, SSR.as_byte, SP);
-    printf("0x02:%u 0x03:%u\n", rdbus(0x0002), rdbus(0x0003));
-    // printf("PPU: %u,%u CYC:%lu\n", 0, 0, mCycles );
+    printf("PPU: %u,%u CYC:%lu\n", 0, 0, clockTime());
 
     (this->*mCurrInstr->fE)();
 

@@ -73,6 +73,7 @@ void EADS::mapRange( addr_t base, addr_t end, addr_t mask, RWX_ rwx,
 
 void EADS::mapRangeTiny( addr_t base, addr_t end, HwModule *dev, RdFunc rd, WtFunc wt )
 {
+    log::Info("mapRangeTiny %04X-%04X\n", base, end);
     size_t len = (end+1) - base;
 
     for (size_t i=base; i<base+len; i+=256)

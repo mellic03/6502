@@ -32,10 +32,9 @@ void NesPPU::drawPatternTile( EmuWindow *win, ivec2 dpos, int tx, int ty )
 }
 
 
-void NesPPU::drawPatternTable( EmuWindow *win, ivec2 dpos, ivec2 spos, ivec2 ssp )
+void NesPPU::drawPatternTable( EmuWindow *win, int palNo, ivec2 dpos, ivec2 spos, ivec2 ssp )
 {
     auto &B = mBus;
-    int palNo = 0;
 
     for (int i=0; i<ssp.y; i++)
     {
