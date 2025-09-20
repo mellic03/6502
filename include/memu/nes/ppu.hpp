@@ -72,6 +72,7 @@ public:
     NesPPU( memu::AddrSpace& );
     virtual void tick() final;
     virtual void reset() final;
+
 };
 
 
@@ -81,24 +82,18 @@ public:
     https://www.nesdev.org/wiki/PPU_nametables
     https://www.nesdev.org/wiki/PPU_attribute_tables
 
-    The NES has four logical nametables, arranged in a 2x2 pattern. Each occupies a 1 KiB
-    chunk of PPU address space, starting at $2000 at the top left, $2400 at the top right,
-    $2800 at the bottom left, and $2C00 at the bottom right. 
-*/
 
-
-/*
-    |Name      | Addr  | Bits                | Type |
+    | Name      | Addr | Bits                | Type |
     |-----------------------------------------------|
-    |PPUCTRL   | $2000 |           VPHB SINN | -W   | 
-    |PPUMASK   | $2001 |           BGRs bMmG | -W   | 
-    |PPUSTATUS | $2002 |           VSO- ---- | R-   | 
-    |OAMADDR   | $2003 |           AAAA AAAA | -W   | 
-    |OAMDATA   | $2004 |           DDDD DDDD | RW   | 
-    |PPUSCROLL | $2005 | XXXX XXXX YYYY YYYY | Wx2  | 
-    |PPUADDR   | $2006 | ..AA AAAA AAAA AAAA | Wx2  | 
-    |PPUDATA   | $2007 |           DDDD DDDD | RW   | 
-    |OAMDMA    | $4014 |           AAAA AAAA | -W   | 
+    | PPUCTRL   | 2000 |           VPHB SINN | -W   | 
+    | PPUMASK   | 2001 |           BGRs bMmG | -W   | 
+    | PPUSTATUS | 2002 |           VSO- ---- | R-   | 
+    | OAMADDR   | 2003 |           AAAA AAAA | -W   | 
+    | OAMDATA   | 2004 |           DDDD DDDD | RW   | 
+    | PPUSCROLL | 2005 | XXXX XXXX YYYY YYYY | Wx2  | 
+    | PPUADDR   | 2006 | ..AA AAAA AAAA AAAA | Wx2  | 
+    | PPUDATA   | 2007 |           DDDD DDDD | RW   | 
+    | OAMDMA    | 4014 |           AAAA AAAA | -W   | 
     |-----------------------------------------------|
 
     PPUCTRL   - NMI enable (V), PPU master/slave (P), sprite height (H), background tile
@@ -114,10 +109,11 @@ public:
     PPUADDR   - VRAM address (two writes: most significant byte, then least significant byte).
     PPUDATA   - VRAM data read/write.
     OAMDMA    - OAM DMA high address.
-        
-
 
     ---------------------------- Attribute Tables ----------------------------
+    The NES has four logical nametables, arranged in a 2x2 pattern. Each occupies a 1 KiB
+    chunk of PPU address space, starting at $2000 at the top left, $2400 at the top right,
+    $2800 at the bottom left, and $2C00 at the bottom right. 
 
     - An attribute table is a 64-byte array at the end of each nametable
       that controls which palette is assigned to each part of the background.
@@ -157,8 +153,6 @@ public:
         +-------+-------+-------+-------+-------+-------+-------+-------+
    2xF8:|   .   |   .   |   .   |   .   |   .   |   .   |   .   |   .   |
         `-------+-------+-------+-------+-------+-------+-------+-------'
-
-
 
 */
 

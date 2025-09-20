@@ -44,15 +44,4 @@ public:
     void mapPage(addr_t addr, addr_t mask, RWX_, void*);
     void mapRange(addr_t start, addr_t end, addr_t mask, RWX_, void*);
 
-    // void mapRdPage(addr_t addr, addr_t mask, void *page);
-    // void mapWtPage(addr_t addr, addr_t mask, void *page);
-    // void mapRdWtPage(addr_t, addr_t, void*);
-
-    // void mapRdRange(addr_t start, addr_t end, addr_t mask, void *pages);
-    // void mapWtRange(addr_t start, addr_t end, addr_t mask, void *pages);
-    // void mapRdWtRange(addr_t, addr_t, addr_t, void*);
-
-    // void unmapRdPage(uint8_t pageno);
-    // void unmapWtPage(uint8_t pageno);
-
 };

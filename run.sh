@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./nesemu ./bin/nestest.nes
+./nesemu --rom ./bin/nestest.nes --jump 0xC000

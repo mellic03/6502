@@ -13,7 +13,6 @@
 
 int main( int argc, char **argv )
 {
-
     NesEmu::System *nes = new NesEmu::System();
 
     for (int i=1; i<argc-1; i+=2)
@@ -34,7 +33,7 @@ int main( int argc, char **argv )
         }
     }
 
-if (argc==1 || !nes->mGPak)
+    if (argc==1 || !nes->mGPak)
     {
         printf("Usage: memu-system-nes --rom [filepath] --jump [address]\n");
         return 1;

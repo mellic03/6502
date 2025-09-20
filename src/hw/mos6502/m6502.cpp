@@ -26,8 +26,10 @@ void m6502::_execute()
     (this->*mCurrInstr->fA)();
 
     printf("%04X\t", (mOpAC) ? AC : mOpAddr);
+
     printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X ", AC, XR, YR, SSR.as_byte, SP);
-    printf("PPU: %u,%u CYC:%lu\n", 0, 0, mCycles );
+    printf("0x02:%u 0x03:%u\n", rdbus(0x0002), rdbus(0x0003));
+    // printf("PPU: %u,%u CYC:%lu\n", 0, 0, mCycles );
 
     (this->*mCurrInstr->fE)();
 
@@ -155,7 +157,6 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0x61] = Inst("ADC", &X::InstrADC, &X::LoadINDX, 6);
     mFtab[0x71] = Inst("ADC", &X::InstrADC, &X::LoadINDY, 5);
 
-
     mFtab[0x29] = Inst("AND", &X::InstrAND, &X::LoadIMM,  2);
     mFtab[0x25] = Inst("AND", &X::InstrAND, &X::LoadZPG,  3);
     mFtab[0x35] = Inst("AND", &X::InstrAND, &X::LoadZPGX, 4);
@@ -165,13 +166,11 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0x21] = Inst("AND", &X::InstrAND, &X::LoadINDX, 6);
     mFtab[0x31] = Inst("AND", &X::InstrAND, &X::LoadINDY, 5);
 
-
     mFtab[0x0A] = Inst("ASL", &X::InstrASL, &X::LoadACC,  2);
     mFtab[0x06] = Inst("ASL", &X::InstrASL, &X::LoadZPG,  5);
     mFtab[0x16] = Inst("ASL", &X::InstrASL, &X::LoadZPGX, 6);
     mFtab[0x0E] = Inst("ASL", &X::InstrASL, &X::LoadABS,  6);
     mFtab[0x1E] = Inst("ASL", &X::InstrASL, &X::LoadABSX, 7);
-
 
     mFtab[0x90] = Inst("BCC", &X::InstrBCC, &X::LoadREL, 2);
     mFtab[0xB0] = Inst("BCS", &X::InstrBCS, &X::LoadREL, 2);
@@ -185,12 +184,10 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0x50] = Inst("BVC", &X::InstrBVC, &X::LoadREL, 2);
     mFtab[0x70] = Inst("BVS", &X::InstrBVS, &X::LoadREL, 2);
 
-
     mFtab[0x18] = Inst("CLC", &X::InstrCLC, &X::LoadIMP, 2);
     mFtab[0xD8] = Inst("CLD", &X::InstrCLD, &X::LoadIMP, 2);
     mFtab[0x58] = Inst("CLI", &X::InstrCLI, &X::LoadIMP, 2);
     mFtab[0xB8] = Inst("CLV", &X::InstrCLV, &X::LoadIMP, 2);
-
 
     mFtab[0xC9] = Inst("CMP", &X::InstrCMP, &X::LoadIMM,  2);
     mFtab[0xC5] = Inst("CMP", &X::InstrCMP, &X::LoadZPG,  3);
@@ -201,7 +198,6 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0xC1] = Inst("CMP", &X::InstrCMP, &X::LoadINDX, 6);
     mFtab[0xD1] = Inst("CMP", &X::InstrCMP, &X::LoadINDY, 5);
 
-
     mFtab[0xE0] = Inst("CPX", &X::InstrCPX, &X::LoadIMM, 2);
     mFtab[0xE4] = Inst("CPX", &X::InstrCPX, &X::LoadZPG, 3);
     mFtab[0xEC] = Inst("CPX", &X::InstrCPX, &X::LoadABS, 4);
@@ -209,14 +205,12 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0xC4] = Inst("CPY", &X::InstrCPY, &X::LoadZPG, 3);
     mFtab[0xCC] = Inst("CPY", &X::InstrCPY, &X::LoadABS, 4);
 
-
     mFtab[0xC6] = Inst("DEC",  &X::InstrDEC, &X::LoadZPG,  5);
     mFtab[0xD6] = Inst("DEC",  &X::InstrDEC, &X::LoadZPGX, 6);
     mFtab[0xCE] = Inst("DEC",  &X::InstrDEC, &X::LoadABS,  6);
     mFtab[0xDE] = Inst("DEC",  &X::InstrDEC, &X::LoadABSX, 7);
     mFtab[0xCA] = Inst("DEX",  &X::InstrDEX, &X::LoadIMP,  2);
     mFtab[0x88] = Inst("DEY",  &X::InstrDEY, &X::LoadIMP,  2);
-
 
     mFtab[0x49] = Inst("EOR", &X::InstrEOR, &X::LoadIMM,  2);
     mFtab[0x45] = Inst("EOR", &X::InstrEOR, &X::LoadZPG,  3);
@@ -226,7 +220,6 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0x59] = Inst("EOR", &X::InstrEOR, &X::LoadABSY, 4);
     mFtab[0x41] = Inst("EOR", &X::InstrEOR, &X::LoadINDX, 6);
     mFtab[0x51] = Inst("EOR", &X::InstrEOR, &X::LoadINDY, 5);
-
 
     mFtab[0xE6] = Inst("INC",  &X::InstrINC, &X::LoadZPG,  5);
     mFtab[0xF6] = Inst("INC",  &X::InstrINC, &X::LoadZPGX, 6);
@@ -239,7 +232,6 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0x6C] = Inst("JMP",  &X::InstrJMP, &X::LoadIND, 5);
     mFtab[0x20] = Inst("JSR",  &X::InstrJSR, &X::LoadABS, 6);
 
-
     mFtab[0xA9] = Inst("LDA", &X::InstrLDA, &X::LoadIMM,  2);
     mFtab[0xA5] = Inst("LDA", &X::InstrLDA, &X::LoadZPG,  3);
     mFtab[0xB5] = Inst("LDA", &X::InstrLDA, &X::LoadZPGX, 4);
@@ -248,7 +240,6 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0xB9] = Inst("LDA", &X::InstrLDA, &X::LoadABSY, 4);
     mFtab[0xA1] = Inst("LDA", &X::InstrLDA, &X::LoadINDX, 6);
     mFtab[0xB1] = Inst("LDA", &X::InstrLDA, &X::LoadINDY, 5);
-
 
     mFtab[0xA2] = Inst("LDX", &X::InstrLDX, &X::LoadIMM,  2);
     mFtab[0xA6] = Inst("LDX", &X::InstrLDX, &X::LoadZPG,  3);
@@ -277,12 +268,10 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0x01] = Inst("ORA", &X::InstrORA, &X::LoadINDX, 6);
     mFtab[0x11] = Inst("ORA", &X::InstrORA, &X::LoadINDY, 5);
 
-
     mFtab[0x68] = Inst("PLA", &X::InstrPLA, &X::LoadIMP, 4);
     mFtab[0x08] = Inst("PHP", &X::InstrPHP, &X::LoadIMP, 3);
     mFtab[0x48] = Inst("PHA", &X::InstrPHA, &X::LoadIMP, 3);
     mFtab[0x28] = Inst("PLP", &X::InstrPLP, &X::LoadIMP, 4);
-
 
     mFtab[0x2A] = Inst("ROL", &X::InstrROL, &X::LoadACC,  2);
     mFtab[0x26] = Inst("ROL", &X::InstrROL, &X::LoadZPG,  5);
@@ -296,7 +285,6 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0x7E] = Inst("ROR", &X::InstrROR, &X::LoadABSX, 7);
     mFtab[0x40] = Inst("RTI", &X::InstrRTI, &X::LoadIMP,  6);
     mFtab[0x60] = Inst("RTS", &X::InstrRTS, &X::LoadIMP,  6);
-
 
     mFtab[0xE9] = Inst("SBC", &X::InstrSBC, &X::LoadIMM,  2);
     mFtab[0xE5] = Inst("SBC", &X::InstrSBC, &X::LoadZPG,  3);
@@ -322,7 +310,6 @@ m6502::m6502( memu::AddrSpace &bus )
     mFtab[0x84] = Inst("STY", &X::InstrSTY, &X::LoadZPG,  3);
     mFtab[0x94] = Inst("STY", &X::InstrSTY, &X::LoadZPGX, 4);
     mFtab[0x8C] = Inst("STY", &X::InstrSTY, &X::LoadABS,  4);
-
 
     mFtab[0xAA] = Inst("TAX", &X::InstrTAX, &X::LoadIMP, 2);
     mFtab[0xA8] = Inst("TAY", &X::InstrTAY, &X::LoadIMP, 2);
