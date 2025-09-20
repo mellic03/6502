@@ -37,6 +37,15 @@ using namespace memu;
     - Each scanline lasts for 341 PPU clock cycles 
 */
 
+
+Ricoh2C02::Ricoh2C02(AddrSpace &bus)
+:   HwModule(bus), BaseHw(),
+    mAccum(0), mScanline(0)
+{
+
+}
+
+
 size_t Ricoh2C02::tick()
 {
     while (mAccum >= 341)

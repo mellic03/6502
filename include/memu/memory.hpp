@@ -78,7 +78,8 @@ private:
 
 public:
     MemoryRW(): MemoryRW(nullptr, 0) {  };
-    MemoryRW(void *p, uint16_t s): mData((ubyte*)p), mSize(s) {  };
+    MemoryRW(void *p, size_t s): mData((ubyte*)p), mSize(s) {  };
+    size_t size() { return mSize; };
     ubyte *data() { return mData; }
     ubyte *get(addr_t);
     virtual ubyte read(addr_t i) { return *get(i); }
@@ -111,21 +112,21 @@ public:
 
 
 
-template <uint16_t Xk>
+template <size_t Xk>
 struct MemoryXkRW: public memu::MemoryRW
 {
-    MemoryXkRW(void *p): MemoryRW(p, Xk) {  };
-    MemoryXkRW(): MemoryXkRW(new ubyte[Xk]) {  };
+    MemoryXkRW(void *p): MemoryRW(p, Xk) {  }
+    MemoryXkRW(): MemoryXkRW(new ubyte[Xk]) {  }
 };
 
-template <uint16_t Xk>
+template <size_t Xk>
 struct MemoryXkRO: public memu::MemoryRO
 {
     MemoryXkRO(void *p): MemoryRO(p, Xk) {  };
     MemoryXkRO(): MemoryXkRO(new ubyte[Xk]) {  };
 };
 
-template <uint16_t Xk>
+template <size_t Xk>
 struct MemoryXkWO: public memu::MemoryWO
 {
     MemoryXkWO(void *p): MemoryWO(p, Xk) {  };

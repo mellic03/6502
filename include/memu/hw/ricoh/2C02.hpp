@@ -30,8 +30,8 @@ public:
 
     Memory2kRW mVRAM;
 
-    Ricoh2C02(AddrSpace &bus)
-    :   HwModule(bus), BaseHw(), mAccum(0), mScanline(0) {  }
+    Ricoh2C02(AddrSpace&);
+    // :   HwModule(bus), BaseHw(), mAccum(0), mScanline(0) {  }
     virtual size_t tick() override;
     virtual void reset() override;
     void loadPalette(const std::string&);

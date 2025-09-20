@@ -32,15 +32,6 @@
 */
 
 
-
-NesEmu::System::System()
-:   mCPU(mBusCPU), mPPU(mBusPPU),
-    mGPak(nullptr)
-{
-
-}
-
-
 void NesEmu::System::loadGamePak( GamePak *gpak )
 {
     mGPak = gpak;
@@ -77,4 +68,179 @@ void NesEmu::System::tick()
 
     accum = std::max(accum, 0);
 }
+
+
+
+
+
+
+
+
+static uint8_t CpuRdPpu(memu::HwModule*, addr_t);
+static void CpuWtPpu(memu::HwModule*, addr_t, ubyte);
+
+static uint8_t CpuRdIO(memu::HwModule*, addr_t);
+static void CpuWtIO(memu::HwModule*, addr_t, ubyte);
+
+
+NesEmu::System::System()
+:   mCPU(mBusCPU), mPPU(mBusPPU),
+    mGPak(nullptr)
+{
+    using namespace memu;
+
+    // CPU Mapping
+    // -------------------------------------------------------------------------
+    ubyte *cpuram = mCPU.mRAM.data();
+    size_t cpursz = mCPU.mRAM.size();
+
+    // CPU --> CPU RAM.
+    mBusCPU.mapRange(0x0000, 0x1FFF, cpursz-1, RWX_RW, cpuram);
+
+    // CPU --> PPU MMIO registers.
+    mBusCPU.mapRangeTiny(0x2000, 0x3FFF, &mPPU, CpuRdPpu, CpuWtPpu);
+
+    // CPU --> APU and IO registers. 4000 - 401F
+    mBusCPU.mapRangeTiny(0x4000, 0x40FF, &mCPU, CpuRdIO, CpuWtIO);
+    // -------------------------------------------------------------------------
+
+
+    // PPU Mapping
+    // -------------------------------------------------------------------------
+    uint8_t *ppuram = mPPU.mVRAM.data();
+    size_t   ppursz = mPPU.mVRAM.size();
+
+    // PPU --> PPU Nametables
+    mBusPPU.mapRange(0x2000, 0x2FFF, ppursz-1, RWX_RW, ppuram);
+    mBusPPU.mapRange(0x3000, 0x3EFF, ppursz-1, RWX_RW, ppuram);
+
+    // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
+    mBusPPU.mapRange(0x3F00, 0x3FFF, 32-1, RWX_RW, mPPU.mPaletteIndices);
+    // bus.mapRange(0x3F00, 0x3FFF, 0x001F, RWX_RW, mPPU.mPalette);
+    // -------------------------------------------------------------------------
+
+}
+
+
+
+enum REG_: uint16_t
+{
+    REG_PPUCTRL = 0x0000,
+    REG_PPUMASK,
+    REG_PPUSTATUS,
+    REG_OAMADDR,
+    REG_OAMDATA,
+    REG_PPUSCROLL,
+    REG_PPUADDR,
+    REG_PPUDATA,
+    REG_OAMDMA = 0x4014,
+};
+
+
+static uint8_t CpuRdPpu( memu::HwModule *dev, addr_t addr )
+{
+    uint8_t idx = addr % 8;
+    NesPPU *ppu = (NesPPU*)dev;
+    uint8_t data = 0;
+
+    switch (idx)
+    {
+        case REG_PPUSTATUS:
+            // ppu->STATUS.V = 1;
+            data = (ppu->STATUS.byte & 0xE0) | (ppu->mData & 0x1F);
+            ppu->STATUS.V = 0;
+            ppu->mAddr.reset();
+            break;
+
+        case REG_OAMDATA:
+        case REG_PPUDATA:
+            data = ppu->MMIO[idx];
+            break;
+
+        default:
+            break;
+    }
+
+    return data;
+}
+
+
+static void CpuWtPpu( memu::HwModule *dev, addr_t addr, ubyte data )
+{
+    uint8_t  idx = addr % 8;
+    NesPPU  &ppu = *(NesPPU*)dev;
+    uint8_t *dst = ppu.MMIO + idx;
+
+    switch (idx)
+    {
+        case REG_PPUCTRL:
+        case REG_PPUMASK:
+        case REG_OAMADDR:
+        case REG_OAMDATA:
+            *dst = data;
+            break;
+
+        case REG_PPUDATA:
+            ppu.mBus.write(ppu.mAddr.value, data);
+            ppu.mAddr.value += 1;
+            break;
+
+        case REG_PPUSCROLL:
+            ppu.mScrl.write(data);
+            break;
+
+        case REG_PPUADDR:
+            ppu.mAddr.write(data);
+            break;
+
+        default:
+            break;
+    }
+}
+
+
+
+static uint8_t CpuRdIO( memu::HwModule *dev, addr_t addr )
+{
+    auto  &cpu = *(NesCPU*)dev;
+    ubyte data = 0;
+
+    switch (addr)
+    {
+        case 0x4016:
+            data = cpu.mStdCtl0.read();
+            break;
+
+        case 0x4017:
+            data = cpu.mStdCtl1.read();
+            break;
+
+        default:
+            break;
+    }
+
+    return data;
+}
+
+
+static void CpuWtIO( memu::HwModule *dev, addr_t addr, ubyte data )
+{
+    auto &cpu = *(NesCPU*)dev;
+
+    if (addr == 0x4016)
+    {
+        if (data & 0x01)
+        {
+            cpu.mStdCtl0.hi();
+            cpu.mStdCtl1.hi();
+        }
+
+        else
+        {
+            cpu.mStdCtl0.lo();
+            cpu.mStdCtl1.lo(); 
+        }
+    }
+}
+
 

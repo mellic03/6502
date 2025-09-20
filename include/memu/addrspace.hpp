@@ -26,13 +26,13 @@ public:
     void write(addr_t, ubyte);
     ubyte operator[](int i) { return read(i); }
 
-    void mapPage(addr_t addr, addr_t mask, RWX_, void*);
-    void mapRange(addr_t start, addr_t end, addr_t mask, RWX_, void*);
+    void mapPage(addr_t base, addr_t mask, RWX_, void*);
+    void mapRange(addr_t base, addr_t end, addr_t mask, RWX_, void *buf); // , uword bufsz);
     void mapRangeTiny(addr_t, addr_t, HwModule*, RdFunc, WtFunc);
 
-    void mapRWRange(addr_t a, addr_t b, void *p ) { mapRange(a, b, b-a, RWX_RW, p); }
-    void mapRdRange(addr_t a, addr_t b, void *p ) { mapRange(a, b, b-a, RWX_R, p); }
-    void mapWtRange(addr_t a, addr_t b, void *p ) { mapRange(a, b, b-a, RWX_W, p); }
+    void mapRWRange(addr_t a, addr_t b, void *p) { mapRange(a, b, b-a, RWX_RW, p); }
+    void mapRdRange(addr_t a, addr_t b, void *p) { mapRange(a, b, b-a, RWX_R, p); }
+    void mapWtRange(addr_t a, addr_t b, void *p) { mapRange(a, b, b-a, RWX_W, p); }
 
     void unmapPage(addr_t addr);
     void unmapRange(addr_t start, addr_t end);
@@ -45,6 +45,7 @@ public:
 
     public:
         ubyte *page; // page base pointer
+        uword  base;
         uword  mask; // wrap-around mask, generally size-1 unless mirrored. Eg 8-1 == addr%8
         bool   used;
 
@@ -52,8 +53,8 @@ public:
         RdFunc    rdfn = nullptr; // ...
         WtFunc    wtfn = nullptr; // ...
         
-        PgEntry(void *p, uword m, bool u): page((ubyte*)p), mask(m), used(u) {  }
-        PgEntry(): PgEntry(dummy, 0x0000, false) {  }
+        PgEntry(void *p, uword b, uword m, bool u): page((ubyte*)p), base(b), mask(m), used(u) {  }
+        PgEntry(): PgEntry(dummy, 0x00, 0x00, false) {  }
     };
 
     PgEntry mRdPages[256];

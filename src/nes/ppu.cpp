@@ -3,33 +3,32 @@
 #include <memu/display.hpp>
 
 
-// void NesPPU::drawPatternTile( EmuWindow *win, ivec2 dpos, int tx, int ty )
-// {
-//     auto &B = mBus;
-//     int ptabno = 0;
+void NesPPU::drawPatternTile( EmuFramebuffer *fb, int palNo, int tx, int ty )
+{
+    auto &B = mBus;
+    int ptabno = 0;
+    int tileOffset = 256*ty + 16*tx;
 
-//     int tileOffset = 256*ty + 16*tx;
+    for (int row=0; row<8; row++)
+    {
+        ubyte lsb = B[ptabno*0x1000 + tileOffset + row+0];
+        ubyte msb = B[ptabno*0x1000 + tileOffset + row+8];
 
-//     for (int row=0; row<8; row++)
-//     {
-//         ubyte lsb = B[ptabno*0x1000 + tileOffset + row+0];
-//         ubyte msb = B[ptabno*0x1000 + tileOffset + row+8];
+        for (int col=0; col; col++)
+        {
+            ubyte pxl = (msb & 0x01) + (lsb & 0x01);
+            ubyte idx = 0x3F00 + 4*palNo + 4*pxl;
+            ubyte *C = mPalette + idx;
 
-//         for (int col=0; col; col++)
-//         {
-//             ubyte pxl = (msb & 0x01) + (lsb & 0x01);
-//             ubyte off = 0x3F00 + 4*pxl;
+            int x = 8*tx + (7-col);
+            int y = 8*tx + (7-col);
+            fb->pixel(x, y, C[0], C[1], C[2]);
 
-//             int x = 8*tx + (7-col);
-//             int y = 8*tx + (7-col);
-
-//             win->pixel(dpos.x+x, dpos.y+y, 8*B[off+0], 8*B[off+1], 8*B[off+2]);
-
-//             lsb >>= 1;
-//             msb >>= 1;
-//         }
-//     }
-// }
+            lsb >>= 1;
+            msb >>= 1;
+        }
+    }
+}
 
 
 void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 spos )
@@ -49,11 +48,10 @@ void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 spos )
                   pxl += 2 * ((B[addr+8] >> (7-(x % 8))) & 1);
 
             ubyte idx = B[0x3F00 + 4*palNo + 4*pxl];
-            ubyte *CL = mPalette + idx;
-            // ubyte off = 0x3F00 + 4*pxl;
+            ubyte *C = mPalette + idx;
             // ubyte spriteOffset = 0x3F10 + 4*pxl;
 
-            fb->pixel(j, i, CL[0], CL[1], CL[2]);
+            fb->pixel(j, i, C[0], C[1], C[2]);
         }
     }
 }
