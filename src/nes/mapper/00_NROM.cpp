@@ -91,15 +91,6 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
     ubyte *fend = fbeg + gpak->size();
     ubyte *fpos = fbeg + 0x10;
 
-    {
-        syslog log("Mapper000_NROM");
-        log("PrgRomNo16K:   %u", fh->PrgRomNo16K);
-        log("ChrRomNo8K:    %u", fh->ChrRomNo8K);
-        log("BankNo8K:      %u", fh->BankNo8K);
-        log("PAL/NTSC:      %s", (fh->IsPAL) ? "PAL" : "NTSC");
-        // log::Info("PAL/NTSC: %s\n", (fh->IsPAL) ? "PAL" : "NTSC");
-    }
-
     mPrgRam = {new ubyte[8*1024], 8*1024};
 
     mPrgRom = {fpos, fh->PrgRomNo16K * 16*1024};
@@ -107,6 +98,18 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
 
     mChrRom = {fpos, fh->ChrRomNo8K * 8*1024};
     fpos += mChrRom.size;
+
+
+    {
+        syslog log("Mapper000_NROM");
+        log("PrgRam:    %uk", mPrgRam.size / 1024);
+        log("PrgRom:    %uk", mPrgRom.size / 1024);
+        log("ChrRom:    %uk", mChrRom.size / 1024);
+        log("BankNo8K:  %u", fh->BankNo8K);
+        log("PAL/NTSC:  %s", (fh->IsPAL) ? "PAL" : "NTSC");
+        // log::Info("PAL/NTSC: %s\n", (fh->IsPAL) ? "PAL" : "NTSC");
+    }
+
 
     auto &ppu = nes.mPPU;
     auto &cpu = nes.mCPU;
