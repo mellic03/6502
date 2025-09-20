@@ -1,8 +1,8 @@
 #pragma once
 
-#include "m6502_detail.hpp"
 #include <memu/hwmodule.hpp>
 #include <memu/memory.hpp>
+#include "6502_detail.hpp"
 
 
 class m6502: public memu::HwModule, public m6502_detail::BaseHw
@@ -11,7 +11,7 @@ public:
     Memory2kRW mRAM;
 
     m6502( memu::AddrSpace& );
-    virtual void tick() override;
+    virtual size_t tick() override;
     virtual void reset() override;
 
     typedef int (m6502::*AddrFn)();
@@ -19,7 +19,8 @@ public:
 
     uint8_t  mInvalidOp;
     uint8_t  mCurrOp;
-    size_t   mCycles;
+    size_t   mCurrClock;
+    size_t   mPrevClock;
     size_t   mOpCount;
     bool     mOpAC;
     uint16_t mOpAddr;

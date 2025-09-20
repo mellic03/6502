@@ -1,4 +1,4 @@
-#include <memu/hw/mos6502.hpp>
+#include <memu/hw/mostech/6502.hpp>
 
 
 uint8_t m6502::fetch08()

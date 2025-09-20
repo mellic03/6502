@@ -3,42 +3,76 @@
 #include <stdio.h>
 #include <string.h>
 
+
+/*
+    https://www.nesdev.org/wiki/CPU_memory_map
+
+    | Address range | Size | Device                                                 |
+    |-------------------------------------------------------------------------------|
+    | 0000 – 07FF   | 0800 | 2 KB internal RAM                                      |
+    |-------------------------------------------------------------------------------|
+    | 0800 – 0FFF   | 0800 |                                                        |
+    | 1000 – 17FF   | 0800 | Mirrors of 0000 – 07FF                                 |
+    | 1800 – 1FFF   | 0800 |                                                        |
+    |-------------------------------------------------------------------------------|
+    | 2000 – 2007   | 0008 | NES PPU registers                                      |
+    |-------------------------------------------------------------------------------|
+    | 2008 – 3FFF   | 1FF8 | Mirrors of 2000 – 2007 (repeats every 8 bytes)         |
+    |-------------------------------------------------------------------------------|
+    | 4000 – 4017   | 0018 | NES APU and I/O registers                              |
+    |-------------------------------------------------------------------------------|
+    | 4018 – 401F   | 0008 | APU and I/O functionality that is normally disabled.   |
+    |-------------------------------------------------------------------------------|
+    | 4020 – FFFF   | BFE0 | Unmapped. Available for cartridge use.                 |
+    | 6000 - 7FFF   | 2000 | Usually cartridge RAM, when present.                   |
+    | 8000 - FFFF   | 8000 | Usually cartridge ROM and mapper registers.            |
+    |-------------------------------------------------------------------------------|
+
+
+*/
+
+
+
 NesEmu::System::System()
-// :   mClock(1'790'000),
-:   mCPU(mBusCPU),
-    mPPU(mBusPPU),
+:   mCPU(mBusCPU), mPPU(mBusPPU),
     mGPak(nullptr)
 {
-    ubyte *cpuRAM  = mCPU.mRAM.data();
-    ubyte *ppuVRAM = mPPU.mVRAM.data();
-    ubyte *ppuMMIO = (ubyte*)(mPPU.mMMIO);
-    // ubyte *apuMMIO = mAPU.data();
 
-    // mBusCPU.attach(&mCPU);
-    mBusCPU.mapRange(0x0000, 0x1FFF, 2048-1, memu::RWX_RW, cpuRAM);  // CPU --> CPU RAM, mirror every 2K
-    // mBusCPU.mapRdWtRange(0x4000, 0x401F, 0x001F, apuMMIO); // CPU --> NES APU and IO regs.
-
-    // mBusPPU.attach(&mPPU);
-    // mBusPPU.mapPage(0x2000, 32-1, mAPU.data(), RWX::RW);
 }
 
 
-void NesEmu::System::LoadROM( GamePak *gpak )
+void NesEmu::System::loadGamePak( GamePak *gpak )
 {
     mGPak = gpak;
     Mapper::MapGamePak(*this, gpak);
-
     mCPU.PC = (mBusCPU.read(0xFFFD) << 8) | mBusCPU.read(0xFFFC);
-    printf("Reset vector: 0x%04X\n", mCPU.PC);
 }
 
 
 void NesEmu::System::tick()
 {
-    // if (mClock.tick(0))
+    static int curr  = 0;
+    static int prev  = 0;
+    static int accum = 0;
+
+    mBusCPU.tick();
+    mBusPPU.tick();
+
+    mBusCPU.tick();
+
+    curr = mCPU.clockTime();
+    accum += curr - prev;
+    prev = curr;
+
+    if (accum >= 3)
     {
-        mBusCPU.tick();
-        mBusPPU.tick();
+        while (accum > 0)
+        {
+            mBusPPU.tick();
+            accum -= 1;
+        }
     }
+
+    accum = std::max(accum, 0);
 }
 

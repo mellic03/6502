@@ -1,5 +1,5 @@
 #pragma once
-#include <memu/hw/mos6502.hpp>
+#include <memu/hw/mostech/6502.hpp>
 
 
 class Ricoh2A03: public m6502
@@ -7,7 +7,6 @@ class Ricoh2A03: public m6502
 public:
     using m6502::m6502;
 
-private:
     struct apu_mmio_t {
         uint8_t  Pulse1[4];
         uint8_t  Pulse2[4];
@@ -20,8 +19,8 @@ private:
         uint8_t  TestModeIO[8]; // Normally disabled
     } mApuMMIO;
 
+private:
 };
-
 
 using NesCPU = Ricoh2A03;
 

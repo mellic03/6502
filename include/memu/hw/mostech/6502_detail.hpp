@@ -61,12 +61,10 @@ public:
     } m_sigprev, m_sigcurr;
 
     enum PIN_: uint8_t { PIN_IRQ,   PIN_RES,   PIN_NMI,   PIN_WAI };
-                    //   00000001,  00000010,  00000100,  00001000
-                    //
-                    //   
-                    //   ____W___,  _____N__,  ______R_,  _______I
-                    //   00000000,  ________,  ____WNRI,  ____W___
-                    //
+    //                  00000001,  00000010,  00000100,  00001000
+    //                  ____W___,  _____N__,  ______R_,  _______I
+    //                  00000000,  ________,  ____WNRI,  ____W___
+    //
 
     void sigLow (PIN_ p) { m_sigcurr.as_byte &= ~(1 << (uint8_t)p); }
     void sigHigh(PIN_ p) { m_sigcurr.as_byte |=  (1 << (uint8_t)p); }

@@ -13,34 +13,33 @@
 
 int main( int argc, char **argv )
 {
-    NesEmu::System *nes = new NesEmu::System();
+    int opts = argc - 2; // name, FILE
 
-    for (int i=1; i<argc-1; i+=2)
+    printf("argc: %d\n", argc);
+    if (argc<2 || (opts % 2) != 0)
     {
-        if (0)
-        {
-
-        }
-        
-        else if (std::string(argv[i]) == "--rom")
-        {
-            nes->LoadROM(new NesEmu::GamePak(argv[i+1]));
-        }
-
-        else if (std::string(argv[i]) == "--jump")
-        {
-            nes->mCPU.PC = (uint16_t)strtol(argv[i+1], NULL, 16); 
-        }
-    }
-
-    if (argc==1 || !nes->mGPak)
-    {
-        printf("Usage: memu-system-nes --rom [filepath] --jump [address]\n");
+        printf("Usage: nesemu FILE [OPTIONS]\n\n");
+        printf(" Option         Long option          Meaning\n");
+        printf(" -j <addr>      --jump <addr>        Jump to address\n");
         return 1;
     }
 
+
+    auto *nes = new NesEmu::System();
+    nes->loadGamePak(new NesEmu::GamePak(argv[1]));
+    
+    for (int i=2; i<argc-1; i+=2)
+    {
+        if (std::string(argv[i]) == "--jump")
+        {
+            nes->mCPU.PC = (uint16_t)strtol(argv[i+1], NULL, 16);
+        }
+    }
+
     Display D;
-    D.init(256, 240, 4);
+    auto *win0 = D.addWindow(new EmuWindow("NES Emulation", 256, 240, 4));
+    auto *win1 = D.addWindow(new EmuWindow("CHR Pattern Tables", 256, 128, 4));
+    // auto *win2 = D.addWindow(new EmuWindow("CHR-ROM 2", 128, 128, 4));
 
     uint64_t tcurr = SDL_GetTicks64();
     uint64_t tprev = tcurr;
@@ -86,6 +85,9 @@ int main( int argc, char **argv )
         {
             break;
         }
+
+        nes->mPPU.drawPatternTable(win1, {0, 0}, {0, 0}, {128, 128});
+        nes->mPPU.drawPatternTable(win1, {128, 0}, {0, 128}, {128, 128});
 
         D.endFrame();
     }

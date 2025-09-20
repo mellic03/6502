@@ -8,7 +8,8 @@
 
 
 memu::HwModule::HwModule( memu::AddrSpace &bus )
-:   mBus(bus)
+:   mBus(bus),
+    mClock(0)
 {
     mBus.attach(this);
 }
@@ -22,19 +23,3 @@ void memu::HwModule::wtbus( uint16_t a, uint8_t v )
 {
     mBus.write(a, v);
 }
-
-
-// void memu::HwModule::tick( uint64_t dt )
-// {
-//     for (HwDevice *dev: mDevices)
-//     {
-//         dev->tick(dt);
-//     }
-// }
-
-
-// void memu::HwModule::attach( HwDevice *dev )
-// {
-//     dev->mBus = this;
-//     mDevices.insert(dev);
-// }

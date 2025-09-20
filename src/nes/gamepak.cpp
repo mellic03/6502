@@ -37,5 +37,5 @@ NesEmu::GamePak::GamePak( const std::string &path )
     stream.seekg(0, std::ifstream::beg);
     stream.read((char*)(m_buf.data()), m_buf.size());
 
-    logasrt(m_buf.size() > 0, "Gpak::size() == %lu", this->size());
+    LogAsrt(m_buf.size() > 0, "Gpak::size() == %lu\n", this->size());
 }

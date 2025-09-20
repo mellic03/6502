@@ -30,16 +30,8 @@ private:
         int32_t  size;
     };
 
-    static constexpr int MAX_PRG_BANKS = 2;
-    static constexpr int MAX_CHR_BANKS = 1;
-
-    PakBank mPrgRom[MAX_PRG_BANKS];
-    PakBank mChrRom[MAX_CHR_BANKS];
-
-    // struct {
-    //     memu::Page prgLo, prgHi;
-    //     memu::Page chrLo, chrHi;
-    // } mBanks;
+    PakBank mPrgRom;
+    PakBank mChrRom;
 
 public:
     Mapper000_NROM(NesEmu::System&, GamePak*);

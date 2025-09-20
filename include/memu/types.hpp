@@ -28,3 +28,11 @@ using uword = uint16_t;
 #elif defined(MEMU_ADDRSPACE_64BIT)
     using addr_t = uint32_t;
 #endif
+
+
+
+struct ivec1        { union { int x, r; }; };
+struct ivec2: ivec1 { union { int y, g; }; };
+struct ivec3: ivec2 { union { int z, b; }; };
+struct ivec4: ivec3 { union { int w, a; }; };
+

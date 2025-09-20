@@ -1,4 +1,4 @@
-#include <memu/hw/mos6502.hpp>
+#include <memu/hw/mostech/6502.hpp>
 #include <memu/addrspace.hpp>
 #include <stdio.h>
 #include <string.h>
@@ -33,17 +33,20 @@ void m6502::_execute()
 
     (this->*mCurrInstr->fE)();
 
-    mCycles += cycles;
+    mCurrClock += cycles;
     mOpCount += 1;
 }
 
     
 
-void m6502::tick()
+size_t m6502::tick()
 {
+    mPrevClock = mCurrClock;
+
     if (mInvalidOp)
     {
-        return;
+        printf("Invalid opcode (0x%02X)\n", mCurrOp);
+        return mCurrClock - mPrevClock;
     }
 
     if (m_sigcurr.nmi != m_sigprev.nmi)
@@ -82,20 +85,18 @@ void m6502::tick()
 over_here:
     m_sigprev = m_sigcurr;
 
-    if (m_sigcurr.wai == 1)
+    if (m_sigcurr.wai == 0)
     {
-        return;
+        _fetch();
+        _decode();
+        _execute();
     }
-
-    _fetch();
-    _decode();
-    _execute();
 
     if (mInvalidOp)
     {
         printf("Invalid opcode (0x%02X)\n", mCurrOp);
-        return;
     }
+    return mCurrClock - mPrevClock;
 }
 
 void m6502::reset()
@@ -103,7 +104,6 @@ void m6502::reset()
     _IntPush();
     _IntJump(0xFFFC);
 }
-
 
 
 void m6502::push08( uint8_t byte )
@@ -135,11 +135,10 @@ m6502::m6502( memu::AddrSpace &bus )
     BaseHw(),
     mInvalidOp(0),
     mCurrOp(0),
-    mCycles(0),
+    mCurrClock(0),
+    mPrevClock(0),
     mOpCount(0)
 {
-    bus.mapRange(0x0000, 0x1FFF, 2048-1, memu::RWX_RW, mRAM.data());
-
     using X = m6502;
 
     mFtab = new Inst[256];

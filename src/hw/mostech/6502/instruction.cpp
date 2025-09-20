@@ -1,4 +1,4 @@
-#include <memu/hw/mos6502.hpp>
+#include <memu/hw/mostech/6502.hpp>
 
 
 void m6502::InstrUnimp()

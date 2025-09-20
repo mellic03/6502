@@ -1,7 +1,9 @@
 #include <memu/memory.hpp>
-#include <cassert>
+#include <memu/log.hpp>
 #include <cstdio>
 #include <cstring>
+
+using namespace memu;
 
 
 // void MemoryRW::flash( uint8_t *src, size_t sz )
@@ -21,29 +23,26 @@
 //     flush();
 // }
 
-ubyte MemoryRW::read( addr_t addr )
+void MemoryRW::_check( addr_t i )
 {
-    assert(addr < mSize);
-    return mData[addr];
+    LogAsrt(i<mSize, "Out of bounds access: mData[%u], mSize=%lu\n", i, mSize);
 }
 
-void MemoryRW::write( addr_t addr, ubyte value )
+ubyte *MemoryRW::get( addr_t i )
 {
-    assert(addr < mSize);
-    mData[addr] = value;
+    _check(i);
+    return &mData[i];
 }
 
-
-void MemoryRO::write( addr_t addr, ubyte value )
+void MemoryRO::write( addr_t i, ubyte value )
 {
-    fprintf(stderr, "Attempted write to read-only device.\n");
-    assert(false);
+    log::Warn("Attempted write to read-only memory.\n");
 }
 
-ubyte MemoryWO::read( addr_t addr )
+ubyte MemoryWO::read( addr_t i )
 {
-    fprintf(stderr, "Attempted read of write-only device.\n");
-    assert(false);
+    log::Warn("Attempted read of write-only memory.\n");
+    return 0;
 }
 
 

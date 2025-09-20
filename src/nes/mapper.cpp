@@ -17,7 +17,7 @@ NesEmu::Mapper *NesEmu::Mapper::MapGamePak( NesEmu::System &nes, GamePak *gpak )
     size_t idx = (fh->MapperHi4 << 4) | fh->MapperLo4;
 
     // logasrt(idx < ftab.size(), "hi4=%u, lo4=%u", fh->MapperHi4, fh->MapperLo4);
-    logasrt(idx < ftab.size(), "idx=%lu, ftab=fptr[%lu]", idx, ftab.size());
+    LogAsrt(idx < ftab.size(), "idx=%lu, ftab=fptr[%lu]\n", idx, ftab.size());
 
     return (ftab[idx])(nes, gpak);
 }

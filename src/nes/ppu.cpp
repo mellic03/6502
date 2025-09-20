@@ -1,94 +1,153 @@
 #include <memu/nes/ppu.hpp>
-#include <stdio.h>
+#include <memu/addrspace.hpp>
+#include <memu/display.hpp>
 
 
-/*
-    Register	        At Power    After Reset
-    PPUCTRL             0000 0000	0000 0000
-    PPUMASK             0000 0000	0000 0000
-    PPUSTATUS           +0+x xxxx	U??x xxxx
-    OAMADDR             $00	        unchanged
-    $2005/$2006 latch	cleared     cleared
-    PPUSCROLL           $0000	    $0000
-    PPUADDR             $0000	    unchanged
-    PPUDATA             read buffer	$00	$00
-
-    ? = unknown, x = irrelevant, + = often set, U = unchanged
-*/
-
-
-/*
-    - Horizontal arrangement: $2000 and $2800 contain the first nametable,
-      and $2400 and $2C00 contain the second nametable (e.g. Super Mario Bros.),
-      accomplished by connecting CIRAM A10 to PPU A10.
-
-    - Vertical arrangement: $2000 and $2400 contain the first nametable,
-      and $2800 and $2C00 contain the second nametable (e.g. Kid Icarus),
-      accomplished by connecting CIRAM A10 to PPU A11.
-*/
-
-NesPPU::NesPPU( memu::AddrSpace &bus )
-:   HwModule(bus)
+void NesPPU::drawPatternTile( EmuWindow *win, ivec2 dpos, int tx, int ty )
 {
-    mMMIO   = (RegMMIO*)(mVRAM.data() + 0);
-    mTables = (TableData*)(mVRAM.data() + sizeof(RegMMIO));
+    auto &B = mBus;
+    int ptabno = 0;
 
-    // ubyte *VRAM = mVRAM.data();
-    // mBus->mapRange(0x2000, 0x2FFF, 2048-1, &mTables[0]);
+    int tileOffset = 256*ty + 16*tx;
 
-    // | Addr      | Size | Desc        | Mapped By |
-    // | ----------|------|-------------|-----------|
-    // | 0000-0FFF | 1000 | PtrnTable 0 | Cartridge |
-    // | 1000-1FFF | 1000 | PtrnTable 1 | Cartridge |
-    // | 2000-23BF | 03C0 | NameTable 0 | Cartridge |
-    // | 23C0-23FF | 0040 | AttrTable 0 | Cartridge |
-    // | 2400-27BF | 03c0 | Nametable 1 | Cartridge |
-    // | 27C0-27FF | 0040 | AttrTable 1 | Cartridge |
-    // | 2800-2BBF | 03c0 | Nametable 2 | Cartridge |
-    // | 2BC0-2BFF | 0040 | AttrTable 2 | Cartridge |
-    // | 2C00-2FBF | 03c0 | Nametable 3 | Cartridge |
-    // | 2FC0-2FFF | 0040 | AttrTable 3 | Cartridge |
-    // ----------------------------------------------
+    for (int row=0; row<8; row++)
+    {
+        ubyte lsb = B[ptabno*0x1000 + tileOffset + row+0];
+        ubyte msb = B[ptabno*0x1000 + tileOffset + row+8];
 
-    /*
-        - The NES has 2kB of RAM dedicated to the PPU, usually mapped to the
-          nametable address space from $2000-$2FFF, but this can be rerouted
-          through custom cartridge wiring. The mappings above are the addresses
-          from which the PPU uses to fetch data during rendering. The actual
-          devices that the PPU fetches pattern, name table and attribute table
-          data from is configured by the cartridge.
+        for (int col=0; col; col++)
+        {
+            ubyte pxl = (msb & 0x01) + (lsb & 0x01);
+            ubyte off = 0x3F00 + 4*pxl;
 
-        - 0000-1FFF normally mapped by the cartridge to a CHR-ROM or CHR-RAM,
-          often with a bank switching mechanism.
+            int x = 8*tx + (7-col);
+            int y = 8*tx + (7-col);
 
-        - 2000-2FFF normally mapped to the 2kB NES internal VRAM, providing 2
-          nametables with a mirroring configuration controlled by the cartridge,
-          but it can be partly or fully remapped to ROM or RAM on the cartridge,
-          allowing up to 4 simultaneous nametables.
+            win->pixel(dpos.x+x, dpos.y+y, 8*B[off+0], 8*B[off+1], 8*B[off+2]);
 
-        - 3000-3EFF usually a mirror of the 2kB region from $2000-2EFF. The PPU
-          does not render from this address range, so this space has negligible
-          utility.
-
-        - 3F00-3FFF not configurable, always mapped to the internal palette control.
-
-    */
-
-    // PPU --> NameTables
-    // mBus->mapRange(0x2000, 0x23FF, 1024-1, &mTables[0]);
-//     mBus->mapRange(0x2400, 0x27FF, 1024-1, &mTables[1]);
-//     mBus->mapRange(0x2800, 0x2BFF, 1024-1, &mTables[2]);
-//     mBus->mapRange(0x2C00, 0x2FFF, 1024-1, &mTables[3]);
+            lsb >>= 1;
+            msb >>= 1;
+        }
+    }
 }
 
 
-void NesPPU::tick()
+void NesPPU::drawPatternTable( EmuWindow *win, ivec2 dpos, ivec2 spos, ivec2 ssp )
 {
-    return;
+    auto &B = mBus;
+    int palNo = 0;
+
+    for (int i=0; i<ssp.y; i++)
+    {
+        for (int j=0; j<ssp.x; j++)
+        {
+            int y = spos.y + i;
+            int x = spos.x + j;
+
+            int addr = 256*(y/8) + (y%8) + 16*(x/8);
+
+            ubyte pxl  = (B[addr+0] >> (7-(x % 8))) & 1;
+                  pxl += 2 * ((B[addr+8] >> (7-(x % 8))) & 1);
+
+            ubyte idx = B[0x3F00 + 4*palNo + 4*pxl];
+            ubyte *CL = mPalette + idx;
+            // ubyte off = 0x3F00 + 4*pxl;
+            // ubyte spriteOffset = 0x3F10 + 4*pxl;
+
+            win->pixel(dpos.x+j, dpos.y+i, CL[0], CL[1], CL[2]);
+        }
+    }
 }
 
-void NesPPU::reset()
-{
-    return;
-}
+
+
+// /*
+//     Register	        At Power    After Reset
+//     PPUCTRL             0000 0000	0000 0000
+//     PPUMASK             0000 0000	0000 0000
+//     PPUSTATUS           +0+x xxxx	U??x xxxx
+//     OAMADDR             $00	        unchanged
+//     $2005/$2006 latch	cleared     cleared
+//     PPUSCROLL           $0000	    $0000
+//     PPUADDR             $0000	    unchanged
+//     PPUDATA             read buffer	$00	$00
+
+//     ? = unknown, x = irrelevant, + = often set, U = unchanged
+// */
+
+
+// /*
+//     - Horizontal arrangement: $2000 and $2800 contain the first nametable,
+//       and $2400 and $2C00 contain the second nametable (e.g. Super Mario Bros.),
+//       accomplished by connecting CIRAM A10 to PPU A10.
+
+//     - Vertical arrangement: $2000 and $2400 contain the first nametable,
+//       and $2800 and $2C00 contain the second nametable (e.g. Kid Icarus),
+//       accomplished by connecting CIRAM A10 to PPU A11.
+// */
+
+// NesPPU::NesPPU( memu::AddrSpace &bus )
+// :   HwModule(bus)
+// {
+//     mMMIO   = (RegMMIO*)(mVRAM.data() + 0);
+//     mTables = (TableData*)(mVRAM.data() + sizeof(RegMMIO));
+
+//     // ubyte *VRAM = mVRAM.data();
+//     // mBus->mapRange(0x2000, 0x2FFF, 2048-1, &mTables[0]);
+
+//     // | Addr      | Size | Desc        | Mapped By |
+//     // | ----------|------|-------------|-----------|
+//     // | 0000-0FFF | 1000 | PtrnTable 0 | Cartridge |
+//     // | 1000-1FFF | 1000 | PtrnTable 1 | Cartridge |
+//     // | 2000-23BF | 03C0 | NameTable 0 | Cartridge |
+//     // | 23C0-23FF | 0040 | AttrTable 0 | Cartridge |
+//     // | 2400-27BF | 03c0 | Nametable 1 | Cartridge |
+//     // | 27C0-27FF | 0040 | AttrTable 1 | Cartridge |
+//     // | 2800-2BBF | 03c0 | Nametable 2 | Cartridge |
+//     // | 2BC0-2BFF | 0040 | AttrTable 2 | Cartridge |
+//     // | 2C00-2FBF | 03c0 | Nametable 3 | Cartridge |
+//     // | 2FC0-2FFF | 0040 | AttrTable 3 | Cartridge |
+//     // ----------------------------------------------
+
+//     /*
+//         - The NES has 2kB of RAM dedicated to the PPU, usually mapped to the
+//           nametable address space from $2000-$2FFF, but this can be rerouted
+//           through custom cartridge wiring. The mappings above are the addresses
+//           from which the PPU uses to fetch data during rendering. The actual
+//           devices that the PPU fetches pattern, name table and attribute table
+//           data from is configured by the cartridge.
+
+//         - 0000-1FFF normally mapped by the cartridge to a CHR-ROM or CHR-RAM,
+//           often with a bank switching mechanism.
+
+//         - 2000-2FFF normally mapped to the 2kB NES internal VRAM, providing 2
+//           nametables with a mirroring configuration controlled by the cartridge,
+//           but it can be partly or fully remapped to ROM or RAM on the cartridge,
+//           allowing up to 4 simultaneous nametables.
+
+//         - 3000-3EFF usually a mirror of the 2kB region from $2000-2EFF. The PPU
+//           does not render from this address range, so this space has negligible
+//           utility.
+
+//         - 3F00-3FFF not configurable, always mapped to the internal palette control.
+
+//     */
+
+//     // PPU --> NameTables
+//     // mBus->mapRange(0x2000, 0x23FF, 1024-1, &mTables[0]);
+// //     mBus->mapRange(0x2400, 0x27FF, 1024-1, &mTables[1]);
+// //     mBus->mapRange(0x2800, 0x2BFF, 1024-1, &mTables[2]);
+// //     mBus->mapRange(0x2C00, 0x2FFF, 1024-1, &mTables[3]);
+// }
+
+
+// void NesPPU::tick()
+// {
+//     return;
+// }
+
+// void NesPPU::reset()
+// {
+//     return;
+// }
 

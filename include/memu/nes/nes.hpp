@@ -15,6 +15,8 @@ namespace NesEmu
 class NesEmu::System
 {
 public:
+    System(const System&) = delete;
+    System &operator=(const System&) = delete;
     // HwClock  mClock;
     // Memory2kRW  wRAM;
     // Memory2kRW  vRAM;
@@ -26,7 +28,7 @@ public:
     GamePak *mGPak;
 
     System();
-    void LoadROM( GamePak* );
+    void loadGamePak( GamePak* );
     void tick();
 
 };

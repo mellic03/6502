@@ -88,9 +88,11 @@
         "stdlib.h": "c",
         "cassert": "cpp",
         "cerrno": "cpp",
-        "strstream": "cpp"
+        "strstream": "cpp",
+        "*.inc": "cpp"
     },
     "C_Cpp.default.includePath": [
+        "${default}",
         "${workspaceFolder}/include/"
     ]
 }

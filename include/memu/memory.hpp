@@ -5,13 +5,12 @@
 #include <array>
 #include <cassert>
 
-// namespace memu
-// {
-//     class AddressableDevice;
-
-//     template <size_t ByteSize>
-//     class MemoryDevice;
-// }
+namespace memu
+{
+    class MemoryRW;
+    class MemoryRO;
+    class MemoryWO;
+}
 
 // class memu::AddressableDevice
 // {
@@ -60,37 +59,38 @@
 /**
  * Read/write memory.
  */
-class MemoryRW // : public ioDevice
+class memu::MemoryRW
 {
 private:
     ubyte *mData;
     size_t mSize;
+    void _check(addr_t);
 
 public:
     MemoryRW(): MemoryRW(nullptr, 0) {  };
     MemoryRW(void *p, uint16_t s): mData((ubyte*)p), mSize(s) {  };
-    ubyte *data() { return mData; } 
-    virtual ubyte read( addr_t );
-    virtual void write( addr_t, ubyte );
+    ubyte *data() { return mData; }
+    ubyte *get(addr_t);
+    virtual ubyte read(addr_t i) { return *get(i); }
+    virtual void write(addr_t i, ubyte v) { *get(i) = v; };
 };
 
 
 /**
  * Read-only memory.
  */
-class MemoryRO: public MemoryRW
+class memu::MemoryRO: public MemoryRW
 {
 public:
     using MemoryRW::MemoryRW;
     virtual void write(addr_t, ubyte) final;
-    ubyte operator[](addr_t i) { return this->read(i); }
 };
 
 
 /**
  * Write-only memory.
  */
-class MemoryWO: public MemoryRW
+class memu::MemoryWO: public MemoryRW
 {
 public:
     using MemoryRW::MemoryRW;
@@ -102,21 +102,21 @@ public:
 
 
 template <uint16_t Xk>
-struct MemoryXkRW: public MemoryRW
+struct MemoryXkRW: public memu::MemoryRW
 {
     MemoryXkRW(void *p): MemoryRW(p, Xk) {  };
     MemoryXkRW(): MemoryXkRW(new ubyte[Xk]) {  };
 };
 
 template <uint16_t Xk>
-struct MemoryXkRO: public MemoryRO
+struct MemoryXkRO: public memu::MemoryRO
 {
     MemoryXkRO(void *p): MemoryRO(p, Xk) {  };
     MemoryXkRO(): MemoryXkRO(new ubyte[Xk]) {  };
 };
 
 template <uint16_t Xk>
-struct MemoryXkWO: public MemoryWO
+struct MemoryXkWO: public memu::MemoryWO
 {
     MemoryXkWO(void *p): MemoryWO(p, Xk) {  };
     MemoryXkWO(): MemoryXkWO(new ubyte[Xk]) {  };

@@ -7,41 +7,60 @@
 
 namespace memu
 {
-    struct Page;
     class AddrSpace;
     class HwModule;
 }
 
 
-struct memu::Page
-{
-    uint8_t *page; // page base pointer.
-    uint16_t base; // base address of mapping. Eg 0x2000-0x2FFF -> base=0x2000.
-    uint16_t mask; // wrap-around mask, generally size-1 unless mirroring. Eg 8-1 == addr%8
-    Page(void *p, uword b, uword m): page((ubyte*)p), base(b), mask(m) {  };
-    Page(): Page(nullptr, 0, 0) {  };
-    uint8_t &operator[](int i) { return page[i]; }
-};
-
-
 class memu::AddrSpace
 {
-private:
-    static constexpr size_t PAGE_SIZE = 0x0100;
-    std::set<HwModule*> mHwModules;
-
 public:
-    memu::Page mRdPages[0x0100];
-    memu::Page mWtPages[0x0100];
+    using RdFunc = uint8_t (*)(HwModule*, addr_t);
+    using WtFunc = void (*)(HwModule*, addr_t, uint8_t);
 
-    AddrSpace();
+    AddrSpace() {  };
     void tick();
     void attach(HwModule*);
-
+    
     ubyte read(addr_t);
     void write(addr_t, ubyte);
+    ubyte operator[](int i) { return read(i); }
 
     void mapPage(addr_t addr, addr_t mask, RWX_, void*);
     void mapRange(addr_t start, addr_t end, addr_t mask, RWX_, void*);
+    void mapRangeTiny(addr_t, addr_t, HwModule*, RdFunc, WtFunc);
+
+    void mapRWRange(addr_t a, addr_t b, void *p ) { mapRange(a, b, b-a, RWX_RW, p); }
+    void mapRdRange(addr_t a, addr_t b, void *p ) { mapRange(a, b, b-a, RWX_R, p); }
+    void mapWtRange(addr_t a, addr_t b, void *p ) { mapRange(a, b, b-a, RWX_W, p); }
+
+    void unmapPage(addr_t addr);
+    void unmapRange(addr_t start, addr_t end);
+
+// private:
+    class PgEntry
+    {
+    private:
+        static ubyte *dummy;
+
+    public:
+        ubyte *page; // page base pointer
+        uword  mask; // wrap-around mask, generally size-1 unless mirrored. Eg 8-1 == addr%8
+        bool   used;
+
+        HwModule *dev  = nullptr; // single-byte pages
+        RdFunc    rdfn = nullptr; // ...
+        WtFunc    wtfn = nullptr; // ...
+        
+        PgEntry(void *p, uword m, bool u): page((ubyte*)p), mask(m), used(u) {  }
+        PgEntry(): PgEntry(dummy, 0x0000, false) {  }
+    };
+
+    PgEntry mRdPages[256];
+    PgEntry mWtPages[256];
+    std::set<HwModule*> mHwModules;
+
+    void _mapPage(addr_t, addr_t, RWX_, void*);
+    void _unmapPage(addr_t, RWX_);
 
 };
