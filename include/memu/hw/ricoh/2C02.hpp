@@ -72,7 +72,7 @@ public:
 
     void write2007( uint8_t data )
     {
-        printf("[write2007] mPpuAddr=%04X\n", mPpuAddr);
+        // printf("[write2007] mPpuAddr=%04X\n", mPpuAddr);
         wtbus(mPpuAddr, data);
         mPpuAddr += (CTRL.I) ? 32 : 1;
         mPpuAddr &= 0x3FFF;
