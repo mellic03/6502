@@ -91,11 +91,43 @@ void EADS::mapRange( addr_t base, addr_t end, RWX_ rwx, void *buf, size_t bufsz 
     for (size_t off=0; off<len; off+=256)
     {
         uword  addr = base + off;
-        size_t boff = (off % bufsz) & ~0xFF;
-        ubyte *page = (ubyte*)buf + boff;
+        ubyte  pgno = addr >> 8;
+        ubyte *page = (ubyte*)buf + (((256*pgno) % bufsz) & 0xFF);
+
+        // size_t boff = (off % bufsz) & ~0xFF;
+        // ubyte *page = (ubyte*)buf + boff;
+
         _mapPage(addr, 0xFFFF, rwx, page);
     }
 }
+
+void EADS::mapRdRange( addr_t base, addr_t end, void *buf, size_t sz, ubyte mask )
+{
+    size_t len = (end+1) - base;
+
+    for (size_t off=0; off<len; off+=256)
+    {
+        uword  addr = base + off;
+        ubyte *page; // = (ubyte*)buf + (((256*pgno) % bufsz) & 0xFF);
+
+        // size_t boff = (off % bufsz) & ~0xFF;
+        // ubyte *page = (ubyte*)buf + boff;
+
+        mRdPages[addr>>8] = PageEntry(page);
+    }
+}
+
+void EADS::mapWtRange( addr_t base, addr_t end, void *buf, size_t sz, ubyte mask )
+{
+
+}
+
+void EADS::mapRWRange( addr_t base, addr_t end, void *buf, size_t sz, ubyte mask )
+{
+
+}
+
+
 
 
 void EADS::mapRange( addr_t base, addr_t end, iPageHandler *handler )

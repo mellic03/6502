@@ -16,12 +16,13 @@ class memu::PageEntry
 {
 private:
     ubyte *mBuf;
+    ubyte  mMask;
 
 public:
     static ubyte *pgdummy;
     iPageHandler *mHandler;
 
-    PageEntry(ubyte *buf): mBuf(buf), mHandler(nullptr) {  }
+    PageEntry(ubyte *buf, ubyte mask): mBuf(buf), mMask(mask), mHandler(nullptr) {  }
     PageEntry(): PageEntry(pgdummy) {  }
 
     ubyte read(addr_t);

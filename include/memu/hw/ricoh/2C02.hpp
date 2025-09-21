@@ -24,7 +24,8 @@ private:
     size_t mScanline;
 
 public:
-    uvec3   mPalette[64];
+    // uvec3   mPalette[64];
+    uint8_t mPalette[192];
     uint8_t mPaletteCtl[32];
 
     Memory2kRW mVRAM;

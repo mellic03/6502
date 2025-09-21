@@ -33,10 +33,9 @@
 
 ubyte *NesPPU::readPalette( int palNo, ubyte pxl )
 {
-    ubyte offset = mPaletteCtl[4*palNo + pxl] & 0x3F;
-    // ubyte offset = rdbus(0x3F00 + 4*palNo + pxl) & 0x3F;
-    // printf("offset=%u\n", offset);
-    return &(mPalette[offset].r);
+    // ubyte offset = mPaletteCtl[4*palNo + pxl] & 0x3F;
+    ubyte offset = rdbus(0x3F00 + 4*palNo + pxl) & 0x3F;
+    return mPalette + offset;
 }
 
 
@@ -55,16 +54,11 @@ void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 spos )
             ubyte pxl  = (B[addr+0] >> (7-(x % 8))) & 1;
                   pxl += 2 * ((B[addr+8] >> (7-(x % 8))) & 1);
 
-            // ubyte off = mPaletteCtl[4*palNo + pxl] & 0x3F;
-            ubyte off = 0;
+            ubyte *rgb = readPalette(palNo, pxl);
+            fb->pixel(j, i, rgb);
 
-            if (pxl==0) off = mPaletteCtl[0];
-            else        off = mPaletteCtl[4*palNo + pxl] & 0x3F;
-
-            // ubyte *C  = mPalette + 4*off;
-            uvec3 C = mPalette[off];
-
-            fb->pixel(j, i, C.r, C.g, C.b);
+            // uvec3 C = mPalette[off];
+            // fb->pixel(j, i, C.r, C.g, C.b);
         }
     }
 }
@@ -98,10 +92,9 @@ void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 spos )
 
 //             // Palette lookup
 //             ubyte off = mPaletteCtl[4*palNo + pxl] & 0x3F;
-//             printf("offset=%u\n", off);
-//             uvec3 C = mPalette[off];
+//             ubyte *C = mPalette + 3*off;
 
-//             fb->pixel(j, i, C.r, C.g, C.b);
+//             fb->pixel(j, i, C);
 //         }
 //     }
 // }

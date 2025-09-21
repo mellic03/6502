@@ -90,17 +90,19 @@ void Ricoh2C02::reset()
 
 void Ricoh2C02::loadPalette( const std::string &path )
 {
-    std::vector<ubyte> temp = loadFileRaw(path);
+    size_t res = loadFileRaw(path, mPalette, sizeof(mPalette));
 
-    LogAsrt(temp.size() == 192, "Error loading .pal file \"%s\"\n", path.c_str());
+    LogAsrt(res==sizeof(mPalette), "Error loading .pal file \"%s\"\n", path.c_str());
+
+    // LogAsrt(temp.size() == 192, "Error loading .pal file \"%s\"\n", path.c_str());
     // memcpy(mPalette, temp.data(), temp.size());
 
-    for (int i=0; i<64; i++)
-    {
-        mPalette[i].r = temp[3*i + 0];
-        mPalette[i].g = temp[3*i + 1];
-        mPalette[i].b = temp[3*i + 2];
-    }
+    // for (int i=0; i<64; i++)
+    // {
+    //     mPalette[i].r = temp[3*i + 0];
+    //     mPalette[i].g = temp[3*i + 1];
+    //     mPalette[i].b = temp[3*i + 2];
+    // }
 
     // size_t bufsz = sizeof(mPalette);
     // size_t rawsz = loadFileRaw(path, mPalette, bufsz);
