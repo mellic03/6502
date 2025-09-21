@@ -4,8 +4,6 @@
 #include <vector>
 #include <memory>
 
-
-
 namespace NesEmu
 {
     class GamePak;
@@ -15,16 +13,13 @@ namespace NesEmu
 class NesEmu::GamePak
 {
 private:
-    std::vector<ubyte> m_buf;
-    // std::vector<ubyte> mPrgROM;
-    // std::vector<ubyte> mChrROM;
-    // ubyte             *mData;
+    std::vector<ubyte> mBuf;
 
 public:
     struct Fmt { enum { iNES, NES20, OTHER, NumFmt }; };
     GamePak( const std::string &path );
 
-    uint8_t *data() { return m_buf.data(); }
-    size_t   size() { return m_buf.size(); }
+    uint8_t *data() { return mBuf.data(); }
+    size_t   size() { return mBuf.size(); }
 };
 

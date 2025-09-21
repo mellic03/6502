@@ -21,14 +21,15 @@ int main( int argc, char **argv )
         if (std::string(argv[i]) == "--conf")
             conf = memu::ConfigParser(argv[i+1]);
     conf.print();
+    auto &boot = conf["boot"];
 
     auto *nes = new NesEmu::System();
-    nes->loadGamePak(new NesEmu::GamePak(conf["BOOT"]["rom"]));
-    nes->mPPU.loadPalette(conf["NTSC"]["palette"]);
+    nes->loadGamePak(new NesEmu::GamePak(boot["rom"]));
+    nes->mPPU.loadPalette(conf["video"]["palette"]);
 
-    if (conf["BOOT"].contains("jump"))
+    if (boot.contains("jump"))
     {
-        nes->mCPU.PC = (uint16_t)strtol(conf["BOOT"]["jump"].c_str(), NULL, 16);
+        nes->mCPU.PC = (uint16_t)strtol(boot["jump"].c_str(), NULL, 16);
     }
 
     auto *fh = (NesEmu::iNES_File*)(nes->mGPak->data());

@@ -100,19 +100,6 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
     mChrRom = {fpos, fh->ChrRomNo8K * 8*1024};
     fpos += mChrRom.size;
 
-
-    {
-        syslog log("Mapper000_NROM");
-        log("PrgRam:    %uk", mPrgRam.size / 1024);
-        log("PrgRom:    %uk", mPrgRom.size / 1024);
-        log("ChrRom:    %uk", mChrRom.size / 1024);
-        log("BankNo8K:  %u", fh->BankNo8K);
-        log("PAL/NTSC:  %s", (fh->IsPAL) ? "PAL" : "NTSC");
-        // log::Info("PAL/NTSC: %s\n", (fh->IsPAL) ? "PAL" : "NTSC");
-    }
-
-
-
     // CPU Mapping
     {
         auto &bus = nes.mBusCPU;

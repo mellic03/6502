@@ -8,45 +8,48 @@
 namespace memu
 {
     class iPageEntry;
-    class iDevicePage;
-
     class PageEntry;
 }
 
 
 class memu::iPageEntry
 {
+protected:
+    ubyte *mBuf;
+    RWX_   mRWX;
+
 public:
+    static ubyte *pgdummy;
+
+    iPageEntry(ubyte *buf, RWX_ rwx): mBuf(buf), mRWX(rwx) {  }
+    iPageEntry(): iPageEntry(pgdummy, RWX_RW) {  }
+
     virtual ubyte read(addr_t) = 0;
     virtual void write(addr_t, ubyte) = 0;
 
 };
 
 
-class memu::iDevicePage: public iPageEntry
-{
-private:
-    HwModule *mDev;
+// class memu::iDevicePage: public iPageEntry
+// {
+// private:
+//     // HwModule *mDev;
 
-public:
-    iDevicePage(HwModule *dev)
-    :   mDev(dev) {  };
+// public:
+//     iDevicePage(ubyte *buf, RWX_ rwx)
+//     :   iPageEntry(buf, rwx) {  }
 
-    virtual ubyte read(addr_t) = 0;
-    virtual void write(addr_t, ubyte) = 0;
-};
+//     virtual ubyte read(addr_t) = 0;
+//     virtual void write(addr_t, ubyte) = 0;
+// };
 
 
 
 class memu::PageEntry: public iPageEntry
 {
-private:
-    ubyte *mBuf;
-    RWX_   mRWX;
-
 public:
     PageEntry(ubyte *buf, RWX_ rwx)
-    :   mBuf(buf), mRWX(rwx) {  };
+    :   iPageEntry(buf, rwx) {  }
 
     virtual ubyte read(addr_t) override;
     virtual void write(addr_t, ubyte) override;

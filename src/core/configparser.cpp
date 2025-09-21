@@ -1,4 +1,5 @@
 #include <memu/configparser.hpp>
+#include <memu/file.hpp>
 #include <memu/log.hpp>
 #include <fstream>
 
@@ -105,17 +106,7 @@ std::string ConfigParser::_readTo( char stop )
 ConfigParser::ConfigParser( const char *path )
 :   mPath(path), mIdx(0)
 {
-    std::ifstream stream(path, std::ifstream::binary);
-    LogAsrt(stream.is_open(), "Could not open file \"%s\"\n", path);
-
-    std::vector<char> bbuf;
-    stream.seekg(0, std::ifstream::end);
-    bbuf.resize(stream.tellg());
-
-    stream.seekg(0, std::ifstream::beg);
-    stream.read(bbuf.data(), bbuf.size());
-
-    for (char ch: bbuf)
+    for (char ch: loadFileRaw(path))
     {
         if (ch != ' ')
         {

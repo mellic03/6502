@@ -3,6 +3,7 @@
 
 using namespace memu;
 
+ubyte *iPageEntry::pgdummy = new ubyte[256];
 
 
 // iPageEntry::iPageEntry(addr_t addr, RWX_ rwx)
@@ -53,17 +54,18 @@ using namespace memu;
 
 
 
-ubyte PageEntry::read( addr_t addr )
+ubyte PageEntry::read( addr_t i )
 {
-    uint16_t idx = addr & 0x00FF;
-    return mBuf[idx];
+    if (mRWX & RWX_R)
+        return mBuf[i&255];
+    return 0;
 }
 
 
-void PageEntry::write( addr_t addr, ubyte data )
+void PageEntry::write( addr_t i, ubyte v )
 {
-    uint16_t idx = addr & 0x00FF;
-    mBuf[idx] = data;
+    if (mRWX & RWX_W)
+        mBuf[i&255] = v;
 }
 
 
