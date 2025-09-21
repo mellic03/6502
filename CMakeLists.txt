@@ -29,6 +29,22 @@ target_link_libraries(
 )
 
 
+
+add_executable(
+    test_m6502
+    "${CMAKE_SOURCE_DIR}/src/test_m6502.cpp"
+    ${SOURCES}
+)
+
+target_link_libraries(
+    test_m6502 PRIVATE
+    memu_core
+    memu_hw
+    memu_nes
+)
+
+
+
 file(
     COPY
         "${CMAKE_SOURCE_DIR}/data/"
