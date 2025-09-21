@@ -10,7 +10,7 @@ ubyte PageEntry::read( addr_t addr )
     if (mHandler)
         return mHandler->read(addr);
     else
-        return mBuf[addr & 0xFF];
+        return mBuf[addr & mMask];
 }
 
 
@@ -19,7 +19,7 @@ void PageEntry::write( addr_t addr, ubyte v )
     if (mHandler)
         mHandler->write(addr, v);
     else
-        mBuf[addr & 0xFF] = v;
+        mBuf[addr & mMask] = v;
 }
 
 
