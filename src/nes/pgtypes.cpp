@@ -15,7 +15,7 @@ enum REG_: uint16_t
 };
 
 
-ubyte PgEntryCpuPpu::read(addr_t addr)
+ubyte CpuPpuHandler::read(addr_t addr)
 {
     uint8_t data = 0;
 
@@ -47,7 +47,7 @@ ubyte PgEntryCpuPpu::read(addr_t addr)
 }
 
 
-void PgEntryCpuPpu::write(addr_t addr, ubyte data)
+void CpuPpuHandler::write(addr_t addr, ubyte data)
 {
     switch (addr % 8)
     {
@@ -86,7 +86,7 @@ void PgEntryCpuPpu::write(addr_t addr, ubyte data)
 
 
 
-ubyte PgEntryCpuIO::read(addr_t addr)
+ubyte CpuIoHandler::read(addr_t addr)
 {
     ubyte data = 0;
 
@@ -108,7 +108,7 @@ ubyte PgEntryCpuIO::read(addr_t addr)
 }
 
 
-void PgEntryCpuIO::write(addr_t addr, ubyte data)
+void CpuIoHandler::write(addr_t addr, ubyte data)
 {
     if (addr == 0x4016)
     {

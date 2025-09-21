@@ -5,13 +5,13 @@
 #include <memu/nes/ppu.hpp>
 
 
-class PgEntryCpuPpu: public memu::iPageHandler
+class CpuPpuHandler: public memu::iPageHandler
 {
 private:
     NesPPU &ppu;
 
 public:
-    PgEntryCpuPpu(NesPPU &p): ppu(p) {  }
+    CpuPpuHandler(NesPPU &p): ppu(p) {  }
     virtual ubyte read(addr_t addr) final;
     virtual void write(addr_t addr, ubyte data) final;
 
@@ -19,13 +19,13 @@ public:
 
 
 
-class PgEntryCpuIO: public memu::iPageHandler
+class CpuIoHandler: public memu::iPageHandler
 {
 private:
     NesCPU &cpu;
 
 public:
-    PgEntryCpuIO(NesCPU &c): cpu(c) {  }
+    CpuIoHandler(NesCPU &c): cpu(c) {  }
     virtual ubyte read(addr_t addr) final;
     virtual void write(addr_t addr, ubyte data) final;
 

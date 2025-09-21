@@ -37,11 +37,9 @@ public:
     ubyte operator[](int i) { return read(i); }
 
     void mapPage(addr_t base, uint16_t mask, RWX_, void*);
-
-    // void mapRange  (addr_t base, addr_t end, RWX_, void *buf, size_t bufsz);
-    void mapRdRange(addr_t base, addr_t end, void *buf, size_t sz, ubyte mask=0xFF);
-    void mapWtRange(addr_t base, addr_t end, void *buf, size_t sz, ubyte mask=0xFF);
-    void mapRWRange(addr_t base, addr_t end, void *buf, size_t sz, ubyte mask=0xFF);
+    void mapRdRange(addr_t base, addr_t end, void *buf, size_t bufsz, ubyte mask=0xFF);
+    void mapWtRange(addr_t base, addr_t end, void *buf, size_t bufsz, ubyte mask=0xFF);
+    void mapRWRange(addr_t base, addr_t end, void *buf, size_t bufsz, ubyte mask=0xFF);
 
     void mapRange(addr_t base, addr_t end, iPageHandler*);
     void unmapPage(addr_t addr);

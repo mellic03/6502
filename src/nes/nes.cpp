@@ -98,10 +98,10 @@ NesEmu::System::System()
     mBusCPU.mapRWRange(0x0000, 0x1FFF, cpuram, cpursz);
 
     // // CPU --> PPU MMIO registers.
-    mBusCPU.mapRange(0x2000, 0x3FFF, new PgEntryCpuPpu(mPPU));
+    mBusCPU.mapRange(0x2000, 0x3FFF, new CpuPpuHandler(mPPU));
 
     // CPU --> APU and IO registers. 4000 - 401F
-    mBusCPU.mapRange(0x4000, 0x40FF, new PgEntryCpuIO(mCPU));
+    mBusCPU.mapRange(0x4000, 0x40FF, new CpuIoHandler(mCPU));
     // -------------------------------------------------------------------------
 
 

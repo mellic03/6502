@@ -14,20 +14,14 @@ namespace memu
 
 class memu::PageEntry
 {
-private:
-    ubyte *mBuf;
-    ubyte  mMask;
-
 public:
     static ubyte *pgdummy;
+    ubyte        *mBuf;
+    ubyte         mMask;
     iPageHandler *mHandler;
 
     PageEntry(ubyte *buf, ubyte mask): mBuf(buf), mMask(mask), mHandler(nullptr) {  }
     PageEntry(): PageEntry(pgdummy, 0xFF) {  }
-
-    ubyte read(addr_t);
-    void write(addr_t, ubyte);
-
 };
 
 

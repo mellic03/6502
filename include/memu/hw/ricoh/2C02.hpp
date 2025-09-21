@@ -39,13 +39,9 @@ public:
 
     uint8_t read2002()
     {
-        uint8_t result = 0;
-
-        STATUS.V = 1;
-        result = (STATUS.byte & 0xE0) | (mPpuData & 0x1F);
-        STATUS.V = 0;
-        mAddrLatch = false;
-
+        uint8_t result = STATUS.byte;
+        STATUS.V = 0;          // clear vblank flag
+        mAddrLatch = false;    // reset $2005/$2006 latch
         return result;
     }
 
@@ -56,6 +52,7 @@ public:
         if (mPpuAddr >= 0x3F00)
             result = mPpuData;
         mPpuAddr += (CTRL.I) ? 32 : 1;
+        mPpuAddr &= 0x3FFF;
         return result;
     }
 
@@ -75,6 +72,7 @@ public:
     void write2007( uint8_t data )
     {
         wtbus(mPpuAddr, data);
-        mPpuAddr = (CTRL.I) ? 32 : 1;
+        mPpuAddr += (CTRL.I) ? 32 : 1;
+        mPpuAddr &= 0x3FFF;
     }
 };
