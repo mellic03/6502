@@ -16,7 +16,7 @@ namespace memu
 class memu::AddrSpace
 {
 private:
-    iPageEntry *mPages[256];
+    PageEntry mPages[256];
     std::set<HwModule*> mHwModules;
 
     void _mapPage(addr_t, addr_t, RWX_, void*);
@@ -36,40 +36,40 @@ public:
 
     void mapPage(addr_t base, uint16_t mask, RWX_, void*);
     void mapRange(addr_t base, addr_t end, RWX_, void *buf, size_t bufsz);
+    void mapRange(addr_t base, addr_t end, iPageHandler*);
     void unmapPage(addr_t addr);
 
+    // template <typename iPageType, typename... Args>
+    // void mapiPage( addr_t addr, uint16_t mask, RWX_ rwx, void *buf,
+    //                Args... args )
+    // {
+    //     static const char rwxtab[4][4] = { "..", "R.", ".W", "RW" };
+    //     log::Info("mapPage  %04X  %s\n", addr, (rwx<4 ? rwxtab[rwx] : "??"));
+    //     mPages[addr>>8] = new iPageType(buf, rwx, args...);
+    // }
 
-    template <typename iPageType, typename... Args>
-    void mapiPage( addr_t addr, uint16_t mask, RWX_ rwx, void *buf,
-                   Args... args )
-    {
-        static const char rwxtab[4][4] = { "..", "R.", ".W", "RW" };
-        log::Info("mapPage  %04X  %s\n", addr, (rwx<4 ? rwxtab[rwx] : "??"));
-        mPages[addr>>8] = new iPageType(buf, rwx, args...);
-    }
+    // // template <typename iPageType, typename... Args>
+    // // void mapiRange( addr_t base, addr_t end, RWX_ rwx, void *buf, size_t bufsz,
+    // //                 Args... args )
+    // // {
+    // //     size_t len = end-base + 1;
+
+    // //     for (uint16_t i=0; i<len; i+=256)
+    // //     {
+    // //         ubyte *pgbase = (ubyte*)buf + (i % bufsz);
+    // //         mPages[(base+i)>>8] = new iPageType(pgbase, rwx, args...);
+    // //     }
+    // // }
 
     // template <typename iPageType, typename... Args>
-    // void mapiRange( addr_t base, addr_t end, RWX_ rwx, void *buf, size_t bufsz,
-    //                 Args... args )
+    // void mapiRange( addr_t base, addr_t end, Args&&... args )
     // {
     //     size_t len = end-base + 1;
 
     //     for (uint16_t i=0; i<len; i+=256)
     //     {
-    //         ubyte *pgbase = (ubyte*)buf + (i % bufsz);
-    //         mPages[(base+i)>>8] = new iPageType(pgbase, rwx, args...);
+    //         mPages[(base+i)>>8] = new iPageType(args...);
     //     }
     // }
-
-    template <typename iPageType, typename... Args>
-    void mapiRange( addr_t base, addr_t end, Args&&... args )
-    {
-        size_t len = end-base + 1;
-
-        for (uint16_t i=0; i<len; i+=256)
-        {
-            mPages[(base+i)>>8] = new iPageType(args...);
-        }
-    }
 
 };

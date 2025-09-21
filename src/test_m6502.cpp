@@ -5,6 +5,7 @@
 #include <memu/addrspace.hpp>
 #include <memu/configparser.hpp>
 #include <memu/nes/nes.hpp>
+#include <memu/nes/gamepak.hpp>
 #include <memu/hw/mostech/6502.hpp>
 
 #include <json/json.hpp>
@@ -72,7 +73,6 @@ static void performTest( m6502 &cpu, auto data )
 
 
 
-
 int main( int argc, char **argv )
 {
     int opts = argc - 2; // name, FILE
@@ -81,9 +81,9 @@ int main( int argc, char **argv )
     for (int i=1; i<argc-1; i+=2)
         if (std::string(argv[i]) == "--conf")
             conf = memu::ConfigParser(argv[i+1]);
-    conf.print();
 
     auto *nes = new NesEmu::System();
+    nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
     nes->mPPU.loadPalette(conf["video"]["palette"]);
 
     // nes->mBusCPU.mapRange(0x0000, 0x7FFF, memu::RWX_RW, new ubyte[32*1024], 32*1024);

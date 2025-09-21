@@ -7,23 +7,34 @@
 
 namespace memu
 {
-    class iPageEntry;
     class PageEntry;
+    class iPageHandler;
 }
 
 
-class memu::iPageEntry
+class memu::PageEntry
 {
-protected:
+private:
     ubyte *mBuf;
     RWX_   mRWX;
 
 public:
     static ubyte *pgdummy;
+    iPageHandler *mHandler;
 
-    iPageEntry(ubyte *buf, RWX_ rwx): mBuf(buf), mRWX(rwx) {  }
-    iPageEntry(): iPageEntry(pgdummy, RWX_RW) {  }
+    PageEntry(ubyte *buf, RWX_ rwx)
+    :   mBuf(buf), mRWX(rwx), mHandler(nullptr) {  }
+    PageEntry(): PageEntry(pgdummy, RWX_RW) {  }
 
+    ubyte read(addr_t);
+    void write(addr_t, ubyte);
+
+};
+
+
+class memu::iPageHandler
+{
+public:
     virtual ubyte read(addr_t) = 0;
     virtual void write(addr_t, ubyte) = 0;
 
@@ -42,18 +53,4 @@ public:
 //     virtual ubyte read(addr_t) = 0;
 //     virtual void write(addr_t, ubyte) = 0;
 // };
-
-
-
-class memu::PageEntry: public iPageEntry
-{
-public:
-    PageEntry(ubyte *buf, RWX_ rwx)
-    :   iPageEntry(buf, rwx) {  }
-
-    virtual ubyte read(addr_t) override;
-    virtual void write(addr_t, ubyte) override;
-
-};
-
 

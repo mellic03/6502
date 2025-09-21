@@ -11,9 +11,6 @@
 #include <memu/nes/mapper.hpp>
 #include <memu/nes/nes.hpp>
 
-// #include <json/json.hpp>
-// using json = nlohmann::json;
-
 
 int main( int argc, char **argv )
 {
@@ -23,7 +20,6 @@ int main( int argc, char **argv )
     for (int i=1; i<argc-1; i+=2)
         if (std::string(argv[i]) == "--conf")
             conf = memu::ConfigParser(argv[i+1]);
-    conf.print();
     auto &boot = conf["boot"];
 
     auto *nes = new NesEmu::System();
@@ -39,9 +35,7 @@ int main( int argc, char **argv )
     std::string title0 = std::string("NesEmu ") + (fh->IsPAL ? "[PAL]" : "[NTSC]");
 
     EmuIO io;
-    auto *win0   = new EmuWindow(title0.c_str(), 256+128, 240, 4);
-    auto *fbgame = new EmuFramebuffer(256, 240);
-    auto *fbpal  = new EmuFramebuffer(128, 256);
+    auto *win0   = new EmuWindow(title0.c_str(), 256+128, 240, 2);
     auto *fbpal0 = new EmuFramebuffer(128, 128);
     auto *fbpal1 = new EmuFramebuffer(128, 128);
 
@@ -105,8 +99,6 @@ int main( int argc, char **argv )
         nes->mPPU.drawPatternTable(fbpal1, palNo, {0, 128});
         win0->blit(fbpal0, {256, 0});
         win0->blit(fbpal1, {256, 128});
-        win0->blit(fbgame, {0, 0});
-
         win0->flush();
     }
 
