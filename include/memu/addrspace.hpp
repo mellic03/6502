@@ -30,8 +30,8 @@ public:
     void tick();
     void attach(HwModule*);
     
-    ubyte read(addr_t);
-    void write(addr_t, ubyte);
+    virtual ubyte read(addr_t);
+    virtual void  write(addr_t, ubyte);
     ubyte operator[](int i) { return read(i); }
 
     void mapPage(addr_t base, uint16_t mask, RWX_, void*);
