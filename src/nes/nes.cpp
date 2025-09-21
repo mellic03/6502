@@ -101,7 +101,7 @@ NesEmu::System::System()
     mBusCPU.mapRange(0x2000, 0x3FFF, new PgEntryCpuPpu(mPPU));
 
     // CPU --> APU and IO registers. 4000 - 401F
-    mBusCPU.mapRange(0x4000, 0x401F, new PgEntryCpuIO(mCPU));
+    mBusCPU.mapRange(0x4000, 0x40FF, new PgEntryCpuIO(mCPU));
     // -------------------------------------------------------------------------
 
 
@@ -115,8 +115,8 @@ NesEmu::System::System()
     mBusPPU.mapRange(0x3000, 0x3EFF, RWX_RW, ppuram, ppursz);
 
     // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
-    // mBusPPU.mapRange(0x3F00, 0x3FFF, RWX_RW, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
-    mBusPPU.mapRange(0x3F00, 0x3FFF, RWX_RW, mPPU.mPalette, sizeof(mPPU.mPalette));
+    mBusPPU.mapRange(0x3F00, 0x3FFF, RWX_RW, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
+    // mBusPPU.mapRange(0x3F00, 0x3FFF, RWX_RW, mPPU.mPalette, sizeof(mPPU.mPalette));
     // -------------------------------------------------------------------------
 
 }

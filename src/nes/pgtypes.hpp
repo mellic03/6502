@@ -8,10 +8,10 @@
 class PgEntryCpuPpu: public memu::iPageHandler
 {
 private:
-    NesPPU &mPPU;
+    NesPPU &ppu;
 
 public:
-    PgEntryCpuPpu(NesPPU &ppu): mPPU(ppu) {  }
+    PgEntryCpuPpu(NesPPU &p): ppu(p) {  }
     virtual ubyte read(addr_t addr) final;
     virtual void write(addr_t addr, ubyte data) final;
 
@@ -22,10 +22,10 @@ public:
 class PgEntryCpuIO: public memu::iPageHandler
 {
 private:
-    NesCPU &mCPU;
+    NesCPU &cpu;
 
 public:
-    PgEntryCpuIO(NesCPU &cpu): mCPU(cpu) {  }
+    PgEntryCpuIO(NesCPU &c): cpu(c) {  }
     virtual ubyte read(addr_t addr) final;
     virtual void write(addr_t addr, ubyte data) final;
 

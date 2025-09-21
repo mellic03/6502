@@ -20,38 +20,34 @@ int main( int argc, char **argv )
     for (int i=1; i<argc-1; i+=2)
         if (std::string(argv[i]) == "--conf")
             conf = memu::ConfigParser(argv[i+1]);
-    auto &boot = conf["boot"];
 
     auto *nes = new NesEmu::System();
-    nes->loadGamePak(new NesEmu::GamePak(boot["rom"]));
+    nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
     nes->mPPU.loadPalette(conf["video"]["palette"]);
 
-    if (boot.contains("jump"))
+    if (conf["boot"].contains("jump"))
     {
-        nes->mCPU.PC = (uint16_t)strtol(boot["jump"].c_str(), NULL, 16);
+        nes->mCPU.PC = (uint16_t)strtol(conf["boot"]["jump"].c_str(), NULL, 16);
     }
 
-    auto *fh = (NesEmu::iNES_File*)(nes->mGPak->data());
-    std::string title0 = std::string("NesEmu ") + (fh->IsPAL ? "[PAL]" : "[NTSC]");
-
     EmuIO io;
-    auto *win0   = new EmuWindow(title0.c_str(), 256+128, 240, 2);
+    auto *win0   = new EmuWindow("NesEmu", 256+128, 240, 4);
     auto *fbpal0 = new EmuFramebuffer(128, 128);
     auto *fbpal1 = new EmuFramebuffer(128, 128);
 
     int palNo = 0;
-    uint64_t tcurr = SDL_GetTicks64();
-    uint64_t tprev = tcurr;
-    uint64_t tdiff = 0;
-    uint64_t accum = 0;
+    // uint64_t tcurr = SDL_GetTicksNS();
+    // uint64_t tprev = tcurr;
+    // uint64_t tdiff = 0;
+    // uint64_t accum = 0;
 
     while (!nes->mCPU.mInvalidOp)
     {
         io.updateEvents();
 
-        tcurr = SDL_GetTicks64();
-        tdiff = tcurr - tprev;
-        tprev = tcurr;
+        // tcurr = SDL_GetTicksNS();
+        // tdiff = tcurr - tprev;
+        // tprev = tcurr;
 
         nes->tick();
 
@@ -71,7 +67,7 @@ int main( int argc, char **argv )
         if (io.keyReleased(SDL_SCANCODE_R))
         {
             printf("Key R --> RESET\n");
-            nes->mCPU.sigHigh(m6502::PIN_RES);
+            nes->mCPU.sigLow(m6502::PIN_RES);
         }
 
         if (io.keyReleased(SDL_SCANCODE_N))
@@ -87,12 +83,14 @@ int main( int argc, char **argv )
 
         if (io.keyReleased(SDL_SCANCODE_LEFT))
         {
-            palNo = (palNo-1) % 12;
+            if (--palNo < 0)
+                palNo = 11;
         }
 
         if (io.keyReleased(SDL_SCANCODE_RIGHT))
         {
-            palNo = (palNo+1) % 12;
+            if (++palNo > 11)
+                palNo = 0;
         }
 
         nes->mPPU.drawPatternTable(fbpal0, palNo, {0, 0});

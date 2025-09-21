@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD "20")
 set(MEMU_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build/NesEmu")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${MEMU_OUTPUT_DIR})
 
-find_package(SDL2 REQUIRED)
+find_package(SDL3 REQUIRED)
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
 

@@ -13,7 +13,7 @@ struct RP2C02_detail::BaseHw
 {
 public:
     BaseHw()
-    :   mScrl(), mAddr(), mData(0) {  }
+    :   mPpuAddr(0), mPpuData(0) {  }
 
     union ppuctl_t {
         ubyte byte;
@@ -64,29 +64,43 @@ public:
         } __attribute__((packed));
     };
 
-    class DataLatch
-    {
-    private:
-        bool mLatch = false;
+    // class DataLatch
+    // {
+    // private:
+    //     bool mLatch = false;
 
-    public:
-        uint16_t value;
+    // public:
+    //     union {
+    //         uint16_t value;
+    //         struct {
+    //             uint8_t lo;
+    //             uint8_t hi;
+    //         };
+    //     };
 
-        void reset()
-        {
-            mLatch = false;
-        }
+    //     void reset()
+    //     {
+    //         mLatch = false;
+    //     }
 
-        void write( uint8_t v )
-        {
-            if (mLatch) value = (value & 0xFF00) | (v << 8);
-            else        value = (value & 0x00FF) | v;
-            mLatch = !mLatch;
-        }
+    //     void write( uint8_t v )
+    //     {
+    //         if (mLatch) hi = v;
+    //         else        lo = v;
+    //         mLatch = !mLatch;
+    //     }
+    // };
+
+    // DataLatch mScrl;
+
+    union {
+        uint16_t mPpuAddr;
+        struct  {
+            uint8_t mPpuAddrLo;
+            uint8_t mPpuAddrHi;
+        };
     };
 
-    DataLatch mScrl;
-    DataLatch mAddr;
-    uint8_t   mData;
+    uint8_t mPpuData;
 
 };

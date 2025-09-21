@@ -2,26 +2,24 @@
 #include <memu/log.hpp>
 
 using namespace memu;
-
 ubyte *PageEntry::pgdummy = new ubyte[256];
 
 
-ubyte PageEntry::read( addr_t i )
+ubyte PageEntry::read( addr_t addr )
 {
     if (mHandler)
-        return mHandler->read(i);
-    else if (mRWX & RWX_R)
-        return mBuf[i&255];
-    return 0;
+        return mHandler->read(addr);
+    else
+        return mBuf[addr & 0xFF];
 }
 
 
-void PageEntry::write( addr_t i, ubyte v )
+void PageEntry::write( addr_t addr, ubyte v )
 {
     if (mHandler)
-        mHandler->write(i, v);
-    else if (mRWX & RWX_W)
-        mBuf[i&255] = v;
+        mHandler->write(addr, v);
+    else
+        mBuf[addr & 0xFF] = v;
 }
 
 

@@ -14,23 +14,29 @@ enum REG_: uint16_t
     REG_OAMDMA = 0x4014,
 };
 
+
 ubyte PgEntryCpuPpu::read(addr_t addr)
 {
-    uint8_t idx = addr % 8;
     uint8_t data = 0;
 
-    switch (idx)
+    switch (addr % 8)
     {
-        case REG_PPUSTATUS:
-            // ppu->STATUS.V = 1;
-            data = (mPPU.STATUS.byte & 0xE0) | (mPPU.mData & 0x1F);
-            mPPU.STATUS.V = 0;
-            mPPU.mAddr.reset();
+        case REG_PPUCTRL:
+        case REG_PPUMASK:
             break;
 
+        case REG_PPUSTATUS:
+            data = ppu.read2002();
+            break;
+
+        case REG_OAMADDR:
         case REG_OAMDATA:
+        case REG_PPUSCROLL:
+        case REG_PPUADDR:
+            break;
+
         case REG_PPUDATA:
-            data = mPPU.MMIO[idx];
+            data = ppu.read2007();
             break;
 
         default:
@@ -40,32 +46,33 @@ ubyte PgEntryCpuPpu::read(addr_t addr)
     return data;
 }
 
+
 void PgEntryCpuPpu::write(addr_t addr, ubyte data)
 {
-    uint8_t  idx = addr % 8;
-    NesPPU  &ppu = mPPU;
-    uint8_t *dst = ppu.MMIO + idx;
-
-    switch (idx)
+    switch (addr % 8)
     {
         case REG_PPUCTRL:
+            ppu.CTRL.byte = data;
+            break;
+            
         case REG_PPUMASK:
-        case REG_OAMADDR:
-        case REG_OAMDATA:
-            *dst = data;
+            ppu.MASK.byte = data;
             break;
 
-        case REG_PPUDATA:
-            ppu.mBus.write(ppu.mAddr.value, data);
-            ppu.mAddr.value += 1;
+        case REG_OAMADDR:
+        case REG_OAMDATA:
             break;
 
         case REG_PPUSCROLL:
-            ppu.mScrl.write(data);
+            ppu.write2005(data);
             break;
 
         case REG_PPUADDR:
-            ppu.mAddr.write(data);
+            ppu.write2006(data);
+            break;
+
+        case REG_PPUDATA:
+            ppu.write2007(data);
             break;
 
         default:
@@ -78,9 +85,9 @@ void PgEntryCpuPpu::write(addr_t addr, ubyte data)
 
 
 
+
 ubyte PgEntryCpuIO::read(addr_t addr)
 {
-    auto &cpu = mCPU;
     ubyte data = 0;
 
     switch (addr)
@@ -103,8 +110,6 @@ ubyte PgEntryCpuIO::read(addr_t addr)
 
 void PgEntryCpuIO::write(addr_t addr, ubyte data)
 {
-    auto &cpu = mCPU;
-
     if (addr == 0x4016)
     {
         if (data & 0x01)

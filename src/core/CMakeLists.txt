@@ -13,6 +13,5 @@ add_library(
 
 target_link_libraries(
     memu_core PRIVATE
-    SDL2::SDL2
-    SDL2::SDL2main
+    SDL3::SDL3
 )

@@ -2,6 +2,7 @@
 #include <memu/addrspace.hpp>
 #include <memu/file.hpp>
 #include <memu/log.hpp>
+#include <cstring>
 
 using namespace memu;
 
@@ -48,6 +49,8 @@ using namespace memu;
 
 Ricoh2C02::Ricoh2C02(AddrSpace &bus)
 :   HwModule(bus), BaseHw(),
+    // mPalette(new ubyte[192]),
+    // mPaletteCtl(new ubyte[32]),
     mAccum(0), mScanline(0)
 {
     // uint8_t *ram = mVRAM.data();
@@ -72,21 +75,35 @@ size_t Ricoh2C02::tick()
     }
 
     mAccum += 1;
-
     return 0;
 }
 
 
 void Ricoh2C02::reset()
 {
-
+    // for (int i=0; i<32; i++)
+    // {
+    //     mPaletteCtl[i] = 0x0F;
+    // }
 }
 
 
 void Ricoh2C02::loadPalette( const std::string &path )
 {
-    size_t bufsz = sizeof(mPalette);
-    size_t res = loadFileRaw(path, mPalette, bufsz);
-    LogAsrt(res==bufsz, "Failed reading .pal file \"%s\"\n", path.c_str());
+    std::vector<ubyte> temp = loadFileRaw(path);
+
+    LogAsrt(temp.size() == 192, "Error loading .pal file \"%s\"\n", path.c_str());
+    // memcpy(mPalette, temp.data(), temp.size());
+
+    for (int i=0; i<64; i++)
+    {
+        mPalette[i].r = temp[3*i + 0];
+        mPalette[i].g = temp[3*i + 1];
+        mPalette[i].b = temp[3*i + 2];
+    }
+
+    // size_t bufsz = sizeof(mPalette);
+    // size_t rawsz = loadFileRaw(path, mPalette, bufsz);
+    // LogAsrt(rawsz==bufsz, "Failed to load .pal file \"%s\"\n", path.c_str());
 }
 

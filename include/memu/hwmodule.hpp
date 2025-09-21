@@ -16,14 +16,15 @@ private:
     size_t mClock;
 
 protected:
-    uint8_t rdbus(uint16_t); // { return mBus.read(a); }
-    void    wtbus(uint16_t, uint8_t); // { mBus.write(a, v); }
 
 public:
     AddrSpace &mBus;
 
     HwModule(AddrSpace&);
     HwModule(const HwModule&) = delete;
+
+    uint8_t rdbus(uint16_t); // { return mBus.read(a); }
+    void    wtbus(uint16_t, uint8_t); // { mBus.write(a, v); }
     HwModule &operator=(const HwModule&) = delete;
     size_t clockTime() { return mClock; }
 

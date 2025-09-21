@@ -10,15 +10,11 @@
 
 NesEmu::GamePak::GamePak( const std::string &path )
 {
-    std::ifstream stream(path, std::ifstream::binary);
-
-    if (!stream.is_open())
-    {
-        printf("Could not open file \"%s\"\n", path.c_str());
-        exit(1);
-    }
+    // std::ifstream stream(path, std::ifstream::binary);
+    // LogAsrt(stream.is_open(), "Failed to open file \"%s\"\n", path.c_str());
 
     mBuf = memu::loadFileRaw(path);
+    memu::log::Info("mBuf.size() == %lu\n", mBuf.size());
 
-    LogAsrt(mBuf.size() > 0, "Gpak::size() == %lu\n", mBuf.size());
+    // LogAsrt(mBuf.size() > 0, "Gpak::size() == %lu\n", mBuf.size());
 }

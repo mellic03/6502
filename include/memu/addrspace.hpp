@@ -16,7 +16,8 @@ namespace memu
 class memu::AddrSpace
 {
 private:
-    PageEntry mPages[256];
+    PageEntry mRdPages[256];
+    PageEntry mWtPages[256];
     std::set<HwModule*> mHwModules;
 
     void _mapPage(addr_t, addr_t, RWX_, void*);
@@ -28,6 +29,7 @@ public:
 
     AddrSpace();
     void tick();
+    void reset();
     void attach(HwModule*);
     
     virtual ubyte read(addr_t);

@@ -8,7 +8,7 @@
 void m6502::_fetch()
 {
     // // printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
-    // printf("%04X %02X  ", PC, rdbus(PC));
+    printf("%04X %02X  ", PC, rdbus(PC));
 
     mOpAC   = false;
     mCurrOp = rdbus(PC++);
@@ -17,7 +17,7 @@ void m6502::_fetch()
 void m6502::_decode()
 {
     mCurrInstr = &mFtab[mCurrOp];
-    // printf("%s    ", mCurrInstr->label);
+    printf("%s    ", mCurrInstr->label);
 }
 
 void m6502::_execute()
@@ -27,8 +27,8 @@ void m6502::_execute()
     (this->*mCurrInstr->fA)();
 
     // // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
-    // printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.as_byte, SP);
-    // printf("PPU: %u,%u CYC:%lu\n", 0, 0, clockTime());
+    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.as_byte, SP);
+    printf("PPU: %u,%u CYC:%lu\n", 0, 0, clockTime());
 
     (this->*mCurrInstr->fE)();
 
@@ -65,7 +65,7 @@ size_t m6502::tick()
         printf("\t\t RES  PC:%04X\n", PC);
         m_sigcurr.wai = 0;
         m_sigcurr.res = 1;
-        this->reset();
+        reset();
         goto over_here;
     }
 
@@ -74,10 +74,13 @@ size_t m6502::tick()
         printf("\t\t IRQ  PC:%04X\n", PC);
         m_sigcurr.wai = 0;
         m_sigcurr.irq = 1;
-        push16(PC);  
+        push16(PC);
         push08(SSR.as_byte);
         SSR.I = 1;
-        _IntJump(0xFFFE);
+        PC_lo = rdbus(0xFFFE);
+        PC_hi = rdbus(0xFFFF);
+        printf("[IRQ] PC=%04X\n", PC);
+        // printf("[IRQ] *0xFFFE, *0xFFFF: %02X, %02X\n", rdbus(0xFFFE), rdbus(0xFFFF));
         goto over_here;
     }
 
@@ -100,8 +103,10 @@ over_here:
 
 void m6502::reset()
 {
-    _IntPush();
-    _IntJump(0xFFFC);
+    SP = 0xFD;
+    SSR.as_byte = 0b00100100;
+    PC_lo = rdbus(0xFFFC);
+    PC_hi = rdbus(0xFFFD);
 }
 
 

@@ -8,6 +8,8 @@ class NesPPU: public memu::Ricoh2C02
 {
 public:
      using Ricoh2C02::Ricoh2C02;
+
+     ubyte *readPalette( int palNo, ubyte pxl );
      void drawPatternTile( EmuFramebuffer*, int palNo, int tx, int ty );
      void drawPatternTable( EmuFramebuffer*, int palNo, ivec2 spos );
 

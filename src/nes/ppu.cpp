@@ -3,31 +3,40 @@
 #include <memu/display.hpp>
 
 
-void NesPPU::drawPatternTile( EmuFramebuffer *fb, int palNo, int tx, int ty )
+// void NesPPU::drawPatternTile( EmuFramebuffer *fb, int palNo, int tx, int ty )
+// {
+//     auto &B = mBus;
+//     int ptabno = 0;
+//     int tileOffset = 256*ty + 16*tx;
+
+//     for (int row=0; row<8; row++)
+//     {
+//         ubyte lsb = B[ptabno*0x1000 + tileOffset + row+0];
+//         ubyte msb = B[ptabno*0x1000 + tileOffset + row+8];
+
+//         for (int col=0; col; col++)
+//         {
+//             ubyte pxl = (msb & 0x01) + (lsb & 0x01);
+//             ubyte idx = 0x3F00 + 4*palNo + 4*pxl;
+//             ubyte *C = mPalette + idx;
+
+//             int x = 8*tx + (7-col);
+//             int y = 8*tx + (7-col);
+//             fb->pixel(x, y, C[0], C[1], C[2]);
+
+//             lsb >>= 1;
+//             msb >>= 1;
+//         }
+//     }
+// }
+
+
+ubyte *NesPPU::readPalette( int palNo, ubyte pxl )
 {
-    auto &B = mBus;
-    int ptabno = 0;
-    int tileOffset = 256*ty + 16*tx;
-
-    for (int row=0; row<8; row++)
-    {
-        ubyte lsb = B[ptabno*0x1000 + tileOffset + row+0];
-        ubyte msb = B[ptabno*0x1000 + tileOffset + row+8];
-
-        for (int col=0; col; col++)
-        {
-            ubyte pxl = (msb & 0x01) + (lsb & 0x01);
-            ubyte idx = 0x3F00 + 4*palNo + 4*pxl;
-            ubyte *C = mPalette + idx;
-
-            int x = 8*tx + (7-col);
-            int y = 8*tx + (7-col);
-            fb->pixel(x, y, C[0], C[1], C[2]);
-
-            lsb >>= 1;
-            msb >>= 1;
-        }
-    }
+    ubyte offset = mPaletteCtl[4*palNo + pxl] & 0x3F;
+    // ubyte offset = rdbus(0x3F00 + 4*palNo + pxl) & 0x3F;
+    // printf("offset=%u\n", offset);
+    return &(mPalette[offset].r);
 }
 
 
@@ -42,20 +51,60 @@ void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 spos )
             int y = spos.y + i;
             int x = spos.x + j;
 
-            int addr = 256*(y/8) + (y%8) + 16*(x/8);
-
+            uword addr = 256*(y/8) + (y%8) + 16*(x/8);
             ubyte pxl  = (B[addr+0] >> (7-(x % 8))) & 1;
                   pxl += 2 * ((B[addr+8] >> (7-(x % 8))) & 1);
 
-            ubyte idx = B[0x3F00 + 4*palNo + 4*pxl];
-            ubyte *C = mPalette + idx;
-            // ubyte spriteOffset = 0x3F10 + 4*pxl;
+            // ubyte off = mPaletteCtl[4*palNo + pxl] & 0x3F;
+            ubyte off = 0;
 
-            fb->pixel(j, i, C[0], C[1], C[2]);
+            if (pxl==0) off = mPaletteCtl[0];
+            else        off = mPaletteCtl[4*palNo + pxl] & 0x3F;
+
+            // ubyte *C  = mPalette + 4*off;
+            uvec3 C = mPalette[off];
+
+            fb->pixel(j, i, C.r, C.g, C.b);
         }
     }
 }
 
+
+// void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 spos )
+// {
+//     auto &B = mBus;
+
+//     for (int i=0; i<128; i++)
+//     {
+//         for (int j=0; j<128; j++)
+//         {
+//             int y = spos.y + i;
+//             int x = spos.x + j;
+
+//             // Compute tile index
+//             int tileX = x / 8;
+//             int tileY = y / 8;
+//             int tileIndex = tileY * 16 + tileX;
+
+//             // Address into CHR
+//             int tileAddr = tileIndex * 16;
+//             int row = y % 8;
+
+//             ubyte plane0 = B[tileAddr + row];
+//             ubyte plane1 = B[tileAddr + row + 8];
+
+//             int bit = 7 - (x % 8);
+//             ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
+
+//             // Palette lookup
+//             ubyte off = mPaletteCtl[4*palNo + pxl] & 0x3F;
+//             printf("offset=%u\n", off);
+//             uvec3 C = mPalette[off];
+
+//             fb->pixel(j, i, C.r, C.g, C.b);
+//         }
+//     }
+// }
 
 
 // /*

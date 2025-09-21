@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <memu/types.hpp>
 #include <vector>
 
@@ -8,40 +8,18 @@
 class EmuFramebuffer
 {
 public:
+    static constexpr SDL_PixelFormat mFormat = SDL_PIXELFORMAT_RGB24;
+
     ivec2 mSp;
     SDL_Surface *mSurface;
 
     EmuFramebuffer( int w, int h )
-    :   mSp{w, h}, mSurface(SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0))
-    {
-        
-    }
+    :   mSp{w, h}, mSurface(SDL_CreateSurface(w, h, mFormat)) {  }
 
-    void blit( EmuFramebuffer *fb, ivec2 dstpos, float S=1.0f )
-    {
-        SDL_Rect src = { 0, 0, fb->mSp.x, fb->mSp.y };
-        SDL_Rect dst = { dstpos.x, dstpos.y, int(S*fb->mSp.x), int(S*fb->mSp.y) };
-        SDL_BlitScaled(fb->mSurface, &src, mSurface, &dst);
-    }
-
-    void pixel( int x, int y, uint8_t r, uint8_t g, uint8_t b )
-    {
-        x %= mSp.x;
-        y %= mSp.y;
-
-        auto &ms   = mSurface;
-        auto pitch = ms->pitch;
-        auto bpp   = ms->format->BytesPerPixel;
-
-        *((Uint8*)(ms->pixels) + (pitch*y + bpp*x) + 0) = b;
-        *((Uint8*)(ms->pixels) + (pitch*y + bpp*x) + 1) = g;
-        *((Uint8*)(ms->pixels) + (pitch*y + bpp*x) + 2) = r;
-    }
-
-    void pixel( int x, int y, uint8_t c=255 )
-    {
-        pixel(x, y, c, c, c);
-    }
+    void blit( EmuFramebuffer *fb, ivec2 dstpos, float S=1.0f );
+    void pixel( int x, int y, uint8_t *src );
+    void pixel( int x, int y, uint8_t value=255 );
+    void pixel( int x, int y, uint8_t r, uint8_t g, uint8_t b );
 };
 
 
@@ -57,16 +35,7 @@ public:
     {
         mSp    = { w, h };
         mScale = scale;
-
-        mWin = SDL_CreateWindow(
-            title,
-            SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED,
-            scale*w,
-            scale*h,
-            0
-        );
-
+        mWin = SDL_CreateWindow(title, scale*w, scale*h, 0);
         mWinSurface = SDL_GetWindowSurface(mWin);
     }
 
@@ -74,11 +43,12 @@ public:
     {
         SDL_Rect src = { 0, 0, mSp.x, mSp.y };
         SDL_Rect dst = { 0, 0, mScale*mSp.x, mScale*mSp.y };
-        SDL_BlitScaled(mSurface, &src, mWinSurface, &dst);
+        SDL_BlitSurfaceScaled(mSurface, &src, mWinSurface, &dst, SDL_SCALEMODE_NEAREST);
         SDL_UpdateWindowSurface(mWin);
     }
 };
 
+#include <stdio.h>
 
 class EmuIO
 {
@@ -93,14 +63,8 @@ public:
         mRunning = true;
         memset(mKeyCurr, 0, 512);
         memset(mKeyPrev, 0, 512);
-        SDL_Init(SDL_INIT_VIDEO);
+        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     }
-
-    // EmuWindow *addWindow( EmuWindow *win )
-    // {
-    //     mWindows.push_back(win);
-    //     return mWindows.back();
-    // }
 
     bool keyReleased( int k )
     {
@@ -117,15 +81,15 @@ public:
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
-            if ((e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) ||
-                (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) 
+            switch (e.type)
             {
-                exit(0);
-            }
+                case SDL_EVENT_QUIT:
+                case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+                    SDL_Quit();
+                    break;
 
-            if (e.type == SDL_MOUSEBUTTONDOWN)
-            {
-        
+                default:
+                    break;
             }
         }
 

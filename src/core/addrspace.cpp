@@ -8,11 +8,10 @@ using EADS = memu::AddrSpace;
 
 EADS::AddrSpace()
 {
-    static ubyte *dummy = new ubyte[256];
-
-    for (size_t i=0; i<=256; i++)
+    for (size_t i=0; i<256; i++)
     {
-        mPages[i] = PageEntry();
+        mRdPages[i] = PageEntry();
+        mWtPages[i] = PageEntry();
     }
 }
 
@@ -21,9 +20,14 @@ EADS::AddrSpace()
 void EADS::tick()
 {
     for (HwModule *hw: mHwModules)
-    {
         hw->mClock += hw->tick();
-    }
+}
+
+
+void EADS::reset()
+{
+    for (HwModule *hw: mHwModules)
+        hw->reset();
 }
 
 
@@ -35,7 +39,7 @@ void EADS::attach( memu::HwModule *hw )
 
 ubyte EADS::read( uint16_t addr )
 {
-    return mPages[addr>>8].read(addr);
+    return mRdPages[addr>>8].read(addr);
     // LogAsrt(pg.used, "Cannot read %04X (page %04X not read-mapped)\n", i, (i>>8)<<8);
     // uint8_t idx = (i & pg.mask);
     // if (pg.rdfn)  return pg.rdfn(pg.dev, idx);
@@ -45,7 +49,7 @@ ubyte EADS::read( uint16_t addr )
 
 void EADS::write( uint16_t addr, ubyte data )
 {
-    mPages[addr>>8].write(addr, data);
+    mWtPages[addr>>8].write(addr, data);
     // LogAsrt(pg.used, "Cannot write %04X (page %04X not write-mapped)\n", i, (i>>8)<<8);
     // uint8_t idx = (i & pg.mask);
     // if (pg.wtfn)  pg.wtfn(pg.dev, idx, v);
@@ -57,25 +61,16 @@ void EADS::write( uint16_t addr, ubyte data )
 
 void EADS::_mapPage( addr_t addr, uint16_t mask, RWX_ rwx, void *buf )
 {
+    LogAsrt(addr%256 == 0, "Addr (%04X) must be multiple of 256.", addr);
+
     // LogAsrt(
     //     mPages[addr>>8]==nullptr,
     //     "Page %04X already mapped.", addr>>8
     // );
 
-    mPages[addr>>8] = PageEntry((ubyte*)buf, rwx);
+    if (rwx & RWX_R) mRdPages[addr>>8] = PageEntry((ubyte*)buf);
+    if (rwx & RWX_W) mWtPages[addr>>8] = PageEntry((ubyte*)buf);
 }
-
-
-void EADS::_unmapPage( addr_t addr, RWX_ rwx )
-{
-    // LogAsrt(
-    //     mPages[addr>>8]!=nullptr,
-    //     "Page %04X not mapped.", addr>>8
-    // );
-
-    // delete mPages[addr>>8];
-}
-
 
 
 void EADS::mapPage( addr_t addr, addr_t mask, RWX_ rwx, void *buf )
@@ -86,30 +81,49 @@ void EADS::mapPage( addr_t addr, addr_t mask, RWX_ rwx, void *buf )
 }
 
 
-void EADS::mapRange(addr_t base, addr_t end, RWX_ rwx, void *buf, size_t bufsz)
+void EADS::mapRange( addr_t base, addr_t end, RWX_ rwx, void *buf, size_t bufsz )
 {
-    size_t len = end-base + 1;
+    LogAsrt(base%256 == 0, "Base (%04X) must be multiple of 256.", base);
+    LogAsrt((end+1)%256 == 0, "End (%04X) + 1 must be multiple of 256.", end);
 
-    uint16_t off = 0;
-    while (off < len)
+    size_t len = (end+1) - base;
+
+    for (size_t off=0; off<len; off+=256)
     {
-        ubyte *page = (ubyte*)buf + (off % bufsz);
-
-        mPages[(base+off) >> 8] = PageEntry(page, rwx);
-        off += 256;
+        uword  addr = base + off;
+        size_t boff = (off % bufsz) & ~0xFF;
+        ubyte *page = (ubyte*)buf + boff;
+        _mapPage(addr, 0xFFFF, rwx, page);
     }
 }
 
 
-void EADS::mapRange(addr_t base, addr_t end, iPageHandler *handler)
+void EADS::mapRange( addr_t base, addr_t end, iPageHandler *handler )
 {
+    LogAsrt(base%256 == 0, "Base (%04X) must be multiple of 256.", base);
+    LogAsrt((end+1)%256 == 0, "End (%04X) + 1 must be multiple of 256.", end);
+
     size_t len = end-base + 1;
 
     for (uint16_t addr=base; addr<end+1; addr+=256)
     {
-        mPages[addr>>8] = PageEntry();
-        mPages[addr>>8].mHandler = handler;
+        mRdPages[addr>>8] = PageEntry();
+        mRdPages[addr>>8].mHandler = handler;
+        mWtPages[addr>>8] = mRdPages[addr>>8];
     }  
+}
+
+
+
+
+void EADS::_unmapPage( addr_t addr, RWX_ rwx )
+{
+    // LogAsrt(
+    //     mPages[addr>>8]!=nullptr,
+    //     "Page %04X not mapped.", addr>>8
+    // );
+
+    // delete mPages[addr>>8];
 }
 
 
