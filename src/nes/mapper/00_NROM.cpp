@@ -103,14 +103,12 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
     // CPU Mapping
     {
         auto &bus = nes.mBusCPU;
+
+        // CPU --> PRG RAM
         bus.mapRange(0x6000, 0x7FFF, RWX_RW, mPrgRam.base, mPrgRam.size);
 
         // CPU --> PRG ROM
         bus.mapRange(0x8000, 0xFFFF, RWX_R, mPrgRom.base, mPrgRom.size);
-
-        // uint8_t sz = fh->PrgRomNo16K;
-        // if (sz==2) bus.mapRange(0xC000, 0xFFFF,  mPrgRom.base + 16*1024);
-        // else       bus.mapRange(0xC000, 0xFFFF,  mPrgRom.base);
     }
 
     // PPU Mapping

@@ -11,6 +11,9 @@
 #include <memu/nes/mapper.hpp>
 #include <memu/nes/nes.hpp>
 
+// #include <json/json.hpp>
+// using json = nlohmann::json;
+
 
 int main( int argc, char **argv )
 {

@@ -58,8 +58,8 @@ Ricoh2C02::Ricoh2C02(AddrSpace &bus)
     // bus.mapRange(0x3000, 0x3EFF, RWX_RW, ram, rsz);
 
     // // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
-    // bus.mapRange(0x3F00, 0x3FFF, RWX_RW, mPaletteCtl, sizeof(mPaletteCtl));
-    // // bus.mapRange(0x3F00, 0x3FFF, RWX_RW, mPalette, sizeof(mPalette));
+    // // bus.mapRange(0x3F00, 0x3FFF, RWX_RW, mPaletteCtl, sizeof(mPaletteCtl));
+    // bus.mapRange(0x3F00, 0x3FFF, RWX_RW, mPalette, sizeof(mPalette));
 }
 
 
