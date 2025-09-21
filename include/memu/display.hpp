@@ -18,7 +18,6 @@ public:
 
     void blit( EmuFramebuffer *fb, ivec2 dstpos, float S=1.0f );
     void pixel( int x, int y, uint8_t *src );
-    void pixel( int x, int y, uint8_t value=255 );
     void pixel( int x, int y, uint8_t r, uint8_t g, uint8_t b );
 };
 

@@ -35,7 +35,7 @@ int main( int argc, char **argv )
     auto *fbpal0 = new EmuFramebuffer(128, 128);
     auto *fbpal1 = new EmuFramebuffer(128, 128);
 
-    int palNo = 0;
+    int palNo = 5;
     // uint64_t tcurr = SDL_GetTicksNS();
     // uint64_t tprev = tcurr;
     // uint64_t tdiff = 0;
@@ -84,12 +84,12 @@ int main( int argc, char **argv )
         if (io.keyReleased(SDL_SCANCODE_LEFT))
         {
             if (--palNo < 0)
-                palNo = 11;
+                palNo = 10;
         }
 
         if (io.keyReleased(SDL_SCANCODE_RIGHT))
         {
-            if (++palNo > 11)
+            if (++palNo > 10)
                 palNo = 0;
         }
 

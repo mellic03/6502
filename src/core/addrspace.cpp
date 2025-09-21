@@ -130,9 +130,8 @@ void EADS::mapRange( addr_t base, addr_t end, iPageHandler *handler )
 
     for (uint16_t addr=base; addr<end+1; addr+=256)
     {
-        mRdPages[addr>>8] = PageEntry();
-        mRdPages[addr>>8].mHandler = handler;
-        mWtPages[addr>>8] = mRdPages[addr>>8];
+        mRdPages[addr>>8] = PageEntry(handler);
+        mWtPages[addr>>8] = PageEntry(handler);
     }  
 }
 

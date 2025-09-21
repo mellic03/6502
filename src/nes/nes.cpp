@@ -32,6 +32,47 @@
 */
 
 
+
+NesEmu::System::System()
+:   mCPU(mBusCPU),
+    mPPU(mBusPPU),
+    mGPak(nullptr)
+{
+    using namespace memu;
+
+    // CPU Mapping
+    // -------------------------------------------------------------------------
+    ubyte *cpuram = mCPU.mRAM.data();
+    size_t cpursz = mCPU.mRAM.size();
+
+    // CPU --> CPU RAM.
+    mBusCPU.mapRWRange(0x0000, 0x1FFF, cpuram, cpursz);
+
+    // // CPU --> PPU MMIO registers.
+    mBusCPU.mapRange(0x2000, 0x3FFF, new CpuPpuHandler(mPPU));
+
+    // CPU --> APU and IO registers. 4000 - 401F
+    mBusCPU.mapRange(0x4000, 0x40FF, new CpuIoHandler(mCPU));
+    // -------------------------------------------------------------------------
+
+
+    // PPU Mapping
+    // -------------------------------------------------------------------------
+    uint8_t *ppuram = mPPU.mVRAM.data();
+    size_t   ppursz = mPPU.mVRAM.size();
+
+    // PPU --> PPU VRAM
+    mBusPPU.mapRWRange(0x2000, 0x2FFF, ppuram, ppursz);
+    mBusPPU.mapRWRange(0x3000, 0x3EFF, ppuram, ppursz);
+
+    // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
+    mBusPPU.mapRWRange(0x3F00, 0x3FFF, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
+    // -------------------------------------------------------------------------
+
+}
+
+
+
 void NesEmu::System::loadGamePak( GamePak *gpak )
 {
     mGPak = gpak;
@@ -69,55 +110,4 @@ void NesEmu::System::tick()
     accum = std::max(accum, 0);
 }
 
-
-
-
-
-
-
-
-// static uint8_t CpuRdPpu(memu::HwModule*, addr_t);
-// static void CpuWtPpu(memu::HwModule*, addr_t, ubyte);
-
-// static uint8_t CpuRdIO(memu::HwModule*, addr_t);
-// static void CpuWtIO(memu::HwModule*, addr_t, ubyte);
-
-
-NesEmu::System::System()
-:   mCPU(mBusCPU), mPPU(mBusPPU),
-    mGPak(nullptr)
-{
-    using namespace memu;
-
-    // CPU Mapping
-    // -------------------------------------------------------------------------
-    ubyte *cpuram = mCPU.mRAM.data();
-    size_t cpursz = mCPU.mRAM.size();
-
-    // CPU --> CPU RAM.
-    mBusCPU.mapRWRange(0x0000, 0x1FFF, cpuram, cpursz);
-
-    // // CPU --> PPU MMIO registers.
-    mBusCPU.mapRange(0x2000, 0x3FFF, new CpuPpuHandler(mPPU));
-
-    // CPU --> APU and IO registers. 4000 - 401F
-    mBusCPU.mapRange(0x4000, 0x40FF, new CpuIoHandler(mCPU));
-    // -------------------------------------------------------------------------
-
-
-    // PPU Mapping
-    // -------------------------------------------------------------------------
-    uint8_t *ppuram = mPPU.mVRAM.data();
-    size_t   ppursz = mPPU.mVRAM.size();
-
-    // PPU --> PPU VRAM
-    mBusPPU.mapRWRange(0x2000, 0x2FFF, ppuram, ppursz);
-    mBusPPU.mapRWRange(0x3000, 0x3EFF, ppuram, ppursz);
-
-    // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
-    mBusPPU.mapRWRange(0x3F00, 0x3FFF, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
-    // mBusPPU.mapRange(0x3F00, 0x3FFF, RWX_RW, mPPU.mPalette, sizeof(mPPU.mPalette));
-    // -------------------------------------------------------------------------
-
-}
 

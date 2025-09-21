@@ -90,7 +90,7 @@ void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 spos )
             ubyte  off = mPaletteCtl[4*palNo + pxl] & 0x3F;
             ubyte *rgb = mPalette + 3*off;
 
-            fb->pixel(j, i, rgb);
+            fb->pixel(j, i, 62*pxl, 62*pxl, 62*pxl);
         }
     }
 }

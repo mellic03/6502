@@ -20,8 +20,9 @@ public:
     ubyte         mMask;
     iPageHandler *mHandler;
 
-    PageEntry(ubyte *buf, ubyte mask): mBuf(buf), mMask(mask), mHandler(nullptr) {  }
     PageEntry(): PageEntry(pgdummy, 0xFF) {  }
+    PageEntry(ubyte *buf, ubyte mask): mBuf(buf), mMask(mask), mHandler(nullptr) {  }
+    PageEntry(iPageHandler *h): mBuf(pgdummy), mMask(0xFF), mHandler(h) { }
 };
 
 
