@@ -4,7 +4,18 @@
 #include <memory>
 
 using EADS = memu::AddrSpace;
-ubyte *EADS::PgEntry::dummy = new ubyte[256];
+
+
+EADS::AddrSpace()
+{
+    static ubyte *dummy = new ubyte[256];
+
+    for (size_t i=0; i<=256; i++)
+    {
+        mPages[i] = new PageEntry(dummy, RWX_RW);
+    }
+}
+
 
 
 void EADS::tick()
@@ -22,155 +33,74 @@ void EADS::attach( memu::HwModule *hw )
 }
 
 
-ubyte EADS::read( uint16_t i )
+ubyte EADS::read( uint16_t addr )
 {
-    auto &pg = mRdPages[i>>8];
-    LogAsrt(pg.used, "Cannot read %04X (page %04X not read-mapped)\n", i, (i>>8)<<8);
-
-    uint8_t idx = (i & pg.mask);
-    if (pg.rdfn)  return pg.rdfn(pg.dev, idx);
-    else          return pg.page[idx];
+    return mPages[addr>>8]->read(addr);
+    // LogAsrt(pg.used, "Cannot read %04X (page %04X not read-mapped)\n", i, (i>>8)<<8);
+    // uint8_t idx = (i & pg.mask);
+    // if (pg.rdfn)  return pg.rdfn(pg.dev, idx);
+    // else          return pg.page[idx];
 }
 
 
-void EADS::write( uint16_t i, ubyte v )
+void EADS::write( uint16_t addr, ubyte data )
 {
-    auto &pg = mWtPages[i>>8];
-    LogAsrt(pg.used, "Cannot write %04X (page %04X not write-mapped)\n", i, (i>>8)<<8);
-
-    uint8_t idx = (i & pg.mask);
-    if (pg.wtfn)  pg.wtfn(pg.dev, idx, v);
-    else          pg.page[idx] = v;
+    mPages[addr>>8]->write(addr, data);
+    // LogAsrt(pg.used, "Cannot write %04X (page %04X not write-mapped)\n", i, (i>>8)<<8);
+    // uint8_t idx = (i & pg.mask);
+    // if (pg.wtfn)  pg.wtfn(pg.dev, idx, v);
+    // else          pg.page[idx] = v;
 }
-
 
 
 #include <memu/log.hpp>
-static const char rwxtab[4][4] = { "..", "R.", ".W", "RW" };
 
-void EADS::mapPage( addr_t addr, addr_t mask, RWX_ rwx, void *page )
+void EADS::_mapPage( addr_t addr, uint16_t mask, RWX_ rwx, void *buf )
 {
-    log::Info("mapPage  %04X       %s\n", addr, (rwx<4 ? rwxtab[rwx] : "??"));
-    _mapPage(addr, mask, rwx, page);
+    // LogAsrt(
+    //     mPages[addr>>8]==nullptr,
+    //     "Page %04X already mapped.", addr>>8
+    // );
+
+    mPages[addr>>8] = new PageEntry((ubyte*)buf, rwx);
 }
 
 
-void EADS::mapRange( addr_t base, addr_t end, addr_t mask, RWX_ rwx, void *buf )
+void EADS::_unmapPage( addr_t addr, RWX_ rwx )
 {
-    log::Info("mapRange %04X-%04X  %s\n", base, end, (rwx<4 ? rwxtab[rwx] : "??"));
+    LogAsrt(
+        mPages[addr>>8]!=nullptr,
+        "Page %04X not mapped.", addr>>8
+    );
 
-    LogAsrt(base % 256==0, "base must be page addr, supplied %04X\n", base);
-    LogAsrt((end+1) % 256==0, "end must be page addr-1, supplied %04X\n", end);
-
-    size_t len = (end+1) - base;
-    for (size_t off=0; off<len; off+=256)
-    {
-        _mapPage(base+off, mask, rwx, (ubyte*)buf + off);
-    }
-
-    // size_t pgNo = 0;
-    // for (size_t addr=base; addr<end+1; addr+=256)
-    // {
-    //     _mapPage(addr, mask, rwx, (ubyte*)buf + 256*pgNo);
-    //     pgNo = (pgNo+1) % (bufsz/256);
-    // }
+    delete mPages[addr>>8];
 }
 
-// void EADS::mapRange( addr_t base, addr_t end, addr_t mask, RWX_ rwx,
-//                      void *pages )
-// {
-//     log::Info("mapRange %04X-%04X  %s\n", base, end, (rwx<4 ? rwxtab[rwx] : "??"));
-
-//     LogAsrt(base % 256==0, "base must be page addr, supplied %04X\n", base);
-//     LogAsrt((end+1) % 256==0, "end must be page addr-1, supplied %04X\n", end);
-
-//     size_t len = (end+1) - base;
-//     for (size_t off=0; off<len; off+=256)
-//     {
-//         _mapPage(base+off, mask, rwx, (ubyte*)pages + off);
-//     }
-// }
 
 
-void EADS::mapRangeTiny( addr_t base, addr_t end, HwModule *dev, RdFunc rd, WtFunc wt )
+void EADS::mapPage( addr_t addr, addr_t mask, RWX_ rwx, void *buf )
 {
-    log::Info("mapRangeTiny %04X-%04X\n", base, end);
-    size_t len = (end+1) - base;
+    static const char rwxtab[4][4] = { "..", "R.", ".W", "RW" };
+    log::Info("mapPage  %04X  %s\n", addr, (rwx<4 ? rwxtab[rwx] : "??"));
+    _mapPage(addr, mask, rwx, buf);
+}
 
-    for (size_t i=base; i<base+len; i+=256)
+
+void EADS::mapRange(addr_t base, addr_t end, RWX_ rwx, void *buf, size_t bufsz)
+{
+    size_t len = end-base + 1;
+
+    for (uint16_t i=0; i<len; i+=256)
     {
-        auto &rdpg = mRdPages[i>>8];
-        auto &wtpg = mWtPages[i>>8];
-
-        rdpg.mask = 0xFFFF;
-        rdpg.used = true;
-        rdpg.dev  = dev;
-        rdpg.rdfn = rd;
-        rdpg.wtfn = wt;
-
-        mWtPages[i>>8] = rdpg;
+        ubyte *pgbase = (ubyte*)buf + (i % bufsz);
+        mPages[(base+i)>>8] = new PageEntry(pgbase, rwx);
     }
 }
-
-
-
 
 
 void EADS::unmapPage( addr_t addr )
 {
     log::Warn("unmapPage %04X\n", addr);
     _unmapPage(addr, RWX_RW);
-}
-
-
-void EADS::unmapRange( addr_t base, addr_t end )
-{
-    log::Warn("unmapRange %04X-%04X\n", base, end);
-
-    size_t len = (end+1) - base;
-    for (size_t off=0; off<len; off+=256)
-    {
-        _unmapPage(base+off, RWX_RW);
-    }
-}
-
-
-void EADS::_mapPage( addr_t addr, addr_t mask, RWX_ rwx, void *page )
-{
-    LogAsrt((addr%256)==0, "address must be page base, supplied %04X\n", addr);
-
-    if (rwx & RWX_R)
-    {
-        auto &pg = mRdPages[addr>>8];
-        LogAsrt(!pg.used, "Page %04X already read-mapped\n", addr);
-        pg = PgEntry(page, addr, mask, true);
-    }
-
-    if (rwx & RWX_W)
-    {
-        auto &pg = mWtPages[addr>>8];
-        LogAsrt(!pg.used, "Page %04X already write-mapped\n", addr);
-        pg = PgEntry(page, addr, mask, true);
-    }
-}
-
-
-void EADS::_unmapPage( addr_t addr, RWX_ )
-{
-    LogAsrt((addr%256)==0, "address must be page base, supplied %04X\n", addr);
-
-    // if (rwx & RWX_R)
-    {
-        auto &pg = mRdPages[addr>>8];
-        LogAsrt(pg.used, "Page %04X not read-mapped", addr);
-        pg = PgEntry();
-    }
-
-    // if (rwx & RWX_W)
-    {
-        auto &pg = mWtPages[addr>>8];
-        LogAsrt(pg.used, "Page %04X not write-mapped", addr);
-        pg = PgEntry();
-    }
 }
 

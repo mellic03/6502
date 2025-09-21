@@ -15,7 +15,7 @@ class memu::Ricoh2C02: public memu::HwModule, public RP2C02_detail::BaseHw
 {
 public:
     uint8_t mPalette[192];
-    uint8_t mPaletteIndices[32];
+    uint8_t mPaletteCtl[32];
 
     /**
      * - Tile pixel has four possible values: 00, 01, 10, 11.

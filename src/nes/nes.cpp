@@ -95,13 +95,13 @@ NesEmu::System::System()
     size_t cpursz = mCPU.mRAM.size();
 
     // CPU --> CPU RAM.
-    mBusCPU.mapRange(0x0000, 0x1FFF, cpursz-1, RWX_RW, cpuram);
+    mBusCPU.mapRange(0x0000, 0x1FFF, RWX_RW, cpuram, cpursz);
 
-    // CPU --> PPU MMIO registers.
-    mBusCPU.mapRangeTiny(0x2000, 0x3FFF, &mPPU, CpuRdPpu, CpuWtPpu);
+    // // CPU --> PPU MMIO registers.
+    // mBusCPU.mapRangeTiny(0x2000, 0x3FFF, &mPPU, CpuRdPpu, CpuWtPpu);
 
-    // CPU --> APU and IO registers. 4000 - 401F
-    mBusCPU.mapRangeTiny(0x4000, 0x40FF, &mCPU, CpuRdIO, CpuWtIO);
+    // // CPU --> APU and IO registers. 4000 - 401F
+    // mBusCPU.mapRangeTiny(0x4000, 0x40FF, &mCPU, CpuRdIO, CpuWtIO);
     // -------------------------------------------------------------------------
 
 
@@ -110,13 +110,13 @@ NesEmu::System::System()
     uint8_t *ppuram = mPPU.mVRAM.data();
     size_t   ppursz = mPPU.mVRAM.size();
 
-    // PPU --> PPU Nametables
-    mBusPPU.mapRange(0x2000, 0x2FFF, ppursz-1, RWX_RW, ppuram);
-    mBusPPU.mapRange(0x3000, 0x3EFF, ppursz-1, RWX_RW, ppuram);
+    // PPU --> PPU VRAM
+    mBusPPU.mapRange(0x2000, 0x2FFF, RWX_RW, ppuram, ppursz);
+    mBusPPU.mapRange(0x3000, 0x3EFF, RWX_RW, ppuram, ppursz);
 
     // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
-    mBusPPU.mapRange(0x3F00, 0x3FFF, 32-1, RWX_RW, mPPU.mPaletteIndices);
-    // bus.mapRange(0x3F00, 0x3FFF, 0x001F, RWX_RW, mPPU.mPalette);
+    // mBusPPU.mapRange(0x3F00, 0x3FFF, RWX_RW, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
+    mBusPPU.mapRange(0x3F00, 0x3FFF, RWX_RW, mPPU.mPalette, sizeof(mPPU.mPalette));
     // -------------------------------------------------------------------------
 
 }
