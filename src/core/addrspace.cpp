@@ -68,8 +68,8 @@ void EADS::_mapPage( addr_t addr, uint16_t mask, RWX_ rwx, void *buf )
     //     "Page %04X already mapped.", addr>>8
     // );
 
-    if (rwx & RWX_R) mRdPages[addr>>8] = PageEntry((ubyte*)buf);
-    if (rwx & RWX_W) mWtPages[addr>>8] = PageEntry((ubyte*)buf);
+    if (rwx & RWX_R) mRdPages[addr>>8] = PageEntry((ubyte*)buf, mask);
+    if (rwx & RWX_W) mWtPages[addr>>8] = PageEntry((ubyte*)buf, mask);
 }
 
 
@@ -81,7 +81,27 @@ void EADS::mapPage( addr_t addr, addr_t mask, RWX_ rwx, void *buf )
 }
 
 
-void EADS::mapRange( addr_t base, addr_t end, RWX_ rwx, void *buf, size_t bufsz )
+// void EADS::mapRange( addr_t base, addr_t end, RWX_ rwx, void *buf, size_t bufsz )
+// {
+//     LogAsrt(base%256 == 0, "Base (%04X) must be multiple of 256.", base);
+//     LogAsrt((end+1)%256 == 0, "End (%04X) + 1 must be multiple of 256.", end);
+
+//     size_t len = (end+1) - base;
+
+//     for (size_t off=0; off<len; off+=256)
+//     {
+//         uword  addr = base + off;
+//         ubyte  pgno = addr >> 8;
+//         ubyte *page = (ubyte*)buf + (((256*pgno) % bufsz) & 0xFF);
+
+//         // size_t boff = (off % bufsz) & ~0xFF;
+//         // ubyte *page = (ubyte*)buf + boff;
+
+//         _mapPage(addr, 0xFFFF, rwx, page);
+//     }
+// }
+
+void EADS::mapRdRange( addr_t base, addr_t end, void *buf, size_t bufsz, ubyte mask )
 {
     LogAsrt(base%256 == 0, "Base (%04X) must be multiple of 256.", base);
     LogAsrt((end+1)%256 == 0, "End (%04X) + 1 must be multiple of 256.", end);
@@ -91,40 +111,32 @@ void EADS::mapRange( addr_t base, addr_t end, RWX_ rwx, void *buf, size_t bufsz 
     for (size_t off=0; off<len; off+=256)
     {
         uword  addr = base + off;
-        ubyte  pgno = addr >> 8;
-        ubyte *page = (ubyte*)buf + (((256*pgno) % bufsz) & 0xFF);
-
-        // size_t boff = (off % bufsz) & ~0xFF;
-        // ubyte *page = (ubyte*)buf + boff;
-
-        _mapPage(addr, 0xFFFF, rwx, page);
+        uword  boff = ((off % bufsz) >> 8) << 8;
+        ubyte *page = (ubyte*)buf + boff;
+        mRdPages[addr>>8] = PageEntry(page, mask);
     }
 }
 
-void EADS::mapRdRange( addr_t base, addr_t end, void *buf, size_t sz, ubyte mask )
+void EADS::mapWtRange( addr_t base, addr_t end, void *buf, size_t bufsz, ubyte mask )
 {
+    LogAsrt(base%256 == 0, "Base (%04X) must be multiple of 256.", base);
+    LogAsrt((end+1)%256 == 0, "End (%04X) + 1 must be multiple of 256.", end);
+
     size_t len = (end+1) - base;
 
     for (size_t off=0; off<len; off+=256)
     {
         uword  addr = base + off;
-        ubyte *page; // = (ubyte*)buf + (((256*pgno) % bufsz) & 0xFF);
-
-        // size_t boff = (off % bufsz) & ~0xFF;
-        // ubyte *page = (ubyte*)buf + boff;
-
-        mRdPages[addr>>8] = PageEntry(page);
+        uword  boff = ((off % bufsz) >> 8) << 8;
+        ubyte *page = (ubyte*)buf + boff;
+        mWtPages[addr>>8] = PageEntry(page, mask);
     }
 }
 
-void EADS::mapWtRange( addr_t base, addr_t end, void *buf, size_t sz, ubyte mask )
+void EADS::mapRWRange( addr_t base, addr_t end, void *buf, size_t bufsz, ubyte mask )
 {
-
-}
-
-void EADS::mapRWRange( addr_t base, addr_t end, void *buf, size_t sz, ubyte mask )
-{
-
+    mapRdRange(base, end, buf, bufsz, mask);
+    mapWtRange(base, end, buf, bufsz, mask);
 }
 
 

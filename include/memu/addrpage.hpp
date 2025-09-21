@@ -23,7 +23,7 @@ public:
     iPageHandler *mHandler;
 
     PageEntry(ubyte *buf, ubyte mask): mBuf(buf), mMask(mask), mHandler(nullptr) {  }
-    PageEntry(): PageEntry(pgdummy) {  }
+    PageEntry(): PageEntry(pgdummy, 0xFF) {  }
 
     ubyte read(addr_t);
     void write(addr_t, ubyte);

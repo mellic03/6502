@@ -105,10 +105,10 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
         auto &bus = nes.mBusCPU;
 
         // CPU --> PRG RAM
-        bus.mapRange(0x6000, 0x7FFF, RWX_RW, mPrgRam.base, mPrgRam.size);
+        bus.mapRWRange(0x6000, 0x7FFF, mPrgRam.base, mPrgRam.size);
 
         // CPU --> PRG ROM
-        bus.mapRange(0x8000, 0xFFFF, RWX_RW, mPrgRom.base, mPrgRom.size);
+        bus.mapRdRange(0x8000, 0xFFFF, mPrgRom.base, mPrgRom.size);
     }
 
     // PPU Mapping
@@ -118,7 +118,7 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
         size_t   ppursz = nes.mPPU.mVRAM.size();
 
         // PPU --> CHR ROM
-        bus.mapRange(0x0000, 0x1FFF, RWX_RW, mChrRom.base, mChrRom.size);
+        bus.mapRdRange(0x0000, 0x1FFF, mChrRom.base, mChrRom.size);
     }
 
 }
