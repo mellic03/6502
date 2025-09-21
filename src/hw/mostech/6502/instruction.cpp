@@ -91,7 +91,6 @@ void m6502::_IntJump(uint16_t addr)
 
 void m6502::_InstrADC(uint8_t b)
 {
-    // SET_NVZC(AC, AC, +, b);
     AC = _NVZC(AC+b, AC, b);
 }
 

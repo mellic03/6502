@@ -100,11 +100,9 @@ NesEmu::System::System()
 
     // // CPU --> PPU MMIO registers.
     mBusCPU.mapiRange<PgEntryCpuPpu>(0x2000, 0x3FFF, mPPU);
-    // mBusCPU.mapRangeTiny(0x2000, 0x3FFF, &mPPU, CpuRdPpu, CpuWtPpu);
 
     // CPU --> APU and IO registers. 4000 - 401F
     mBusCPU.mapiRange<PgEntryCpuIO>(0x4000, 0x401F, mCPU);
-    // mBusCPU.mapRangeTiny(0x4000, 0x40FF, &mCPU, CpuRdIO, CpuWtIO);
     // -------------------------------------------------------------------------
 
 
@@ -122,9 +120,6 @@ NesEmu::System::System()
     mBusPPU.mapRange(0x3F00, 0x3FFF, RWX_RW, mPPU.mPalette, sizeof(mPPU.mPalette));
     // -------------------------------------------------------------------------
 
-    // | 4000 – 4017   | 0018 | NES APU and I/O registers                              |
-    // |-------------------------------------------------------------------------------|
-    // | 4018 – 401F   | 0008 | APU and I/O functionality that is normally disabled. 
 }
 
 
