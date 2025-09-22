@@ -68,20 +68,17 @@ int main( int argc, char **argv )
         {
             printf("Key I --> IRQ\n");
             nes->mBusCPU.pend_irq = 1;
-            // nes->mBusCPU.sigSet(SIG::IRQ, 0);
         }
 
         if (io.keyReleased(SDL_SCANCODE_R))
         {
-            // printf("Key R --> RESET\n");
-            // nes->mBusCPU.sigSet(SIG::RES, 0);
+            printf("Key R --> RESET\n");
         }
 
         if (io.keyReleased(SDL_SCANCODE_N))
         {
             printf("Key N --> NMI\n");
             nes->mBusCPU.pend_nmi = 1;
-            // nes->mBusCPU.sigFlip(SIG::NMI);
         }
 
         if (io.keyReleased(SDL_SCANCODE_ESCAPE))
@@ -122,11 +119,11 @@ int main( int argc, char **argv )
                     nes->mPPU.drawPattern(pat1, 1, 8*j, 8*i, j, i);
                 }
             }
+            win0->blit(pat0, 256, 0*128);
+            win0->blit(pat1, 256, 1+128);
 
             nes->mPPU.drawNameTable(win0, 0x2000);
 
-            win0->blit(pat0, 256, 0*128);
-            win0->blit(pat1, 256, 1+128);
             win0->flush();
         }
 

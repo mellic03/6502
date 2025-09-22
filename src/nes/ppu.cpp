@@ -100,14 +100,17 @@ void NesPPU::drawNameTable( EmuFramebuffer *fb, uword base )
 {
     uword off = 0;
 
-    for (uword y=0; y<240; y+=8)
+    for (uword r=0; r<30; r+=1)
     {
-        for (uword x=0; x<256; x+=8)
+        for (uword c=0; c<32; c+=1)
         {
+            uword y = 8*r; // 240/30 == 8
+            uword x = 8*c; // 256/32 == 8
+
             // uword off = 256*y + x;
             ubyte val = rdbus(base+off);
 
-            fb->pixel(x, y, val, val, val);
+            // fb->pixel(x, y, val, val, val);
             // fb->pixel(x, y, 255, 255, 255);
 
             drawPattern(fb, 1, x, y, val%128, val/128);
