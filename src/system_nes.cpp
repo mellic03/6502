@@ -14,28 +14,34 @@
 
 int main( int argc, char **argv )
 {
+    srand(clock());
+
     int opts = argc - 2; // name, FILE
 
-    memu::ConfigParser conf("boot.conf");
-    for (int i=1; i<argc-1; i+=2)
-        if (std::string(argv[i]) == "--conf")
-            conf = memu::ConfigParser(argv[i+1]);
+    // memu::ConfigParser conf("boot.conf");
+    // for (int i=1; i<argc-1; i+=2)
+    //     if (std::string(argv[i]) == "--conf")
+    //         conf = memu::ConfigParser(argv[i+1]);
 
     auto *nes = new NesEmu::System();
+    auto &conf = NesEmu::CONF;
+
+    auto ree = conf["boot"];
+    auto roo = ree["rom"];
+
     nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
     nes->mPPU.loadPalette(conf["video"]["palette"]);
 
-    if (conf["boot"].contains("jump"))
+    if (conf["boot"]["jump"])
     {
-        nes->mCPU.PC = (uint16_t)strtol(conf["boot"]["jump"].c_str(), NULL, 16);
+        // nes->mCPU.PC = (uint16_t)strtol(conf["boot"]["jump"], NULL, 16);
     }
 
     EmuIO io;
-    auto *win0   = new EmuWindow("NesEmu", 256+128, 240, 4);
-    auto *fbpal0 = new EmuFramebuffer(128, 128);
-    auto *fbpal1 = new EmuFramebuffer(128, 128);
-
-    int palNo = 5;
+    auto *win0  = new EmuWindow("NesEmu", 256+128, 240, 2);
+    auto  pat0  = new EmuFramebuffer(128, 128);
+    auto  pat1  = new EmuFramebuffer(128, 128);
+    auto  gview = new EmuFramebuffer(256, 240);
     // uint64_t tcurr = SDL_GetTicksNS();
     // uint64_t tprev = tcurr;
     // uint64_t tdiff = 0;
@@ -48,7 +54,6 @@ int main( int argc, char **argv )
         // tcurr = SDL_GetTicksNS();
         // tdiff = tcurr - tprev;
         // tprev = tcurr;
-
         nes->tick();
 
         if (io.keyReleased(SDL_SCANCODE_SPACE))
@@ -81,22 +86,43 @@ int main( int argc, char **argv )
             break;
         }
 
+        if (io.keyReleased(SDL_SCANCODE_TAB))
+        {
+            // break;
+        }
+
         if (io.keyReleased(SDL_SCANCODE_LEFT))
         {
-            if (--palNo < 0)
-                palNo = 10;
+            if (--nes->mPPU.mPalNo < 0)
+                nes->mPPU.mPalNo = 12;
         }
 
         if (io.keyReleased(SDL_SCANCODE_RIGHT))
         {
-            if (++palNo > 10)
-                palNo = 0;
+            if (++nes->mPPU.mPalNo > 12)
+                nes->mPPU.mPalNo = 0;
         }
 
-        nes->mPPU.drawPatternTable(fbpal0, palNo, {0, 0});
-        nes->mPPU.drawPatternTable(fbpal1, palNo, {0, 128});
-        win0->blit(fbpal0, {256, 0});
-        win0->blit(fbpal1, {256, 128});
+        // nes->mPPU.drawPatternTable(win0, palNo, {256, 0}, {0, 0});
+        // nes->mPPU.drawPatternTable(win0, palNo, {256, 128}, {0, 128});
+
+        for (int i=0; i<16; i++)
+        {
+            for (int j=0; j<16; j++)
+            {
+                nes->mPPU.drawPattern(pat0, 0, 8*j, 8*i, j, i);
+                nes->mPPU.drawPattern(pat1, 1, 8*j, 8*i, j, i);
+            }
+        }
+
+        win0->blit(pat0, 256, 0*128);
+        win0->blit(pat1, 256, 1+128);
+
+        nes->mPPU.drawNameTable(win0, 0x2000, 0, 0);
+        nes->mPPU.drawNameTable(win0, 0x2400, 128, 0);
+        // nes->mPPU.drawNameTable(win0, 0x2800, 0, 120);
+        // nes->mPPU.drawNameTable(win0, 0x2C00, 128, 120);
+
         win0->flush();
     }
 

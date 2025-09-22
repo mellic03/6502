@@ -7,12 +7,20 @@ class EmuFramebuffer;
 class NesPPU: public memu::Ricoh2C02
 {
 public:
+     int mPalNo = 0;
+
      using Ricoh2C02::Ricoh2C02;
 
      ubyte *readPalette( int palNo, ubyte pxl );
      void drawPatternTile( EmuFramebuffer*, int palNo, int tx, int ty );
      void drawPatternTable( EmuFramebuffer*, int palNo, ivec2 spos );
+     void drawPatternTable( EmuFramebuffer*, int palNo, ivec2 dpos, ivec2 spos );
 
+     void drawPattern( EmuFramebuffer*, int tabNo, int dstx, int dsty,
+                       int srcx, int srcy );
+
+     ubyte readNameTile( uword base, ubyte row, ubyte col );
+     void drawNameTable( EmuFramebuffer*, uword addr, int dstx, int dsty );
 };
 
 

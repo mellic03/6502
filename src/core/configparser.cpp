@@ -137,9 +137,9 @@ ConfigParser::ConfigParser( const char *path )
             std::string key = _readLabel();
 
             if (match('\"'))
-                mConf[section][key] = _readTo('\"');
+                mData[section][key] = _readTo('\"');
             else
-                mConf[section][key] = _readTo('\n');
+                mData[section][key] = _readTo('\n');
         }
     }
 }
@@ -148,7 +148,7 @@ ConfigParser::ConfigParser( const char *path )
 
 void ConfigParser::print()
 {
-    for (auto &[section, keyval]: mConf)
+    for (auto &[section, keyval]: mData)
     {
         syslog log("Section %s", section.c_str());
 

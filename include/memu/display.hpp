@@ -16,9 +16,10 @@ public:
     EmuFramebuffer( int w, int h )
     :   mSp{w, h}, mSurface(SDL_CreateSurface(w, h, mFormat)) {  }
 
-    void blit( EmuFramebuffer *fb, ivec2 dstpos, float S=1.0f );
+    void blit( EmuFramebuffer *fb, int dstx, int dsty, float S=1.0f );
     void pixel( int x, int y, uint8_t *src );
     void pixel( int x, int y, uint8_t r, uint8_t g, uint8_t b );
+    void rect( int x, int y, int w, int h, ubyte r, ubyte g, ubyte b );
 };
 
 
@@ -35,6 +36,7 @@ public:
         mSp    = { w, h };
         mScale = scale;
         mWin = SDL_CreateWindow(title, scale*w, scale*h, 0);
+        SDL_SetWindowPosition(mWin, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
         mWinSurface = SDL_GetWindowSurface(mWin);
     }
 

@@ -8,7 +8,6 @@ namespace NesEmu
     class Mapper;
 }
 
-
 class NesEmu::Mapper
 {
 public:

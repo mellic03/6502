@@ -2,13 +2,12 @@
 #include <iostream>
 
 
-void EmuFramebuffer::blit( EmuFramebuffer *fb, ivec2 dstpos, float S )
+void EmuFramebuffer::blit( EmuFramebuffer *fb, int dstx, int dsty, float S )
 {
     SDL_Rect src = { 0, 0, fb->mSp.x, fb->mSp.y };
-    SDL_Rect dst = { dstpos.x, dstpos.y, int(S*fb->mSp.x), int(S*fb->mSp.y) };
+    SDL_Rect dst = { dstx, dsty, int(S*fb->mSp.x), int(S*fb->mSp.y) };
     SDL_BlitSurfaceScaled(fb->mSurface, &src, mSurface, &dst, SDL_SCALEMODE_NEAREST);
 }
-
 
 void EmuFramebuffer::pixel( int x, int y, uint8_t *src )
 {
@@ -17,7 +16,7 @@ void EmuFramebuffer::pixel( int x, int y, uint8_t *src )
 
     auto *info = SDL_GetPixelFormatDetails(mFormat);
     auto pitch = mSurface->pitch;
-    auto bpp   = info->bytes_per_pixel; // ms->format->BytesPerPixel;
+    auto bpp   = info->bytes_per_pixel;
 
     uint8_t *dst = ((uint8_t*)mSurface->pixels) + pitch*y + bpp*x;
 
@@ -26,12 +25,19 @@ void EmuFramebuffer::pixel( int x, int y, uint8_t *src )
     dst[2] = src[2];
 }
 
-
-void EmuFramebuffer::pixel( int x, int y, uint8_t r, uint8_t g, uint8_t b )
+void EmuFramebuffer::pixel( int x, int y, ubyte r, ubyte g, ubyte b )
 {
-    ubyte buf[3];
-    buf[0] = r;
-    buf[1] = g;
-    buf[2] = b;
+    ubyte buf[3] = {r, g, b};
     pixel(x, y, buf);
+}
+
+void EmuFramebuffer::rect( int tlx, int tly, int w, int h, ubyte r, ubyte g, ubyte b )
+{
+    for (int y=tly; y<tly+h; y++)
+    {
+        for (int x=tlx; x<tlx+w; x++)
+        {
+            pixel(x, y, r, g, b);
+        }
+    }
 }

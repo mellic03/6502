@@ -27,10 +27,14 @@
     | 6000 - 7FFF   | 2000 | Usually cartridge RAM, when present.                   |
     | 8000 - FFFF   | 8000 | Usually cartridge ROM and mapper registers.            |
     |-------------------------------------------------------------------------------|
-
-
 */
+memu::ConfigParser NesEmu::CONF("./nes.conf");
 
+
+static void on_nmi( void *arg )
+{
+    ((NesCPU*)arg)->callNMI();
+}
 
 
 NesEmu::System::System()
@@ -58,6 +62,10 @@ NesEmu::System::System()
 
     // PPU Mapping
     // -------------------------------------------------------------------------
+    mPPU.nmiArg = (void*)(&mCPU);
+    mPPU.nmiFunc = [](void *p) { ((NesCPU*)p)->callNMI(); };
+
+
     uint8_t *ppuram = mPPU.mVRAM.data();
     size_t   ppursz = mPPU.mVRAM.size();
 
@@ -68,7 +76,6 @@ NesEmu::System::System()
     // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
     mBusPPU.mapRWRange(0x3F00, 0x3FFF, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
     // -------------------------------------------------------------------------
-
 }
 
 
@@ -89,8 +96,8 @@ void NesEmu::System::tick()
 
     mBusPPU.tick();
     mBusPPU.tick();
-    mBusPPU.tick();
     mBusCPU.tick();
+    mBusPPU.tick();
 
     // mBusCPU.tick();
 

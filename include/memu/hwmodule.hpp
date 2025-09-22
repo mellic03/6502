@@ -16,6 +16,9 @@ private:
     size_t mClock;
 
 protected:
+    void *mCallbackArg;
+    void (*on_rdbus)(void*);
+    void (*on_wtbus)(void*);
 
 public:
     AddrSpace &mBus;

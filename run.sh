@@ -4,5 +4,5 @@
 
 cp -R ./data/* ./build/NesEmu/
 cd ./build/NesEmu
-./nesemu --conf ./boot.conf
+./nesemu --conf ./nes.conf
 # ./test_m6502

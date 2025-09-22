@@ -50,13 +50,7 @@ size_t m6502::tick()
 
     if (m_sigcurr.nmi != m_sigprev.nmi)
     {
-        printf("\t\t NMI  PC:%04X\n", PC);
-        m_sigcurr.wai = 0;
-        push16(PC);  
-        push08(SSR.as_byte);
-        SSR.I = 1;
-        SSR.B = 0;
-        _IntJump(0xFFFA);
+        callNMI();
         goto over_here;
     }
 
@@ -109,6 +103,16 @@ void m6502::reset()
     PC_hi = rdbus(0xFFFD);
 }
 
+void m6502::callNMI()
+{
+    printf("\t\t NMI  PC:%04X\n", PC);
+    m_sigcurr.wai = 0;
+    push16(PC);  
+    push08(SSR.as_byte);
+    SSR.I = 1;
+    SSR.B = 0;
+    _IntJump(0xFFFA);
+}
 
 void m6502::push08( uint8_t byte )
 {

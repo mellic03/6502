@@ -44,26 +44,53 @@ using namespace memu;
 
     3F00-3FFF not configurable, always mapped to the internal palette control.
 */
+#include <ctime>
 
+static void onRdBus( void *arg )
+{
+    ((Ricoh2C02*)arg)->mScanDot += 2;
+}
 
+static void nofunc( void *)
+{
+    return;
+}
 
 Ricoh2C02::Ricoh2C02(AddrSpace &bus)
 :   HwModule(bus), BaseHw(),
-    mAccum(0), mScanline(0)
+    nmiArg(nullptr),
+    nmiFunc(nofunc),
+    mScanLine(0),
+    mScanDot(0)
 {
+    static constexpr ubyte blue   [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
+    static constexpr ubyte pink   [] = { 0x11, 246, 108, 92, 187, 42, 210, 95, 168, 78, 142, 98, 129, 239, 103, 87, 172, 13, 30, 101, 140, 87, 215, 181, 232, 143, 132, 245, 39, 10, 61, 155 };
+    static constexpr ubyte purple [] = { 0x11, 227, 188, 126, 51, 108, 242, 50, 62, 34, 86, 167, 40, 63, 8, 141, 51, 132, 202, 219, 88, 130, 97, 206, 73, 196, 175, 197, 55, 172, 109, 187 };
+    static constexpr ubyte luigi  [] = { 0x11, 89, 54, 254, 96, 12, 40, 67, 229, 115, 37, 146, 57, 101, 190, 224, 85, 64, 203, 98, 106, 182, 27, 196, 254, 231, 87, 157, 17, 71, 189, 134 };
+    static constexpr ubyte ginger [] = { 0x11, 16, 22, 214, 245, 224, 70, 255, 64, 116, 122, 27, 99, 72, 85, 139, 182, 112, 82, 127, 92, 88, 47, 23, 185, 17, 132, 75, 47, 215, 16, 147 };
 
+    memcpy(mPaletteCtl, blue, sizeof(mPaletteCtl));
 }
 
 
 size_t Ricoh2C02::tick()
 {
-    while (mAccum >= 341)
+    mScanDot += 1;
+    STATUS.V = 0;
+
+    if (mScanDot >= 341)
     {
-        mScanline += 1;
-        mAccum -= 341;
+        mScanLine = (mScanLine+1) % 262;
+        mScanDot = 0;
     }
 
-    mAccum += 1;
+    if (mScanLine==241 & mScanDot==0)
+    {
+        printf("\n\nWOOP\n\n");
+        STATUS.V = 1;
+        nmiFunc(nmiArg);
+    }
+
     return 0;
 }
 

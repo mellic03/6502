@@ -1,12 +1,14 @@
 #pragma once
 
 #include <memu/addrspace.hpp>
+#include <memu/configparser.hpp>
 #include "cpu.hpp"
 #include "ppu.hpp"
 
 
 namespace NesEmu
 {
+    extern memu::ConfigParser CONF;
     class GamePak;
     class System;
 }

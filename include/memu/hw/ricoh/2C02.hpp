@@ -20,11 +20,13 @@ namespace memu
 class memu::Ricoh2C02: public memu::HwModule, public RP2C02_detail::BaseHw
 {
 private:
-    size_t mAccum;
-    size_t mScanline;
 
 public:
-    // uvec3   mPalette[64];
+    void *nmiArg;
+    void (*nmiFunc)(void*);
+    size_t mScanLine;
+    size_t mScanDot;
+
     uint8_t mPalette[192];
     uint8_t mPaletteCtl[32];
 
@@ -39,7 +41,6 @@ public:
 
     uint8_t read2002()
     {
-        STATUS.V = 1;
         uint8_t result = STATUS.byte;
         STATUS.V = 0;          // clear vblank flag
         mAddrLatch = false;    // reset $2005/$2006 latch
@@ -72,7 +73,7 @@ public:
 
     void write2007( uint8_t data )
     {
-        // printf("[write2007] mPpuAddr=%04X\n", mPpuAddr);
+        printf("[write2007] mPpuAddr=%04X\n", mPpuAddr);
         wtbus(mPpuAddr, data);
         mPpuAddr += (CTRL.I) ? 32 : 1;
         mPpuAddr &= 0x3FFF;

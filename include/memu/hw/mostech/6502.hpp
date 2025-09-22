@@ -13,6 +13,7 @@ public:
     m6502( memu::AddrSpace& );
     virtual size_t tick() override;
     virtual void reset() override;
+    void callNMI();
 
     typedef int (m6502::*AddrFn)();
     typedef void (m6502::*ExecFn)();
