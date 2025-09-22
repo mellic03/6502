@@ -1,19 +1,27 @@
 #pragma once
 
-#include <memu/addrpage.hpp>
-#include <memu/log.hpp>
+#include "types.hpp"
+#include "addrpage.hpp"
+#include "log.hpp"
+#include "signal.hpp"
 #include "rwx.hpp"
 #include <set>
 
 
 namespace memu
 {
+    enum class SIG: uint8_t
+    {
+        IRQ, RES, NMI, WAI,
+        NumValues
+    };
+
     class AddrSpace;
     class HwModule;
 }
 
 
-class memu::AddrSpace
+class memu::AddrSpace: public SigPins<SIG>
 {
 private:
     PageEntry mRdPages[256];
@@ -26,6 +34,13 @@ private:
 public:
     using RdFunc = uint8_t (*)(HwModule*, addr_t);
     using WtFunc = void (*)(HwModule*, addr_t, uint8_t);
+
+    uint8_t prev_nmi = 0;
+    uint8_t prev_irq = 1;
+    uint8_t line_nmi = 0; // Active on rising edge.
+    uint8_t line_irq = 1; // Active on low.
+    uint8_t pend_nmi = 0;
+    uint8_t pend_irq = 0;
 
     AddrSpace();
     void tick();

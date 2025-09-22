@@ -20,6 +20,7 @@ void m6502::_decode()
     printf("%s    ", mCurrInstr->label);
 }
 
+
 void m6502::_execute()
 {
     int cycles = mCurrInstr->cycles;
@@ -27,8 +28,8 @@ void m6502::_execute()
     (this->*mCurrInstr->fA)();
 
     // // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
-    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.as_byte, SP);
-    printf("PPU: %u,%u CYC:%lu\n", 0, 0, clockTime());
+    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
+    printf("PPU: %u,%u CYC:%lu\n", mScanLine, mScanDot, clockTime());
 
     (this->*mCurrInstr->fE)();
 
@@ -40,79 +41,39 @@ void m6502::_execute()
 
 size_t m6502::tick()
 {
-    mPrevClock = mCurrClock;
+    using namespace memu;
 
-    if (mInvalidOp)
+    if (mBus.pend_nmi == 1)
     {
-        printf("Invalid opcode (0x%02X)\n", mCurrOp);
-        return mCurrClock - mPrevClock;
+        mBus.pend_nmi = 0;
+        mWaiting = false;
+        _NMI();
     }
 
-    if (m_sigcurr.nmi != m_sigprev.nmi)
+    else if (mBus.pend_irq == 1) // sigSet(SIG::IRQ) && !(SSR.I))
     {
-        callNMI();
-        goto over_here;
+        mBus.pend_irq = 0;
+        mWaiting = false;
+        _IRQ();
     }
 
-    if (m_sigcurr.res == 0)
+    if (mWaiting)
     {
-        printf("\t\t RES  PC:%04X\n", PC);
-        m_sigcurr.wai = 0;
-        m_sigcurr.res = 1;
-        reset();
-        goto over_here;
+        return 0;
     }
 
-    if (m_sigcurr.irq==0 && SSR.I==0)
-    {
-        printf("\t\t IRQ  PC:%04X\n", PC);
-        m_sigcurr.wai = 0;
-        m_sigcurr.irq = 1;
-        push16(PC);
-        push08(SSR.as_byte);
-        SSR.I = 1;
-        PC_lo = rdbus(0xFFFE);
-        PC_hi = rdbus(0xFFFF);
-        printf("[IRQ] PC=%04X\n", PC);
-        // printf("[IRQ] *0xFFFE, *0xFFFF: %02X, %02X\n", rdbus(0xFFFE), rdbus(0xFFFF));
-        goto over_here;
-    }
-
-over_here:
-    m_sigprev = m_sigcurr;
-
-    if (m_sigcurr.wai == 0)
-    {
-        _fetch();
-        _decode();
-        _execute();
-    }
+    _fetch();
+    _decode();
+    _execute();
 
     if (mInvalidOp)
     {
         printf("Invalid opcode (0x%02X)\n", mCurrOp);
     }
+
     return mCurrClock - mPrevClock;
 }
 
-void m6502::reset()
-{
-    SP = 0xFD;
-    SSR.as_byte = 0b00100100;
-    PC_lo = rdbus(0xFFFC);
-    PC_hi = rdbus(0xFFFD);
-}
-
-void m6502::callNMI()
-{
-    printf("\t\t NMI  PC:%04X\n", PC);
-    m_sigcurr.wai = 0;
-    push16(PC);  
-    push08(SSR.as_byte);
-    SSR.I = 1;
-    SSR.B = 0;
-    _IntJump(0xFFFA);
-}
 
 void m6502::push08( uint8_t byte )
 {
@@ -141,6 +102,7 @@ uint16_t m6502::pop16()
 m6502::m6502( memu::AddrSpace &bus )
 :   HwModule(bus),
     BaseHw(),
+    mWaiting(false),
     mInvalidOp(0),
     mCurrOp(0),
     mCurrClock(0),

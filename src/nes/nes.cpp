@@ -31,12 +31,6 @@
 memu::ConfigParser NesEmu::CONF("./nes.conf");
 
 
-static void on_nmi( void *arg )
-{
-    ((NesCPU*)arg)->callNMI();
-}
-
-
 NesEmu::System::System()
 :   mCPU(mBusCPU),
     mPPU(mBusPPU),
@@ -62,19 +56,15 @@ NesEmu::System::System()
 
     // PPU Mapping
     // -------------------------------------------------------------------------
-    mPPU.nmiArg = (void*)(&mCPU);
-    mPPU.nmiFunc = [](void *p) { ((NesCPU*)p)->callNMI(); };
+    // uint8_t *ppuram = mPPU.mVRAM.data();
+    // size_t   ppursz = mPPU.mVRAM.size();
 
+    // // PPU --> PPU VRAM
+    // mBusPPU.mapRWRange(0x2000, 0x2FFF, ppuram, ppursz);
+    // mBusPPU.mapRWRange(0x3000, 0x3EFF, ppuram, ppursz);
 
-    uint8_t *ppuram = mPPU.mVRAM.data();
-    size_t   ppursz = mPPU.mVRAM.size();
-
-    // PPU --> PPU VRAM
-    mBusPPU.mapRWRange(0x2000, 0x2FFF, ppuram, ppursz);
-    mBusPPU.mapRWRange(0x3000, 0x3EFF, ppuram, ppursz);
-
-    // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
-    mBusPPU.mapRWRange(0x3F00, 0x3FFF, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
+    // // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
+    // mBusPPU.mapRWRange(0x3F00, 0x3FFF, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
     // -------------------------------------------------------------------------
 }
 
@@ -96,8 +86,16 @@ void NesEmu::System::tick()
 
     mBusPPU.tick();
     mBusPPU.tick();
-    mBusCPU.tick();
     mBusPPU.tick();
+
+    if (mPPU.STATUS.V == 1)
+        mBusCPU.line_nmi = 1;
+    else
+        mBusCPU.line_nmi = 0;
+
+    mCPU.mScanLine = mPPU.mScanLine;
+    mCPU.mScanDot  = mPPU.mScanDot;
+    mBusCPU.tick();
 
     // mBusCPU.tick();
 

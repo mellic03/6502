@@ -45,21 +45,16 @@ using namespace memu;
     3F00-3FFF not configurable, always mapped to the internal palette control.
 */
 #include <ctime>
+#include <cstdio>
 
 static void onRdBus( void *arg )
 {
     ((Ricoh2C02*)arg)->mScanDot += 2;
 }
 
-static void nofunc( void *)
-{
-    return;
-}
 
 Ricoh2C02::Ricoh2C02(AddrSpace &bus)
 :   HwModule(bus), BaseHw(),
-    nmiArg(nullptr),
-    nmiFunc(nofunc),
     mScanLine(0),
     mScanDot(0)
 {
@@ -76,7 +71,6 @@ Ricoh2C02::Ricoh2C02(AddrSpace &bus)
 size_t Ricoh2C02::tick()
 {
     mScanDot += 1;
-    STATUS.V = 0;
 
     if (mScanDot >= 341)
     {
@@ -84,11 +78,15 @@ size_t Ricoh2C02::tick()
         mScanDot = 0;
     }
 
-    if (mScanLine==241 & mScanDot==0)
+    if (mScanLine==241 & mScanDot==1)
     {
-        printf("\n\nWOOP\n\n");
         STATUS.V = 1;
-        nmiFunc(nmiArg);
+        // mBus.sigSet(SIG::NMI);
+    }
+
+    if (mScanLine==260)
+    {
+        STATUS.V = 0;
     }
 
     return 0;

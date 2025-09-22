@@ -22,8 +22,6 @@ class memu::Ricoh2C02: public memu::HwModule, public RP2C02_detail::BaseHw
 private:
 
 public:
-    void *nmiArg;
-    void (*nmiFunc)(void*);
     size_t mScanLine;
     size_t mScanDot;
 

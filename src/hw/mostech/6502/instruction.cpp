@@ -1,4 +1,5 @@
 #include <memu/hw/mostech/6502.hpp>
+#include <memu/addrspace.hpp>
 
 
 void m6502::InstrUnimp()
@@ -36,19 +37,71 @@ uint8_t m6502::_NVZC(uint8_t x, uint8_t a, uint8_t b)
     return _NZC(x);
 }
 
-void m6502::_IntPush()
+
+
+
+#include <cstdio>
+
+
+/*
+    Important distinction
+    - Stack copy of SSR: is a snapshot taken before the interrupt,
+      with B adjusted according to source (IRQ vs BRK).
+
+    - Real SSR: gets I=1 after the push, so further IRQs are
+      masked until cleared.
+*/
+void m6502::_IntPush( ubyte B, ubyte U )
 {
-    PC += 1;
+    static auto stat = SSR;
+
     push16(PC);
-    push08(SSR.as_byte);
+
+    stat = SSR;
+    stat.B = (B) ? 1 : 0;
+    stat.U = (U) ? 1 : stat.U;
+    push08(stat.byte);
+
     SSR.I = 1;
 }
 
-void m6502::_IntJump(uint16_t addr)
+void m6502::_IntJump( uword addr )
 {
     PC_lo = rdbus(addr+0);
     PC_hi = rdbus(addr+1);
 }
+
+
+void m6502::_NMI()
+{
+    printf("\t\t NMI  PC:%04X\n", PC);
+
+    _IntPush(0, 1);
+    _IntJump(0xFFFA);
+}
+
+void m6502::_RES()
+{
+    printf("\t\t RES  PC:%04X\n", PC);
+
+    SP = 0xFD;
+    SSR.I = 1;
+    PC = rdbusw(0xFFFC);
+}
+
+void m6502::_IRQ()
+{
+    _IntPush(0);
+    _IntJump(0xFFFE);
+}
+
+void m6502::_BRK()
+{
+    _IntPush(1);
+    _IntJump(0xFFFE);
+}
+
+
 
 void m6502::_InstrADC(uint8_t b)
 {
@@ -57,6 +110,8 @@ void m6502::_InstrADC(uint8_t b)
     SSR.V = (~(AC ^ b) & (AC ^ sum) & 0x80) != 0;
     AC = _NZ(sum & 0xFF);
 }
+
+
 
 
 
@@ -84,16 +139,7 @@ void m6502::InstrBIT()
 void m6502::InstrBMI() { if (SSR.N==1) PC = mOpAddr; }
 void m6502::InstrBNE() { if (SSR.Z==0) PC = mOpAddr; }
 void m6502::InstrBPL() { if (SSR.N==0) PC = mOpAddr; }
-
-// BRK not affected by I
-void m6502::InstrBRK()
-{
-    push16(PC + 1);
-    push08(SSR.as_byte);
-    SSR.I = 1;
-    _IntJump(0xFFFE);
-}
-
+void m6502::InstrBRK() { _BRK(); }
 void m6502::InstrBVC() { if (SSR.V==0) PC = mOpAddr; }
 void m6502::InstrBVS() { if (SSR.V==1) PC = mOpAddr; }
 
@@ -138,9 +184,9 @@ void m6502::InstrLSR()
 void m6502::InstrNOP() {   }
 void m6502::InstrORA() { AC =_NZ(AC | rdbus(mOpAddr)); }
 void m6502::InstrPHA() { push08(AC); }
-void m6502::InstrPHP() { SSR.B = 1;  push08(SSR.as_byte); }
+void m6502::InstrPHP() { SSR.B = 1;  push08(SSR.byte); }
 void m6502::InstrPLA() { AC = _NZ(pop08()); }
-void m6502::InstrPLP() { SSR.as_byte = pop08(); }
+void m6502::InstrPLP() { SSR.byte = pop08(); }
 
 void m6502::InstrROL()
 {
@@ -178,7 +224,7 @@ void m6502::InstrROR()
 
 void m6502::InstrRTI()
 {
-    SSR.as_byte = pop08();
+    SSR.byte = pop08();
     SSR.B = 0;
     PC = pop16();
 }

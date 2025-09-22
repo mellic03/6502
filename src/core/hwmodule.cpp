@@ -23,14 +23,22 @@ memu::HwModule::HwModule( memu::AddrSpace &bus )
     mBus.attach(this);
 }
 
-uint8_t memu::HwModule::rdbus( uint16_t a )
+
+ubyte memu::HwModule::rdbus( addr_t addr )
 {
     on_rdbus(mCallbackArg);
-    return mBus.read(a);
+    return mBus.read(addr);
 }
 
-void memu::HwModule::wtbus( uint16_t a, uint8_t v )
+uword memu::HwModule::rdbusw( addr_t addr )
+{
+    ubyte lo = mBus.read(addr+0);
+    ubyte hi = mBus.read(addr+1);
+    return (hi << 8) | lo;
+}
+
+void memu::HwModule::wtbus( addr_t addr, ubyte v )
 {
     on_wtbus(mCallbackArg);
-    mBus.write(a, v);
+    mBus.write(addr, v);
 }

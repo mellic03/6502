@@ -26,8 +26,11 @@ public:
     HwModule(AddrSpace&);
     HwModule(const HwModule&) = delete;
 
-    uint8_t rdbus(uint16_t); // { return mBus.read(a); }
-    void    wtbus(uint16_t, uint8_t); // { mBus.write(a, v); }
+    ubyte rdbus(addr_t);
+    uword rdbusw(addr_t);
+    void  wtbus(addr_t, ubyte);
+
+
     HwModule &operator=(const HwModule&) = delete;
     size_t clockTime() { return mClock; }
 

@@ -38,7 +38,7 @@ int main( int argc, char **argv )
     }
 
     EmuIO io;
-    auto *win0  = new EmuWindow("NesEmu", 256+128, 240, 2);
+    auto *win0  = new EmuWindow("NesEmu", 256+128, 240, 4);
     auto  pat0  = new EmuFramebuffer(128, 128);
     auto  pat1  = new EmuFramebuffer(128, 128);
     auto  gview = new EmuFramebuffer(256, 240);
@@ -49,6 +49,8 @@ int main( int argc, char **argv )
 
     while (!nes->mCPU.mInvalidOp)
     {
+        using namespace memu;
+
         io.updateEvents();
 
         // tcurr = SDL_GetTicksNS();
@@ -59,30 +61,32 @@ int main( int argc, char **argv )
         if (io.keyReleased(SDL_SCANCODE_SPACE))
         {
             printf("Key SPACE --> WAI\tI:%u B%u\n", nes->mCPU.SSR.I, nes->mCPU.SSR.B);
-            nes->mCPU.sigFlip(m6502::PIN_WAI);
+            nes->mCPU.wait();
         }
 
         if (io.keyReleased(SDL_SCANCODE_I))
         {
             printf("Key I --> IRQ\n");
-            nes->mCPU.SSR.I = 0;
-            nes->mCPU.sigLow(m6502::PIN_IRQ);
+            nes->mBusCPU.pend_irq = 1;
+            // nes->mBusCPU.sigSet(SIG::IRQ, 0);
         }
 
         if (io.keyReleased(SDL_SCANCODE_R))
         {
-            printf("Key R --> RESET\n");
-            nes->mCPU.sigLow(m6502::PIN_RES);
+            // printf("Key R --> RESET\n");
+            // nes->mBusCPU.sigSet(SIG::RES, 0);
         }
 
         if (io.keyReleased(SDL_SCANCODE_N))
         {
             printf("Key N --> NMI\n");
-            nes->mCPU.sigFlip(m6502::PIN_NMI);
+            nes->mBusCPU.pend_nmi = 1;
+            // nes->mBusCPU.sigFlip(SIG::NMI);
         }
 
         if (io.keyReleased(SDL_SCANCODE_ESCAPE))
         {
+            SDL_Quit();
             break;
         }
 
@@ -103,27 +107,30 @@ int main( int argc, char **argv )
                 nes->mPPU.mPalNo = 0;
         }
 
-        // nes->mPPU.drawPatternTable(win0, palNo, {256, 0}, {0, 0});
-        // nes->mPPU.drawPatternTable(win0, palNo, {256, 128}, {0, 128});
 
-        for (int i=0; i<16; i++)
+        static int count = 0;
+        static ubyte prev = 0;
+        ubyte curr = nes->mPPU.STATUS.V;
+
+        if (prev==0 && curr==1)
         {
-            for (int j=0; j<16; j++)
+            for (int i=0; i<16; i++)
             {
-                nes->mPPU.drawPattern(pat0, 0, 8*j, 8*i, j, i);
-                nes->mPPU.drawPattern(pat1, 1, 8*j, 8*i, j, i);
+                for (int j=0; j<16; j++)
+                {
+                    nes->mPPU.drawPattern(pat0, 0, 8*j, 8*i, j, i);
+                    nes->mPPU.drawPattern(pat1, 1, 8*j, 8*i, j, i);
+                }
             }
+
+            nes->mPPU.drawNameTable(win0, 0x2000);
+
+            win0->blit(pat0, 256, 0*128);
+            win0->blit(pat1, 256, 1+128);
+            win0->flush();
         }
 
-        win0->blit(pat0, 256, 0*128);
-        win0->blit(pat1, 256, 1+128);
-
-        nes->mPPU.drawNameTable(win0, 0x2000, 0, 0);
-        nes->mPPU.drawNameTable(win0, 0x2400, 128, 0);
-        // nes->mPPU.drawNameTable(win0, 0x2800, 0, 120);
-        // nes->mPPU.drawNameTable(win0, 0x2C00, 128, 120);
-
-        win0->flush();
+        prev = curr;
     }
 
     return 0;

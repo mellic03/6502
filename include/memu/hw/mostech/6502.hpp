@@ -8,23 +8,27 @@
 class m6502: public memu::HwModule, public m6502_detail::BaseHw
 {
 public:
-    Memory2kRW mRAM;
-
-    m6502( memu::AddrSpace& );
-    virtual size_t tick() override;
-    virtual void reset() override;
-    void callNMI();
-
     typedef int (m6502::*AddrFn)();
     typedef void (m6502::*ExecFn)();
 
-    uint8_t  mInvalidOp;
-    uint8_t  mCurrOp;
-    size_t   mCurrClock;
-    size_t   mPrevClock;
-    size_t   mOpCount;
-    bool     mOpAC;
-    uint16_t mOpAddr;
+    Memory2kRW mRAM;
+    bool       mWaiting;
+    uint8_t    mInvalidOp;
+    uint8_t    mCurrOp;
+    size_t     mCurrClock;
+    size_t     mPrevClock;
+    size_t     mOpCount;
+    bool       mOpAC;
+    uint16_t   mOpAddr;
+
+    uint16_t   mScanLine = 0;
+    uint16_t   mScanDot = 0;
+
+    m6502( memu::AddrSpace& );
+    virtual size_t tick() override;
+    virtual void reset() override { _RES(); };
+    void wait() { mWaiting = true; }
+
 
 private:
     struct Inst;
@@ -64,7 +68,12 @@ private:
     int  LoadZPGX();
     int  LoadZPGY();
 
-    void _IntPush();
+    void _NMI();
+    void _RES();
+    void _IRQ();
+    void _BRK();
+
+    void _IntPush(ubyte B, ubyte U=0);
     void _IntJump(uword);
     void _InstrADC(ubyte);
 

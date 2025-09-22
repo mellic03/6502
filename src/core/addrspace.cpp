@@ -2,6 +2,7 @@
 #include <memu/hwmodule.hpp>
 #include <memu/log.hpp>
 #include <memory>
+#include <cstring>
 
 using EADS = memu::AddrSpace;
 
@@ -20,7 +21,16 @@ EADS::AddrSpace()
 void EADS::tick()
 {
     for (HwModule *hw: mHwModules)
+    {
         hw->mClock += hw->tick();
+    }
+
+    pend_nmi = (line_nmi==1 && prev_nmi==0);
+    pend_irq = (line_irq == 0);
+
+    prev_nmi = line_nmi;
+    prev_irq = line_irq;
+
 }
 
 
@@ -28,6 +38,7 @@ void EADS::reset()
 {
     for (HwModule *hw: mHwModules)
         hw->reset();
+    memcpy(mSigPrev, mSigCurr, sizeof(mSigCurr));
 }
 
 

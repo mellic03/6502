@@ -20,7 +20,7 @@ public:
                        int srcx, int srcy );
 
      ubyte readNameTile( uword base, ubyte row, ubyte col );
-     void drawNameTable( EmuFramebuffer*, uword addr, int dstx, int dsty );
+     void drawNameTable( EmuFramebuffer*, uword base );
 };
 
 

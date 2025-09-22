@@ -53,7 +53,7 @@ static void performTest( m6502 &cpu, auto data )
     cpu.AC = iAC;
     cpu.XR = iXR;
     cpu.YR = iYR;
-    cpu.SSR.as_byte = iSSR;
+    cpu.SSR.byte = iSSR;
 
     // while (cpu.PC != fPC)
     for (int i=0; i<4; i++)
@@ -67,7 +67,7 @@ static void performTest( m6502 &cpu, auto data )
     printf("AC:  0x%02X\n", cpu.AC);
     printf("XR:  0x%02X\n", cpu.XR);
     printf("YR:  0x%02X\n", cpu.YR);
-    printf("SSR: 0x%02X\n", cpu.SSR.as_byte);
+    printf("SSR: 0x%02X\n", cpu.SSR.byte);
     printf("\n");
 }
 
