@@ -7,8 +7,8 @@
 
 void m6502::_fetch()
 {
-    // // printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
-    printf("%04X %02X  ", PC, rdbus(PC));
+    // // // printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
+    // printf("%04X %02X  ", PC, rdbus(PC));
 
     mOpAC   = false;
     mCurrOp = rdbus(PC++);
@@ -17,7 +17,7 @@ void m6502::_fetch()
 void m6502::_decode()
 {
     mCurrInstr = &mFtab[mCurrOp];
-    printf("%s    ", mCurrInstr->label);
+    // printf("%s    ", mCurrInstr->label);
 }
 
 
@@ -27,9 +27,9 @@ void m6502::_execute()
 
     (this->*mCurrInstr->fA)();
 
-    // // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
-    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
-    printf("PPU: %u,%u CYC:%lu\n", mScanLine, mScanDot, clockTime());
+    // // // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
+    // printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
+    // printf("PPU: %u,%u CYC:%lu\n", mScanLine, mScanDot, clockTime());
 
     (this->*mCurrInstr->fE)();
 

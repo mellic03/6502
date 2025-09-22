@@ -52,9 +52,9 @@ void NesPPU::drawPattern( EmuFramebuffer *fb, int tabNo, int dx, int dy, int sx,
     static constexpr ubyte conf0  [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
     static constexpr ubyte conf1  [] = { 0x11, 32, 144, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
 
-    for (int i=0; i<16; i++)
+    for (int i=0; i<8; i++)
     {
-        for (int j=0; j<16; j++)
+        for (int j=0; j<8; j++)
         {
             int y = 8*sy + i;
             int x = 8*sx + j;
@@ -80,7 +80,7 @@ void NesPPU::drawPattern( EmuFramebuffer *fb, int tabNo, int dx, int dy, int sx,
 
             auto &ctl = (tabNo==0) ? conf0 : conf1;
             ubyte  off = ctl[4*mPalNo + pxl] & 0x3F;
-            fb->pixel(dx+x, dy+y, mPalette + 3*off);
+            fb->pixel(dx+j, dy+i, mPalette + 3*off);
         }
     }
 }
