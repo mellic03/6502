@@ -115,9 +115,9 @@ void NesPPU::drawNameTable( EmuFramebuffer *fb, uword base )
 
             drawPattern(fb, 1, x, y, val%128, val/128);
 
-            // for (int j=0; j<8; j++)
+            // for (int i=0; i<8; i++)
             // {
-            //     for (int i=0; i<8; i++)
+            //     for (int j=0; j<8; j++)
             //     {
             //         fb->pixel(x+j, y+i, val, val, val);
             //     }
