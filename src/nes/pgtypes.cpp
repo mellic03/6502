@@ -52,11 +52,12 @@ void CpuPpuHandler::write(addr_t addr, ubyte data)
     switch (addr % 8)
     {
         case REG_PPUCTRL:
-            ppu.CTRL.byte = data;
+            printf("[WRITE PPUCTRL] data=%u\n", data);
+            ppu.ppuctl = { data };
             break;
             
         case REG_PPUMASK:
-            ppu.MASK.byte = data;
+            ppu.ppumask = { data };
             break;
 
         case REG_OAMADDR:
@@ -112,17 +113,17 @@ void CpuIoHandler::write(addr_t addr, ubyte data)
 {
     if (addr == 0x4016)
     {
-        if (data & 0x01)
-        {
-            cpu.mStdCtl0.hi();
-            cpu.mStdCtl1.hi();
-        }
+        // if (data & 0x01)
+        // {
+        //     cpu.mStdCtl0.hi();
+        //     cpu.mStdCtl1.hi();
+        // }
 
-        else
-        {
-            cpu.mStdCtl0.lo();
-            cpu.mStdCtl1.lo(); 
-        }
+        // else
+        // {
+        //     cpu.mStdCtl0.lo();
+        //     cpu.mStdCtl1.lo(); 
+        // }
     }
 }
 

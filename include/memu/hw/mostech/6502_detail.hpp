@@ -10,10 +10,6 @@ namespace m6502_detail
 class m6502_detail::BaseHw
 {
 public:
-    BaseHw()
-    : AC(0), XR(0), YR(0), SP(0xFD), PC{0xFFFC}, SSR{0b00100100} {  };
-
-// protected:
     ubyte AC, XR, YR, SP;
 
     union {
@@ -37,6 +33,21 @@ public:
             ubyte N :1;
         } __attribute__((packed));
     } SSR;
+
+
+    struct {
+        ubyte *ioNMI;
+        ubyte *ioIRQ;
+        ubyte *ioCLK;
+    };
+
+
+    BaseHw()
+    :   AC(0x00), XR(0x00), YR(0x99),
+        SP(0xFD), PC{0xFFFC}, SSR{0b00100100}
+    {
+        // assert((ioNMI && ioIRQ && ioCLK));
+    };
 
 };
 

@@ -34,15 +34,7 @@ public:
     HwModule &operator=(const HwModule&) = delete;
     size_t clockTime() { return mClock; }
 
-    /**
-     * Execute.
-     * @return Number of clock cycles used.
-     */
-    virtual size_t tick() = 0;
-
-    /**
-     * Reset the device.
-     */
+    virtual void tick() = 0;
     virtual void reset() = 0;
 };
 

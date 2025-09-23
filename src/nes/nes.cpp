@@ -31,12 +31,26 @@
 memu::ConfigParser NesEmu::CONF("./nes.conf");
 
 
+
 NesEmu::System::System()
 :   mCPU(mBusCPU),
     mPPU(mBusPPU),
-    mGPak(nullptr)
+    mGPak(nullptr),
+    mWin(new EmuWindow("NesEmu", 256, 240, 4))
 {
     using namespace memu;
+
+    // pinout mappings
+    // -------------------------------------------------------------------------
+
+    mCPU.ioNMI = &ioNmi;
+    mCPU.ioIRQ = &ioIRQ;
+    mCPU.ioCLK = &ioCLK;
+
+    mPPU.ioCLK = &ioCLK;
+    mPPU.ioINT = &ioNmi;
+    // -------------------------------------------------------------------------
+
 
     // CPU Mapping
     // -------------------------------------------------------------------------
@@ -89,39 +103,31 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
 
 void NesEmu::System::tick()
 {
-    static int curr  = 0;
-    static int prev  = 0;
-    static int accum = 0;
+    mPPU.tick(mWin);
+    mPPU.tick(mWin);
+    mPPU.tick(mWin);
+    mCPU.tick();
 
-    mBusPPU.tick();
-    mBusPPU.tick();
-    mBusPPU.tick();
+    // static size_t accum = 0;
+    // static size_t prev = 0;
 
-    if (mPPU.STATUS.V == 1)
-        mBusCPU.line_nmi = 1;
-    else
-        mBusCPU.line_nmi = 0;
+    // accum += mPPU.clockTime() - prev;
+    // prev   = mPPU.clockTime();
 
-    mCPU.mScanLine = mPPU.mScanLine;
-    mCPU.mScanDot  = mPPU.mScanDot;
-    mBusCPU.tick();
-
-    // mBusCPU.tick();
-
-    // curr = mCPU.clockTime();
-    // accum += curr - prev;
-    // prev = curr;
-
-    // if (accum >= 3)
+    // while (accum > 3)
     // {
-    //     while (accum > 0)
-    //     {
-    //         mBusPPU.tick();
-    //         accum -= 1;
-    //     }
+    //     mBusCPU.tick();
+        
     // }
 
-    accum = std::max(accum, 0);
+    // {
+    //     mPPU.tick(mWin);
+    //     mBusPPU.tick();
+    //     mBusPPU.tick();
+    //     mBusPPU.tick();
+    // }
+
+    mClocks += 1;
 }
 
 

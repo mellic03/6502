@@ -2,9 +2,9 @@
 
 #include <memu/addrspace.hpp>
 #include <memu/configparser.hpp>
+#include <memu/display.hpp>
 #include "cpu.hpp"
 #include "ppu.hpp"
-
 
 namespace NesEmu
 {
@@ -54,18 +54,25 @@ namespace NesEmu
 class NesEmu::System
 {
 private:
+    size_t mClocks = 0;
+
+    struct {
+        ubyte ioNmi;
+        ubyte ioIRQ;
+        ubyte ioCLK;
+    };
 
 public:
-    System(const System&) = delete;
-    System &operator=(const System&) = delete;
-
     memu::AddrSpace mBusCPU;
     memu::AddrSpace mBusPPU;
-    NesCPU   mCPU;
-    NesPPU   mPPU;
-    GamePak *mGPak;
+    NesCPU     mCPU;
+    NesPPU     mPPU;
+    GamePak   *mGPak;
+    EmuWindow *mWin;
 
     System();
+    System(const System&) = delete;
+    System &operator=(const System&) = delete;
     void loadGamePak(GamePak*);
     void tick();
     // StdCtl &getStdCtl0() { return mStdCtl0; }

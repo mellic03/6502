@@ -15,29 +15,17 @@ class memu::DataLatch
 private:
     bool nextIsHi = true;
 
-    union {
-        uword word;
-        struct {
-            ubyte lo;
-            ubyte hi;
-        } __attribute__((packed));
-    };
-
 public:
-    DataLatch( uword w ): word(w) { }
+    uword value;
 
-    inline uword read()
-    {
-        return word;
-    }
+    DataLatch( uword v ): value(v) { }
 
+    inline void reset() { nextIsHi=true; }
+    inline uword read() { return value; }
     inline void write( ubyte data )
     {
-        if (nextIsHi)
-            word = (word & 0x00FF) | (uint16_t(data) << 8);
-        else
-            word = (word & 0xFF00) | data;
-
+        if (nextIsHi) value = (value & 0x00FF) | (uint16_t(data) << 8);
+        else          value = (value & 0xFF00) | data;
         nextIsHi = !nextIsHi;
     }
 };

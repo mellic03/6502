@@ -2,119 +2,53 @@
 #include <memu/nes/nes.hpp>
 #include <memu/addrspace.hpp>
 #include <memu/display.hpp>
+#include <memu/pinout.hpp>
 
 
-void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 dpos, ivec2 spos )
+
+void NesPPU::tick( EmuWindow *win )
 {
-    for (int i=0; i<128; i++)
+    if (onRange(0, 240))
     {
-        for (int j=0; j<128; j++)
-        {
-            int y = spos.y + i;
-            int x = spos.x + j;
-
-            // Compute tile index
-            int tileX = x/8;
-            int tileY = y/8;
-            int tileIndex = 16*tileY + tileX;
-
-            // Address into CHR
-            int tileAddr = 16*tileIndex + y%8;
-            ubyte plane0 = rdbus(tileAddr + 0);
-            ubyte plane1 = rdbus(tileAddr + 8);
-
-            ubyte bit = 7 - (x % 8);
-            ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
-
-            // ubyte  off = rdbus(0x3F00 + 4*palNo + pxl);
-            // ubyte  off = mPaletteCtl[4*palNo + pxl] & 0x3F;
-            // ubyte *rgb = mPalette + 3*off;
-            // fb->pixel(dpos.x+j, dpos.y+i, rgb);
-
-            fb->pixel(dpos.x+j, dpos.y+i, 62*pxl, 62*pxl, 62*pxl);
-        }
+        uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+        drawNameTableRow(win, base, ubyte(mScanLine/8));
     }
-}
 
-void NesPPU::drawPatternTable( EmuFramebuffer *fb, int palNo, ivec2 spos )
-{
-    drawPatternTable(fb, palNo, {0, 0}, spos);
-}
-
-
-void NesPPU::drawPattern( EmuFramebuffer *fb, int dstx, int dsty, PtrnAddr pddr )
-{
-    // PtrnAddr pddr{ getTileAddr(row, col) };
-    // uword tAddr = pddr.word;
-    // ubyte tIdx  = (pddr.tileIdxHi << 4) | pddr.tileIdxLo;
-
-    for (int y=0; y<8; y++)
+    if (mScanLine==241 && mCycle==1)
     {
-        pddr.fineY = y;
-        pddr.tableNo = 1;
-
-        for (int x=0; x<8; x++)
-        {
-            auto plo=pddr; plo.bitPlane=0;
-            auto phi=pddr; phi.bitPlane=1;
-
-            ubyte plane0 = rdbus(pddr.word + 0);
-            ubyte plane1 = rdbus(pddr.word + 8);
-
-            ubyte bit = 7 - (x % 8);
-            ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
-            ubyte off = mPaletteCtl[4*mPalNo + pxl] & 0x3F;
-
-            fb->pixel(dstx+x, dsty+y, &mPalette[3*off]);
-        }
+        ppustat.VBlank = 1;
+        memu::ioWrite(ioINT, 1);
     }
+
+
+    mPrevLine = mScanLine;
+
+    if ((++mCycle) >= 341)
+    {
+        mCycle = 0;
+        mScanLine++;
+
+        if (mScanLine >= 261)
+        {
+            ppustat.VBlank = 0;
+            win->flush();
+            mScanLine = -1;
+        }
+
+        // if (0<=mScanLine && mScanLine<261)
+        // {
+        //     uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+        //     drawNameTableRow(win, base, mScanLine);
+        // }
+    }
+
 }
 
 
-// void NesPPU::drawPattern( EmuFramebuffer *fb, int tabNo, int dx, int dy, int sx, int sy )
-// {
-//     static constexpr ubyte conf0  [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
-//     static constexpr ubyte conf1  [] = { 0x11, 32, 144, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
 
-//     for (int i=0; i<8; i++)
-//     {
-//         for (int j=0; j<8; j++)
-//         {
-//             int y = 16*sy + i;
-//             int x = 16*sx + j;
 
-//             // Compute tile index
-//             int tx = sx;
-//             int ty = sy;
-//             int tidx = 16*ty + tx;
-//             // int tidx = (16*y)/8 + (x/8);
-
-//             // Address into CHR
-//             uword addr   = 0x1000*tabNo + 16*tidx + y%8;
-//             ubyte plane0 = rdbus(addr+0);
-//             ubyte plane1 = rdbus(addr+8);
-
-//             ubyte bit = 7 - (x % 8);
-//             ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
-
-//             // // if (NesEmu::CONF["debug"]["GreyPalettes"])
-//             // {
-//             //     fb->pixel(dx+j, dy+i, 62*pxl, 62*pxl, 62*pxl);
-//             //     continue;
-//             // }
-
-//             auto &ctl = (tabNo==0) ? conf0 : conf1;
-//             ubyte  off = ctl[4*mPalNo + pxl] & 0x3F;
-//             fb->pixel(dx+j, dy+i, mPalette + 3*off);
-//         }
-//     }
-// }
-
-void NesPPU::drawPattern( EmuFramebuffer *fb, int tabNo, int dstx, int dsty, ubyte row, ubyte col )
+void NesPPU::drawPattern( EmuFramebuffer *fb, int dstx, int dsty, ubyte bgTile, ubyte row, ubyte col )
 {
-    static constexpr ubyte conf0  [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
-    static constexpr ubyte conf1  [] = { 0x11, 32, 144, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
-
     for (int i=0; i<8; i++)
     {
         for (int j=0; j<8; j++)
@@ -126,7 +60,7 @@ void NesPPU::drawPattern( EmuFramebuffer *fb, int tabNo, int dstx, int dsty, uby
             int tidx = 16*row + col;
 
             // Address into CHR
-            uword addr   = 0x1000*tabNo + 16*tidx + y%8;
+            uword addr   = 0x1000*bgTile + 16*tidx + y%8;
             ubyte plane0 = rdbus(addr+0);
             ubyte plane1 = rdbus(addr+8);
 
@@ -139,9 +73,8 @@ void NesPPU::drawPattern( EmuFramebuffer *fb, int tabNo, int dstx, int dsty, uby
             //     continue;
             // }
 
-            auto &ctl = (tabNo==0) ? conf0 : conf1;
-            ubyte  off = ctl[4*mPalNo + pxl] & 0x3F;
-            fb->pixel(dstx+j, dsty+i, mPalette + 3*off);
+            ubyte  off = mPaletteCtl[4*mPalNo + pxl] & 0x3F;
+            fb->pixel(dstx+j, dsty+i, &mPalette[3*off]);
         }
     }
 }
@@ -152,15 +85,78 @@ ubyte NesPPU::readNameTile( uword base, ubyte row, ubyte col )
 }
 
 
-void NesPPU::drawNameTable( EmuFramebuffer *fb, int dstx, int dsty, uword base )
+void NesPPU::drawNameTableCell( EmuFramebuffer *fb, uword base, ubyte r, ubyte c )
 {
     uword off = 0;
+
+    for (uword row=0; row<30; row+=1)
+    {
+        if (row != r)
+        {
+            off += 32;
+            continue;
+        }
+
+        for (uword col=0; col<32; col+=1)
+        {
+            ubyte idx    = rdbus(base+off);
+            ubyte bgTile = (ppuctl.BgTileSel) ? 1 : 0;
+            ubyte spTile = (ppuctl.SpriteTileSel) ? 1 : 0;
+            drawPattern(fb, 8*col, 8*row, bgTile, idx/16, idx%16);
+            off += 1;
+        }
+    }
+}
+
+
+void NesPPU::drawNameTableRow( EmuFramebuffer *fb, uword base, ubyte row )
+{
+    // uword off = 0;
+
+    // for (uword row=0; row<30; row+=1)
+    // {
+    //     if (row != r)
+    //     {
+    //         off += 32;
+    //         continue;
+    //     }
+
+    //     for (uword col=0; col<32; col+=1)
+    //     {
+    //         ubyte idx    = rdbus(base+off);
+    //         ubyte bgTile = (ppuctl.BgTileSel) ? 1 : 0;
+    //         ubyte spTile = (ppuctl.SpriteTileSel) ? 1 : 0;
+    //         drawPattern(fb, 8*col, 8*row, bgTile, idx/16, idx%16);
+    //         off += 1;
+    //     }
+    // }
+
+    uword off = 32*row;
+
+    for (uword col=0; col<32; col+=1)
+    {
+        ubyte idx    = rdbus(base+off + col);
+        ubyte bgTile = (ppuctl.BgTileSel) ? 1 : 0;
+        ubyte spTile = (ppuctl.SpriteTileSel) ? 1 : 0;
+        drawPattern(fb, 8*col, 8*row, bgTile, idx/16, idx%16);
+        // off += 1;
+    }
+
+}
+
+
+void NesPPU::drawNameTable( EmuFramebuffer *fb, uword base )
+{
+    uword off = 0;
+
     for (uword row=0; row<30; row+=1)
     {
         for (uword col=0; col<32; col+=1)
         {
-            ubyte val = rdbus(base+off);
-            drawPattern(fb, 1, dstx+8*col, dsty+8*row, val/16, val%16);
+            ubyte idx    = rdbus(base+off);
+            ubyte bgTile = (ppuctl.BgTileSel) ? 1 : 0;
+            ubyte spTile = (ppuctl.SpriteTileSel) ? 1 : 0;
+            drawPattern(fb, 8*col, 8*row, bgTile, idx/16, idx%16);
             off += 1;
         }
     }
@@ -245,15 +241,3 @@ void NesPPU::drawNameTable( EmuFramebuffer *fb, int dstx, int dsty, uword base )
 // //     mBus->mapRange(0x2800, 0x2BFF, 1024-1, &mTables[2]);
 // //     mBus->mapRange(0x2C00, 0x2FFF, 1024-1, &mTables[3]);
 // }
-
-
-// void NesPPU::tick()
-// {
-//     return;
-// }
-
-// void NesPPU::reset()
-// {
-//     return;
-// }
-

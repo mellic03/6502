@@ -4,13 +4,18 @@
 class EmuFramebuffer;
 
 
+
 class NesPPU: public memu::Ricoh2C02
 {
 private:
-     union PtrnAddr
-     {
-          uword word;
+     bool onRange( int16_t beg, int16_t end )
+     { return (mPrevLine!=mScanLine) && (beg<=mScanLine && mScanLine<end); }
 
+     bool onLine( int16_t line )
+     { return (mPrevLine!=mScanLine) && (mScanLine==line); }
+
+     union PtrnAddr {
+          uword word;
           struct {
                uint8_t fineY     :3;
                uint8_t bitPlane  :1;
@@ -20,44 +25,30 @@ private:
                uint8_t zero      :3;
           } __attribute__((packed));
 
-          PtrnAddr(uword w): word(0)
-          {
-               
-          }
-
-          ubyte getIdx()
-          {
-               return (tileIdxHi << 4) | tileIdxLo;
-          }
-
-          void setIdx( ubyte idx )
-          {
-               tileIdxLo = (idx & 0x00FF);
-               tileIdxHi = (idx >> 8);
-          }
-     
+          PtrnAddr(uword w): word(0) {  }
+          ubyte getIdx() { return (tileIdxHi << 4) | tileIdxLo; }
+          void setIdx(ubyte i) { tileIdxLo=(i & 0xFF); tileIdxHi=(i >> 8); }
      };
 
 
 public:
      int mPalNo = 0;
-
      using Ricoh2C02::Ricoh2C02;
 
-     ubyte *readPalette( int palNo, ubyte pxl );
-     void drawPatternTile( EmuFramebuffer*, int palNo, int tx, int ty );
-     void drawPatternTable( EmuFramebuffer*, int palNo, ivec2 spos );
-     void drawPatternTable( EmuFramebuffer*, int palNo, ivec2 dpos, ivec2 spos );
+     void tick( EmuWindow* );
+     virtual void tick() final {  };
 
-     void drawPattern( EmuFramebuffer*, int tabNo, int dstx, int dsty, ubyte row, ubyte col );
-     // void drawPattern( EmuFramebuffer *fb, int tabNo, int dx, int dy, int sx, int sy );
+     ubyte *readPalette( int palNo, ubyte pxl );
+     void drawPattern( EmuFramebuffer*, int dstx, int dsty, ubyte bgTile, ubyte row, ubyte col );
 
      uword getTileAddr( ubyte row, ubyte col );
      void drawPattern( EmuFramebuffer *fb, int dstx, int dsty, PtrnAddr );
      
 
      ubyte readNameTile( uword base, ubyte row, ubyte col );
-     void drawNameTable( EmuFramebuffer*, int dstx, int dsty, uword base );
+     void drawNameTableCell( EmuFramebuffer*, uword base, ubyte row, ubyte col );
+     void drawNameTableRow( EmuFramebuffer*, uword base, ubyte row );
+     void drawNameTable( EmuFramebuffer*, uword base );
 };
 
 

@@ -22,15 +22,8 @@ void EADS::tick()
 {
     for (HwModule *hw: mHwModules)
     {
-        hw->mClock += hw->tick();
+        hw->tick();
     }
-
-    pend_nmi = (line_nmi==1 && prev_nmi==0);
-    pend_irq = (line_irq == 0);
-
-    prev_nmi = line_nmi;
-    prev_irq = line_irq;
-
 }
 
 
@@ -54,7 +47,7 @@ ubyte EADS::read( uint16_t i )
     bool  H = (pg.mHandler != nullptr);
 
     if (H) return pg.mHandler->read(i);
-    else   return pg.mBuf[i&255];
+    else   return pg.mBuf[i & pg.mMask];
 }
 
 
@@ -64,7 +57,7 @@ void EADS::write( uint16_t i, ubyte data )
     bool  H = (pg.mHandler != nullptr);
 
     if (H) pg.mHandler->write(i, data);
-    else   pg.mBuf[i&255] = data;
+    else   pg.mBuf[i & pg.mMask] = data;
 }
 
 

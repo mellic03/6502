@@ -1,5 +1,6 @@
 #include <memu/hw/mostech/6502.hpp>
 #include <memu/addrspace.hpp>
+#include <memu/pinout.hpp>
 #include <stdio.h>
 #include <string.h>
 #include <SDL2/SDL.h>
@@ -7,7 +8,7 @@
 
 void m6502::_fetch()
 {
-    // // // printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
+    // // printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
     // printf("%04X %02X  ", PC, rdbus(PC));
 
     mOpAC   = false;
@@ -27,7 +28,7 @@ void m6502::_execute()
 
     (this->*mCurrInstr->fA)();
 
-    // // // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
+    // // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
     // printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
     // printf("PPU: %u,%u CYC:%lu\n", mScanLine, mScanDot, clockTime());
 
@@ -39,27 +40,25 @@ void m6502::_execute()
 
     
 
-size_t m6502::tick()
+void m6502::tick()
 {
     using namespace memu;
 
-    if (mBus.pend_nmi == 1)
+    if (ioRead(ioNMI))
     {
-        mBus.pend_nmi = 0;
-        mWaiting = false;
+        printf("[m6502::tick] NMI\n");
         _NMI();
+        ioWrite(ioNMI, 0);
     }
 
-    else if (mBus.pend_irq == 1) // sigSet(SIG::IRQ) && !(SSR.I))
+    else if (ioRead(ioIRQ) == 0)
     {
-        mBus.pend_irq = 0;
-        mWaiting = false;
         _IRQ();
     }
 
     if (mWaiting)
     {
-        return 0;
+        return;
     }
 
     _fetch();
@@ -70,8 +69,6 @@ size_t m6502::tick()
     {
         printf("Invalid opcode (0x%02X)\n", mCurrOp);
     }
-
-    return mCurrClock - mPrevClock;
 }
 
 

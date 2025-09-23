@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include <memu/configparser.hpp>
-#include <memu/display.hpp>
 #include <memu/nes/mapper.hpp>
 #include <memu/nes/nes.hpp>
 
@@ -23,6 +22,7 @@ int main( int argc, char **argv )
     srand(clock());
 
     nes = new NesEmu::System();
+    auto *win0 = nes->mWin;
     auto &conf = NesEmu::CONF;
 
     nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
@@ -33,8 +33,7 @@ int main( int argc, char **argv )
         // nes->mCPU.PC = (uint16_t)strtol(conf["boot"]["jump"], NULL, 16);
     }
 
-    auto *win0 = new EmuWindow("NesEmu", 256, 240, 4);
-    auto *win1 = new EmuWindow("CHR-ROM", 128, 256, 4);
+    // auto *win1 = new EmuWindow("CHR-ROM", 128, 256, 4);
     // uint64_t tcurr = SDL_GetTicksNS();
     // uint64_t tprev = tcurr;
     // uint64_t tdiff = 0;
@@ -53,27 +52,30 @@ int main( int argc, char **argv )
             break;
         }
 
-        static int count = 0;
-        static ubyte prev = 0;
-        ubyte curr = nes->mPPU.STATUS.V;
+        // auto &ppu     = nes->mPPU;
+        // auto &ppuctl  = ppu.ppuctl;
+        // auto &ppustat = ppu.ppustat;
 
-        if (prev==0 && curr==1)
-        {
-            for (int i=0; i<16; i++)
-            {
-                for (int j=0; j<16; j++)
-                {
-                    nes->mPPU.drawPattern(win1, 0, 8*j,     8*i, i, j);
-                    nes->mPPU.drawPattern(win1, 1, 8*j, 128+8*i, i, j);
-                }
-            }
-            win1->flush();
+        // static int16_t lprev = 0;
+        // int16_t lcurr = ppu.mScanLine;
 
-            nes->mPPU.drawNameTable(win0, 0, 0, 0x2000);
-            win0->flush();
-        }
-        prev = curr;
-
+        // if (lprev < lcurr)
+        // {
+        //     if (0<=lcurr && lcurr<240)
+        //     {
+        //         uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+        //         ppu.drawNameTableRow(win0, base, lcurr);
+        //     }
+        
+        //     if (lcurr == 240)
+        //     {
+        //         // uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+        //         // nes->mPPU.drawNameTable(win0, base);
+        //         win0->flush();
+        //     }
+        // }
+        // lprev = lcurr;
+  
 
         SDL_Event e;
         while (SDL_PollEvent(&e))
@@ -124,6 +126,8 @@ static void NesEmu_HandleEvent( SDL_Event *e )
 
         case SDLK_R:
             printf("Key R --> RESET\n");
+            nes->mCPU.reset();
+            nes->mPPU.reset();
             break;
 
         case SDLK_N:

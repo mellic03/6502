@@ -2,6 +2,7 @@
 #include <memu/addrspace.hpp>
 #include <memu/file.hpp>
 #include <memu/log.hpp>
+#include <memu/pinout.hpp>
 #include <cstring>
 
 using namespace memu;
@@ -47,16 +48,11 @@ using namespace memu;
 #include <ctime>
 #include <cstdio>
 
-static void onRdBus( void *arg )
-{
-    ((Ricoh2C02*)arg)->mScanDot += 2;
-}
-
 
 Ricoh2C02::Ricoh2C02(AddrSpace &bus)
 :   HwModule(bus), BaseHw(),
-    mScanLine(0),
-    mScanDot(0)
+    mCycle(0), mScanLine(0), mPrevLine(0),
+    mPpuAddr(0), mPpuData(0)
 {
     static constexpr ubyte blue   [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
     static constexpr ubyte pink   [] = { 0x11, 246, 108, 92, 187, 42, 210, 95, 168, 78, 142, 98, 129, 239, 103, 87, 172, 13, 30, 101, 140, 87, 215, 181, 232, 143, 132, 245, 39, 10, 61, 155 };
@@ -68,33 +64,107 @@ Ricoh2C02::Ricoh2C02(AddrSpace &bus)
 }
 
 
-size_t Ricoh2C02::tick()
-{
-    mScanDot += 1;
 
-    if (mScanDot >= 341)
-    {
-        mScanLine = (mScanLine+1) % 262;
-        mScanDot = 0;
-    }
+/*
+    https://www.nesdev.org/wiki/PPU_frame_timing
 
-    if (mScanLine==241 & mScanDot==1)
-    {
-        STATUS.V = 1;
-        // mBus.sigSet(SIG::NMI);
-    }
+    Each PPU frame is 341*262=89342 PPU clocks long.
 
-    if (mScanLine==260)
-    {
-        STATUS.V = 0;
-    }
+*/
 
-    return 0;
-}
+// void Ricoh2C02::tick( EmuFramebuffer *fb )
+// {
+//     if (-1<=mScanLine && mScanLine<240)
+//     {
+//         if (mScanLine==0 && mCycle==0)
+// 		{   // "Odd Frame" cycle skip
+// 			mCycle = 1;
+// 		}
+
+// 		if (mScanLine==-1 && mCycle==1)
+// 		{   // Effectively start of new frame, so clear vertical blank flag
+// 			ppustat.VBlank = 0;
+// 		}
+
+//     }
+
+//     // if (mScanDot >= 341)
+//     // {
+//     //     mScanLine = (mScanLine+1) % 262;
+//     //     mScanDot = 0;
+//     // }
+
+//     // if (mScanLine==241 & mScanDot==1)
+//     // {
+//     //     ppustat.VBlank = 1;
+//     //     ioWrite(ioINT, 1);
+//     // }
+
+//     // if (mScanLine==260)
+//     // {
+//     //     ppustat.VBlank = 0;
+//     // }
+
+// 	if (241<=mScanLine && mScanLine<261)
+// 	{
+// 		if (mScanLine==241 && mCycle==1)
+// 		{   // Effectively end of frame, so set vertical blank flag
+// 			ppustat.VBlank = 1;
+
+//             // printf("NMIEnabled=%u\n", ppuctl.NMIEnabled);
+            
+//             if (ppuctl.NMIEnabled)
+//             {
+//                 ioWrite(ioINT, 1);
+//             }
+// 		}
+// 	}
+
+//     if (ppumask.BackGndEnable)
+//     {
+//         // do stuff
+//     }
+
+
+//     if (0<=lcurr && lcurr<240)
+//     {
+//         uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+//         drawNameTableRow(fb, base, lcurr);
+//     }
+
+
+//     mCycle++;
+
+// 	if (mCycle >= 341)
+// 	{
+// 		mCycle = 0;
+// 		mScanLine++;
+
+// 		if (mScanLine >= 261)
+// 		{
+// 			mScanLine = -1;
+// 		}
+// 	}
+
+// }
 
 
 void Ricoh2C02::reset()
 {
+    ppuctl  = {0};
+    ppumask = {0};
+    ppustat = {0};
+    OAMADDR = 0;
+    OAMDATA = 0;
+    SCROLL  = 0;
+    ADDR    = 0;
+    DATA    = 0;
+
+    mCycle    = 0;
+    mScanLine = 0;
+
+    mPpuAddr.reset();
+    mPpuAddr.value = 0;
 
 }
 

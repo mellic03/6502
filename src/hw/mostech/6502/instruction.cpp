@@ -75,6 +75,7 @@ void m6502::_IntJump( uword addr )
 void m6502::_NMI()
 {
     // printf("\t\t NMI  PC:%04X\n", PC);
+    mWaiting = false;
     _IntPush(0, 1);
     _IntJump(0xFFFA);
 }
@@ -82,6 +83,7 @@ void m6502::_NMI()
 void m6502::_RES()
 {
     // printf("\t\t RES  PC:%04X\n", PC);
+    mWaiting = false;
     SP = 0xFD;
     SSR.I = 1;
     PC = rdbusw(0xFFFC);
@@ -89,6 +91,7 @@ void m6502::_RES()
 
 void m6502::_IRQ()
 {
+    mWaiting = false;
     _IntPush(0);
     _IntJump(0xFFFE);
 }

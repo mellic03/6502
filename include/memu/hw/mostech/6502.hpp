@@ -21,11 +21,11 @@ public:
     bool       mOpAC;
     uint16_t   mOpAddr;
 
-    uint16_t   mScanLine = 0;
-    uint16_t   mScanDot = 0;
+    // uint16_t   mScanLine = 0;
+    // uint16_t   mScanDot = 0;
 
     m6502( memu::AddrSpace& );
-    virtual size_t tick() override;
+    virtual void tick() override;
     virtual void reset() override { _RES(); };
     void wait() { mWaiting = true; }
 
