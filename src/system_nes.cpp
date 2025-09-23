@@ -12,22 +12,18 @@
 #include <memu/nes/nes.hpp>
 
 
+static void NesEmu_HandleEvent( SDL_Event *e );
+
+
+static EmuIO io;
+static NesEmu::System *nes;
+
 int main( int argc, char **argv )
 {
     srand(clock());
 
-    int opts = argc - 2; // name, FILE
-
-    // memu::ConfigParser conf("boot.conf");
-    // for (int i=1; i<argc-1; i+=2)
-    //     if (std::string(argv[i]) == "--conf")
-    //         conf = memu::ConfigParser(argv[i+1]);
-
-    auto *nes = new NesEmu::System();
+    nes = new NesEmu::System();
     auto &conf = NesEmu::CONF;
-
-    auto ree = conf["boot"];
-    auto roo = ree["rom"];
 
     nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
     nes->mPPU.loadPalette(conf["video"]["palette"]);
@@ -37,73 +33,25 @@ int main( int argc, char **argv )
         // nes->mCPU.PC = (uint16_t)strtol(conf["boot"]["jump"], NULL, 16);
     }
 
-    EmuIO io;
-    auto *win0  = new EmuWindow("NesEmu", 256+128, 240, 4);
-    auto  pat0  = new EmuFramebuffer(128, 128);
-    auto  pat1  = new EmuFramebuffer(128, 128);
-    auto  gview = new EmuFramebuffer(256, 240);
+    auto *win0 = new EmuWindow("NesEmu", 256, 240, 4);
+    auto *win1 = new EmuWindow("CHR-ROM", 128, 256, 4);
     // uint64_t tcurr = SDL_GetTicksNS();
     // uint64_t tprev = tcurr;
     // uint64_t tdiff = 0;
     // uint64_t accum = 0;
 
-    while (!nes->mCPU.mInvalidOp)
+    // SDL_LoadBMP("data/font/atlas.png");
+
+    while (io.mRunning)
     {
         using namespace memu;
 
-        io.updateEvents();
-
-        // tcurr = SDL_GetTicksNS();
-        // tdiff = tcurr - tprev;
-        // tprev = tcurr;
         nes->tick();
 
-        if (io.keyReleased(SDL_SCANCODE_SPACE))
+        if (nes->mCPU.mInvalidOp)
         {
-            printf("Key SPACE --> WAI\tI:%u B%u\n", nes->mCPU.SSR.I, nes->mCPU.SSR.B);
-            nes->mCPU.wait();
-        }
-
-        if (io.keyReleased(SDL_SCANCODE_I))
-        {
-            printf("Key I --> IRQ\n");
-            nes->mBusCPU.pend_irq = 1;
-        }
-
-        if (io.keyReleased(SDL_SCANCODE_R))
-        {
-            printf("Key R --> RESET\n");
-        }
-
-        if (io.keyReleased(SDL_SCANCODE_N))
-        {
-            printf("Key N --> NMI\n");
-            nes->mBusCPU.pend_nmi = 1;
-        }
-
-        if (io.keyReleased(SDL_SCANCODE_ESCAPE))
-        {
-            SDL_Quit();
             break;
         }
-
-        if (io.keyReleased(SDL_SCANCODE_TAB))
-        {
-            // break;
-        }
-
-        if (io.keyReleased(SDL_SCANCODE_LEFT))
-        {
-            if (--nes->mPPU.mPalNo < 0)
-                nes->mPPU.mPalNo = 12;
-        }
-
-        if (io.keyReleased(SDL_SCANCODE_RIGHT))
-        {
-            if (++nes->mPPU.mPalNo > 12)
-                nes->mPPU.mPalNo = 0;
-        }
-
 
         static int count = 0;
         static ubyte prev = 0;
@@ -115,21 +63,96 @@ int main( int argc, char **argv )
             {
                 for (int j=0; j<16; j++)
                 {
-                    nes->mPPU.drawPattern(pat0, 0, 8*j, 8*i, j, i);
-                    nes->mPPU.drawPattern(pat1, 1, 8*j, 8*i, j, i);
+                    nes->mPPU.drawPattern(win1, 0, 8*j,     8*i, i, j);
+                    nes->mPPU.drawPattern(win1, 1, 8*j, 128+8*i, i, j);
                 }
             }
-            win0->blit(pat0, 256, 0*128);
-            win0->blit(pat1, 256, 1+128);
+            win1->flush();
 
-            nes->mPPU.drawNameTable(win0, 0x2000);
-
+            nes->mPPU.drawNameTable(win0, 0, 0, 0x2000);
             win0->flush();
         }
-
         prev = curr;
+
+
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+            NesEmu_HandleEvent(&e);
+        }
+
+        SDL_PumpEvents();
     }
 
     return 0;
 }
 
+
+
+
+static void NesEmu_HandleEvent( SDL_Event *e )
+{
+    switch (e->type)
+    {
+        case SDL_EVENT_QUIT:
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+            io.quit();
+        default:
+            break;
+    }
+
+    if (e->type != SDL_EVENT_KEY_UP)
+    {
+        return;
+    }
+
+    switch (e->key.key)
+    {
+        case SDLK_ESCAPE:
+            io.quit();
+            break;
+
+        case SDLK_SPACE:
+            printf("Key SPACE --> WAI\tI:%u B%u\n", nes->mCPU.SSR.I, nes->mCPU.SSR.B);
+            nes->mCPU.wait();
+            break;
+
+        case SDLK_I:
+            printf("Key I --> IRQ\n");
+            nes->mBusCPU.pend_irq = 1;
+            break;
+
+        case SDLK_R:
+            printf("Key R --> RESET\n");
+            break;
+
+        case SDLK_N:
+            printf("Key N --> NMI\n");
+            nes->mBusCPU.pend_nmi = 1;
+            break;
+
+        case SDLK_TAB:
+            break;
+
+        case SDLK_LEFT:
+            if (--nes->mPPU.mPalNo < 0)
+                nes->mPPU.mPalNo = 12;
+            break;
+
+        case SDLK_RIGHT:
+            if (++nes->mPPU.mPalNo > 12)
+                nes->mPPU.mPalNo = 0;
+            break;
+
+        default:
+            break;
+    }
+
+}
+
+
+
+static void SDL_AppQuit( void *appstate, SDL_AppResult result )
+{
+
+}

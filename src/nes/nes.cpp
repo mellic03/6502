@@ -74,7 +74,16 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
 {
     mGPak = gpak;
     Mapper::MapGamePak(*this, gpak);
-    mCPU.PC = (mBusCPU.read(0xFFFD) << 8) | mBusCPU.read(0xFFFC);
+
+    if (CONF["boot"]["jump"])
+    {
+        (uint16_t)strtol(CONF["boot"]["jump"], NULL, 16);
+    }
+
+    else
+    {
+        mCPU.PC = (mBusCPU.read(0xFFFD) << 8) | mBusCPU.read(0xFFFC);
+    }
 }
 
 

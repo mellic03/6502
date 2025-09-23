@@ -29,6 +29,7 @@ private:
         nomap_t(bool e, const std::string &v): mExists(e), mValue(v) {  }
         operator bool() const { return mExists; }
         operator std::string() const { return mValue; }
+        operator const char*() const { return mValue.c_str(); }
     };
 
 

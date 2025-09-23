@@ -6,6 +6,39 @@ class EmuFramebuffer;
 
 class NesPPU: public memu::Ricoh2C02
 {
+private:
+     union PtrnAddr
+     {
+          uword word;
+
+          struct {
+               uint8_t fineY     :3;
+               uint8_t bitPlane  :1;
+               uint8_t tileIdxLo :4;
+               uint8_t tileIdxHi :4;
+               uint8_t tableNo   :1;
+               uint8_t zero      :3;
+          } __attribute__((packed));
+
+          PtrnAddr(uword w): word(0)
+          {
+               
+          }
+
+          ubyte getIdx()
+          {
+               return (tileIdxHi << 4) | tileIdxLo;
+          }
+
+          void setIdx( ubyte idx )
+          {
+               tileIdxLo = (idx & 0x00FF);
+               tileIdxHi = (idx >> 8);
+          }
+     
+     };
+
+
 public:
      int mPalNo = 0;
 
@@ -16,11 +49,15 @@ public:
      void drawPatternTable( EmuFramebuffer*, int palNo, ivec2 spos );
      void drawPatternTable( EmuFramebuffer*, int palNo, ivec2 dpos, ivec2 spos );
 
-     void drawPattern( EmuFramebuffer*, int tabNo, int dstx, int dsty,
-                       int srcx, int srcy );
+     void drawPattern( EmuFramebuffer*, int tabNo, int dstx, int dsty, ubyte row, ubyte col );
+     // void drawPattern( EmuFramebuffer *fb, int tabNo, int dx, int dy, int sx, int sy );
+
+     uword getTileAddr( ubyte row, ubyte col );
+     void drawPattern( EmuFramebuffer *fb, int dstx, int dsty, PtrnAddr );
+     
 
      ubyte readNameTile( uword base, ubyte row, ubyte col );
-     void drawNameTable( EmuFramebuffer*, uword base );
+     void drawNameTable( EmuFramebuffer*, int dstx, int dsty, uword base );
 };
 
 

@@ -8,19 +8,19 @@
 class EmuFramebuffer
 {
 public:
-    static constexpr SDL_PixelFormat mFormat = SDL_PIXELFORMAT_RGB24;
+    static constexpr SDL_PixelFormat mFormat    = SDL_PIXELFORMAT_RGB24;
+    static constexpr SDL_ScaleMode   mScaleMode = SDL_SCALEMODE_NEAREST;
 
     ivec2 mSp;
     SDL_Surface *mSurface;
 
-    EmuFramebuffer( int w, int h )
-    :   mSp{w, h}, mSurface(SDL_CreateSurface(w, h, mFormat)) {  }
-
-    void blit( EmuFramebuffer *fb, int dstx, int dsty, float S=1.0f );
+    EmuFramebuffer( int w, int h );
+    void blit( EmuFramebuffer *fb, int dstx, int dsty );
     void pixel( int x, int y, uint8_t *src );
     void pixel( int x, int y, uint8_t r, uint8_t g, uint8_t b );
     void rect( int x, int y, int w, int h, ubyte r, ubyte g, ubyte b );
 };
+
 
 
 class EmuWindow: public EmuFramebuffer
@@ -30,70 +30,28 @@ public:
     SDL_Surface *mWinSurface;
     int          mScale;
 
-    EmuWindow( const char *title, int w, int h, int scale )
-    :   EmuFramebuffer(w, h)
-    {
-        mSp    = { w, h };
-        mScale = scale;
-        mWin = SDL_CreateWindow(title, scale*w, scale*h, 0);
-        SDL_SetWindowPosition(mWin, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-        mWinSurface = SDL_GetWindowSurface(mWin);
-    }
-
-    void flush()
-    {
-        SDL_Rect src = { 0, 0, mSp.x, mSp.y };
-        SDL_Rect dst = { 0, 0, mScale*mSp.x, mScale*mSp.y };
-        SDL_BlitSurfaceScaled(mSurface, &src, mWinSurface, &dst, SDL_SCALEMODE_NEAREST);
-        SDL_UpdateWindowSurface(mWin);
-    }
+    EmuWindow( const char *title, int w, int h, int scale );
+    void flush();
 };
 
-#include <stdio.h>
+
 
 class EmuIO
 {
-private:
 public:
     bool  mRunning;
-    Uint8 mKeyCurr[512];
-    Uint8 mKeyPrev[512];
+    // Uint8 mKeyCurr[512];
+    // Uint8 mKeyPrev[512];
 
-    EmuIO()
+    EmuIO();
+
+    void quit()
     {
-        mRunning = true;
-        memset(mKeyCurr, 0, 512);
-        memset(mKeyPrev, 0, 512);
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+        SDL_Quit();
+        mRunning = false;
     }
 
-    bool keyReleased( int k )
-    {
-        return (mKeyPrev[k] == 1) && (mKeyCurr[k] == 0);
-    }
+private:
 
-    void updateEvents()
-    {
-        int numkeys = 0;
-        auto *state = SDL_GetKeyboardState(&numkeys);
-        memcpy(mKeyPrev, mKeyCurr, numkeys);
-        memcpy(mKeyCurr, state, numkeys);
 
-        SDL_Event e;
-        while (SDL_PollEvent(&e))
-        {
-            switch (e.type)
-            {
-                case SDL_EVENT_QUIT:
-                case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-                    SDL_Quit();
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
-        SDL_PumpEvents();
-    }
 };
