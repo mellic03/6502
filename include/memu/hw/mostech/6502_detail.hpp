@@ -36,9 +36,10 @@ public:
 
 
     struct {
-        ubyte *ioNMI;
-        ubyte *ioIRQ;
         ubyte *ioCLK;
+        ubyte *ioIRQ;
+        ubyte *ioNMI;
+        ubyte *ioRES;
     };
 
 

@@ -42,13 +42,14 @@ NesEmu::System::System()
 
     // pinout mappings
     // -------------------------------------------------------------------------
-
-    mCPU.ioNMI = &ioNmi;
-    mCPU.ioIRQ = &ioIRQ;
     mCPU.ioCLK = &ioCLK;
+    mCPU.ioIRQ = &ioIRQ;
+    mCPU.ioNMI = &ioNmi;
+    mCPU.ioRES = &ioRES;
 
     mPPU.ioCLK = &ioCLK;
     mPPU.ioINT = &ioNmi;
+    mPPU.ioRES = &ioRES;
     // -------------------------------------------------------------------------
 
 
@@ -104,9 +105,10 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
 void NesEmu::System::tick()
 {
     mPPU.tick(mWin);
-    mPPU.tick(mWin);
-    mPPU.tick(mWin);
     mCPU.tick();
+    ioRES = 1;
+    mPPU.tick(mWin);
+    mPPU.tick(mWin);
 
     // static size_t accum = 0;
     // static size_t prev = 0;

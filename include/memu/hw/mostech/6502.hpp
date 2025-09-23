@@ -26,7 +26,7 @@ public:
 
     m6502( memu::AddrSpace& );
     virtual void tick() override;
-    virtual void reset() override { _RES(); };
+    virtual void reset() override;
     void wait() { mWaiting = true; }
 
 

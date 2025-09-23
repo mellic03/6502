@@ -126,8 +126,7 @@ static void NesEmu_HandleEvent( SDL_Event *e )
 
         case SDLK_R:
             printf("Key R --> RESET\n");
-            nes->mCPU.reset();
-            nes->mPPU.reset();
+            nes->reset();
             break;
 
         case SDLK_N:

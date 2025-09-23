@@ -58,6 +58,7 @@ private:
 
     struct {
         ubyte ioNmi;
+        ubyte ioRES;
         ubyte ioIRQ;
         ubyte ioCLK;
     };
@@ -75,6 +76,7 @@ public:
     System &operator=(const System&) = delete;
     void loadGamePak(GamePak*);
     void tick();
+    void reset() { ioRES=0; }
     // StdCtl &getStdCtl0() { return mStdCtl0; }
     // StdCtl &getStdCtl1() { return mStdCtl1; }
 };

@@ -8,8 +8,8 @@
 
 void m6502::_fetch()
 {
-    // // printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
-    // printf("%04X %02X  ", PC, rdbus(PC));
+    // printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
+    printf("%04X %02X  ", PC, rdbus(PC));
 
     mOpAC   = false;
     mCurrOp = rdbus(PC++);
@@ -18,7 +18,7 @@ void m6502::_fetch()
 void m6502::_decode()
 {
     mCurrInstr = &mFtab[mCurrOp];
-    // printf("%s    ", mCurrInstr->label);
+    printf("%s    ", mCurrInstr->label);
 }
 
 
@@ -28,8 +28,9 @@ void m6502::_execute()
 
     (this->*mCurrInstr->fA)();
 
-    // // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
-    // printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
+    // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
+    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
+    printf("\n");
     // printf("PPU: %u,%u CYC:%lu\n", mScanLine, mScanDot, clockTime());
 
     (this->*mCurrInstr->fE)();
@@ -46,9 +47,13 @@ void m6502::tick()
 
     if (ioRead(ioNMI))
     {
-        printf("[m6502::tick] NMI\n");
         _NMI();
         ioWrite(ioNMI, 0);
+    }
+
+    else if (ioRead(ioRES) == 0)
+    {
+        this->reset();
     }
 
     else if (ioRead(ioIRQ) == 0)
@@ -71,6 +76,25 @@ void m6502::tick()
     }
 }
 
+
+void m6502::reset()
+{
+    AC  = 0x00;
+    XR  = 0x00;
+    YR  = 0x99;
+    SP  = 0xFD;
+    PC  = 0xFFFC;
+    SSR = {0b00100100};
+
+    mWaiting   = false;
+    mInvalidOp = 0;
+    mCurrOp    = 0;
+    mCurrClock = 0;
+    mPrevClock = 0;
+    mOpCount   = 0;
+
+    _RES();
+}
 
 void m6502::push08( uint8_t byte )
 {

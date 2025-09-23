@@ -61,6 +61,7 @@ public:
     struct { // PinOut
         ubyte *ioCLK;
         ubyte *ioINT;
+        ubyte *ioRES;
     };
 
 
