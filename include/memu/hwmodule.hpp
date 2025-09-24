@@ -13,9 +13,9 @@ class memu::HwModule
 {
 private:
     friend class AddrSpace;
-    size_t mClock;
 
 protected:
+    size_t mClock;
     void *mCallbackArg;
     void (*on_rdbus)(void*);
     void (*on_wtbus)(void*);

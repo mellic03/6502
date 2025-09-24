@@ -12,6 +12,7 @@
 
 
 static void NesEmu_HandleEvent( SDL_Event *e );
+static void NesEmu_PlayerCtl( SDL_Event *e );
 
 
 static EmuIO io;
@@ -28,18 +29,14 @@ int main( int argc, char **argv )
     nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
     nes->mPPU.loadPalette(conf["video"]["palette"]);
 
-    if (conf["boot"]["jump"])
-    {
-        // nes->mCPU.PC = (uint16_t)strtol(conf["boot"]["jump"], NULL, 16);
-    }
 
     // auto *win1 = new EmuWindow("CHR-ROM", 128, 256, 4);
+    // SDL_LoadBMP("data/font/atlas.png");
+
     // uint64_t tcurr = SDL_GetTicksNS();
     // uint64_t tprev = tcurr;
     // uint64_t tdiff = 0;
     // uint64_t accum = 0;
-
-    // SDL_LoadBMP("data/font/atlas.png");
 
     while (io.mRunning)
     {
@@ -52,34 +49,27 @@ int main( int argc, char **argv )
             break;
         }
 
-        // auto &ppu     = nes->mPPU;
-        // auto &ppuctl  = ppu.ppuctl;
-        // auto &ppustat = ppu.ppustat;
-
-        // static int16_t lprev = 0;
-        // int16_t lcurr = ppu.mScanLine;
-
-        // if (lprev < lcurr)
+        // for (int i=0; i<16; i++)
         // {
-        //     if (0<=lcurr && lcurr<240)
+        //     for (int j=0; j<16; j++)
         //     {
-        //         uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-        //         ppu.drawNameTableRow(win0, base, lcurr);
-        //     }
-        
-        //     if (lcurr == 240)
-        //     {
-        //         // uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-        //         // nes->mPPU.drawNameTable(win0, base);
-        //         win0->flush();
+        //         nes->mPPU.drawPattern(win1, 0, 8*j,     8*i, j, i);
+        //         nes->mPPU.drawPattern(win1, 1, 8*j, 128+8*i, j, i);
         //     }
         // }
-        // lprev = lcurr;
-  
+        // win1->flush();
+
 
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
+            if (e.type == SDL_EVENT_GAMEPAD_ADDED)
+            {
+                SDL_JoystickID jid = e.gdevice.which;
+                SDL_Gamepad *pad = SDL_OpenGamepad(jid);
+            }
+
+            NesEmu_PlayerCtl(&e);
             NesEmu_HandleEvent(&e);
         }
 
@@ -88,7 +78,6 @@ int main( int argc, char **argv )
 
     return 0;
 }
-
 
 
 
@@ -150,7 +139,36 @@ static void NesEmu_HandleEvent( SDL_Event *e )
         default:
             break;
     }
+}
 
+
+
+static void NesEmu_PlayerCtl( SDL_Event *e )
+{
+    switch (e->type)
+    {
+        case SDL_EVENT_GAMEPAD_BUTTON_UP:
+        case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+            break;
+        default:
+            return;
+    }
+
+    auto &ctl = nes->mPlayerCtl[0];
+    bool down = e->gbutton.down;
+
+    switch (e->gbutton.button)
+    {
+        default: break;
+        case SDL_GAMEPAD_BUTTON_SOUTH:      ctl.a      = down; break;
+        case SDL_GAMEPAD_BUTTON_EAST:       ctl.b      = down; break;
+        case SDL_GAMEPAD_BUTTON_GUIDE:      ctl.sel    = down; break;
+        case SDL_GAMEPAD_BUTTON_START:      ctl.start  = down; break;
+        case SDL_GAMEPAD_BUTTON_DPAD_UP:    ctl.up     = down; break;
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN:  ctl.down   = down; break;
+        case SDL_GAMEPAD_BUTTON_DPAD_LEFT:  ctl.left   = down; break;
+        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: ctl.right  = down; break;
+    }
 }
 
 

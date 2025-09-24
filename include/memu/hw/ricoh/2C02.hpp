@@ -6,6 +6,7 @@
 #include <memu/latch.hpp>
 #include "2C02_detail.hpp"
 #include <string>
+#include <array>
 #include <vector>
 
 
@@ -23,68 +24,50 @@ namespace memu
 class memu::Ricoh2C02: public memu::HwModule, public RP2C02_detail::BaseHw
 {
 private:
+    bool ppuAddrLatch = true;
+
+    void _quik( int n );
+    void _drawPattern( int dstx, int dsty, ubyte bgTile, ubyte row, ubyte col );
+    void _drawNameTableRow( ubyte row );
+    void _drawNameTableCell( ubyte row, ubyte col );
+
+    union PtrnAddr {
+        uword word;
+        struct {
+            uint8_t fineY     :3;
+            uint8_t bitPlane  :1;
+            uint8_t tileIdxLo :4;
+            uint8_t tileIdxHi :4;
+            uint8_t tableNo   :1;
+            uint8_t zero      :3;
+        } __attribute__((packed));
+
+        //   PtrnAddr(uword w): word(0) {  }
+        ubyte getIdx() { return (tileIdxHi << 4) | tileIdxLo; }
+        // void setIdx(ubyte i) { tileIdxLo=(i & 0xFF); tileIdxHi=(i >> 8); }
+    };
+
+
+protected:
+    ubyte *mFramebuffer;
+    size_t mPitch;
+    size_t mBPP;
 
 public:
-    int16_t   mCycle;
-    int16_t   mScanLine;
-    int16_t   mPrevLine;
+    EmuWindow *mWin;
+    int mCycle;
+    int mScanLine;
+    int mPalNo = 0;
 
-    DataLatch mPpuAddr;
-    uint8_t   mPpuData;
-
-    Memory2kRW mVRAM;
+    std::array<ubyte, 2*1024> mVRAM;
     uint8_t mPalette[192];
     uint8_t mPaletteCtl[32];
 
 
-    Ricoh2C02(AddrSpace&);
-    virtual void tick() = 0;
+    Ricoh2C02(AddrSpace&, ubyte *fb, size_t pitch, size_t bpp);
+    virtual void tick() override {  };
     virtual void reset() override;
+    int tickn( int n );
     void loadPalette(const std::string&);
 
-
-    uint8_t read2002()
-    {
-        printf("[read2002] vblank cleared\n");
-
-        uint8_t result = ppustat.byte;
-        ppustat.VBlank = 0;
-        mPpuAddr.reset();
-        return result;
-    }
-
-    uint8_t read2007()
-    {
-        ubyte  res  = mPpuData;
-        uword &addr = mPpuAddr.value;
-
-        mPpuData = rdbus(addr);
-        if (addr >= 0x3F00)
-            res = mPpuData;
-        addr += (ppuctl.Increment) ? 32 : 1;
-        addr &= 0x3FFF;
-
-        return res;
-    }
-
-
-    void write2005( uint8_t data )
-    {
-
-    }
-
-    void write2006( uint8_t data )
-    {
-        mPpuAddr.write(data);
-    }
-
-    void write2007( uint8_t data )
-    {
-        uword &addr = mPpuAddr.value;
-        printf("[write2007] ppuAddr=%04X\n", addr);
-
-        wtbus(addr, data);
-        addr += (ppuctl.Increment) ? 32 : 1;
-        addr &= 0x3FFF;
-    }
 };

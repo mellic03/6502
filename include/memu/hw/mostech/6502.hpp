@@ -15,8 +15,6 @@ public:
     bool       mWaiting;
     uint8_t    mInvalidOp;
     uint8_t    mCurrOp;
-    size_t     mCurrClock;
-    size_t     mPrevClock;
     size_t     mOpCount;
     bool       mOpAC;
     uint16_t   mOpAddr;

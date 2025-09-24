@@ -113,20 +113,10 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
 
     // PPU Mapping
     {
-        auto  &bus    = nes.mBusPPU;
-        auto  &ppu    = nes.mPPU;
-        ubyte *ppuram = ppu.mVRAM.data();
-        size_t ppursz = ppu.mVRAM.size();
+        auto &bus = nes.mBusPPU;
 
         // PPU --> CHR ROM
         bus.mapRdRange(0x0000, 0x1FFF, mChrRom.base, mChrRom.size);
-
-        // PPU --> PPU VRAM
-        bus.mapRWRange(0x2000, 0x2FFF, ppuram, ppursz, ppursz-1);
-        bus.mapRWRange(0x3000, 0x3EFF, ppuram, ppursz, ppursz-1);
-
-        // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
-        bus.mapRWRange(0x3F00, 0x3FFF, ppu.mPaletteCtl, sizeof(ppu.mPaletteCtl));
 
     }
 

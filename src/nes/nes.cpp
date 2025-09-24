@@ -1,6 +1,5 @@
 #include <memu/nes/nes.hpp>
 #include <memu/nes/mapper.hpp>
-#include "pgtypes.hpp"
 #include <stdio.h>
 #include <string.h>
 
@@ -33,13 +32,17 @@ memu::ConfigParser NesEmu::CONF("./nes.conf");
 
 
 NesEmu::System::System()
-:   mCPU(mBusCPU),
-    mPPU(mBusPPU),
-    mGPak(nullptr),
-    mWin(new EmuWindow("NesEmu", 256, 240, 4))
+:   mWin(new EmuWindow("NesEmu", 256, 240, 4)),
+    mCPU(mBusCPU),
+    mPPU(mBusPPU, mWin->data(), mWin->mPitch, mWin->mBPP),
+    mGPak(nullptr)
 {
     using namespace memu;
 
+    mPPU.mWin = mWin;
+    memset(mPlayerCtl, 0, sizeof(mPlayerCtl));
+
+    
     // pinout mappings
     // -------------------------------------------------------------------------
     mCPU.ioCLK = &ioCLK;
@@ -62,24 +65,24 @@ NesEmu::System::System()
     mBusCPU.mapRWRange(0x0000, 0x1FFF, cpuram, cpursz);
 
     // // CPU --> PPU MMIO registers.
-    mBusCPU.mapRange(0x2000, 0x3FFF, new CpuPpuHandler(mPPU));
+    mBusCPU.mapRange(0x2000, 0x3FFF, new NesPPU::CpuAccess(mPPU));
 
     // CPU --> APU and IO registers. 4000 - 401F
-    mBusCPU.mapRange(0x4000, 0x40FF, new CpuIoHandler(mCPU));
+    mBusCPU.mapRange(0x4000, 0x40FF, new NesCPU::PageHandlerMMIO(*this));
     // -------------------------------------------------------------------------
 
 
     // PPU Mapping
     // -------------------------------------------------------------------------
-    // uint8_t *ppuram = mPPU.mVRAM.data();
-    // size_t   ppursz = mPPU.mVRAM.size();
+    uint8_t *ppuram = mPPU.mVRAM.data();
+    size_t   ppursz = mPPU.mVRAM.size();
 
-    // // PPU --> PPU VRAM
-    // mBusPPU.mapRWRange(0x2000, 0x2FFF, ppuram, ppursz);
-    // mBusPPU.mapRWRange(0x3000, 0x3EFF, ppuram, ppursz);
+    // PPU --> PPU VRAM
+    mBusPPU.mapRWRange(0x2000, 0x2FFF, ppuram, ppursz);
+    mBusPPU.mapRWRange(0x3000, 0x3EFF, ppuram, ppursz);
 
-    // // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
-    // mBusPPU.mapRWRange(0x3F00, 0x3FFF, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
+    // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
+    mBusPPU.mapRWRange(0x3F00, 0x3FFF, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
     // -------------------------------------------------------------------------
 }
 
@@ -104,11 +107,34 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
 
 void NesEmu::System::tick()
 {
-    mPPU.tick(mWin);
+    size_t start = mCPU.clockTime();
     mCPU.tick();
     ioRES = 1;
-    mPPU.tick(mWin);
-    mPPU.tick(mWin);
+
+    mPPU.tickn(1);
+    mPPU.tickn(1);
+    mPPU.tickn(1);
+
+    // size_t rem = mPPU.tickn(3 * (mCPU.clockTime() - start));
+
+    // if (rem)
+    // {
+    //     mPPU.tickn(rem);
+    // }
+
+
+    // mPPU.tick();
+    // mCPU.tick();
+    // ioRES = 1;
+    // mPPU.tick();
+    // mPPU.tick();
+
+
+    // if (mPPU.mFrameDone == true)
+    // {
+    //     mWin->flush();
+    //     mPPU.mFrameDone = false;
+    // }
 
     // static size_t accum = 0;
     // static size_t prev = 0;

@@ -1,4 +1,6 @@
 #pragma once
+
+#include <memu/addrpage.hpp>
 #include <memu/hw/ricoh/2C02.hpp>
 
 class EmuFramebuffer;
@@ -8,47 +10,20 @@ class EmuFramebuffer;
 class NesPPU: public memu::Ricoh2C02
 {
 private:
-     bool onRange( int16_t beg, int16_t end )
-     { return (mPrevLine!=mScanLine) && (beg<=mScanLine && mScanLine<end); }
-
-     bool onLine( int16_t line )
-     { return (mPrevLine!=mScanLine) && (mScanLine==line); }
-
-     union PtrnAddr {
-          uword word;
-          struct {
-               uint8_t fineY     :3;
-               uint8_t bitPlane  :1;
-               uint8_t tileIdxLo :4;
-               uint8_t tileIdxHi :4;
-               uint8_t tableNo   :1;
-               uint8_t zero      :3;
-          } __attribute__((packed));
-
-          PtrnAddr(uword w): word(0) {  }
-          ubyte getIdx() { return (tileIdxHi << 4) | tileIdxLo; }
-          void setIdx(ubyte i) { tileIdxLo=(i & 0xFF); tileIdxHi=(i >> 8); }
-     };
-
 
 public:
-     int mPalNo = 0;
      using Ricoh2C02::Ricoh2C02;
 
-     void tick( EmuWindow* );
-     virtual void tick() final {  };
-
-     ubyte *readPalette( int palNo, ubyte pxl );
-     void drawPattern( EmuFramebuffer*, int dstx, int dsty, ubyte bgTile, ubyte row, ubyte col );
-
-     uword getTileAddr( ubyte row, ubyte col );
-     void drawPattern( EmuFramebuffer *fb, int dstx, int dsty, PtrnAddr );
-     
-
-     ubyte readNameTile( uword base, ubyte row, ubyte col );
-     void drawNameTableCell( EmuFramebuffer*, uword base, ubyte row, ubyte col );
-     void drawNameTableRow( EmuFramebuffer*, uword base, ubyte row );
-     void drawNameTable( EmuFramebuffer*, uword base );
+     class CpuAccess: public memu::iPageHandler
+     {
+     private:
+          NesPPU &ppu;
+          bool mAddrLatch;
+     public:
+          CpuAccess(NesPPU &p): ppu(p), mAddrLatch(true) {  }
+          virtual ubyte read(addr_t) final;
+          virtual void write(addr_t, ubyte) final;
+     };
 };
 
 

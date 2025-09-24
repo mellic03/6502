@@ -11,8 +11,11 @@ public:
     static constexpr SDL_PixelFormat mFormat    = SDL_PIXELFORMAT_RGB24;
     static constexpr SDL_ScaleMode   mScaleMode = SDL_SCALEMODE_NEAREST;
 
-    ivec2 mSp;
     SDL_Surface *mSurface;
+    size_t mW, mH;
+    void  *mData;
+    size_t mPitch, mBPP;
+    ivec2 mSp;
 
     EmuFramebuffer( int w, int h );
     void blit( EmuFramebuffer *fb, int dstx, int dsty );
@@ -31,6 +34,7 @@ public:
     int          mScale;
 
     EmuWindow( const char *title, int w, int h, int scale );
+    ubyte *data();
     void flush();
 };
 

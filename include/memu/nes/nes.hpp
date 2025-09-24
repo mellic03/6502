@@ -3,8 +3,11 @@
 #include <memu/addrspace.hpp>
 #include <memu/configparser.hpp>
 #include <memu/display.hpp>
+
 #include "cpu.hpp"
 #include "ppu.hpp"
+#include "controller.hpp"
+
 
 namespace NesEmu
 {
@@ -64,12 +67,13 @@ private:
     };
 
 public:
+    EmuWindow      *mWin;
     memu::AddrSpace mBusCPU;
     memu::AddrSpace mBusPPU;
-    NesCPU     mCPU;
-    NesPPU     mPPU;
-    GamePak   *mGPak;
-    EmuWindow *mWin;
+    NesCPU          mCPU;
+    NesPPU          mPPU;
+    GamePak        *mGPak;
+    NesController   mPlayerCtl[2];
 
     System();
     System(const System&) = delete;
@@ -77,7 +81,5 @@ public:
     void loadGamePak(GamePak*);
     void tick();
     void reset() { ioRES=0; }
-    // StdCtl &getStdCtl0() { return mStdCtl0; }
-    // StdCtl &getStdCtl1() { return mStdCtl1; }
 };
 

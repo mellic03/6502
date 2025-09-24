@@ -12,6 +12,12 @@ namespace RP2C02_detail
 struct RP2C02_detail::BaseHw
 {
 public:
+    struct NTable
+    {
+        ubyte tile[30][32];
+        ubyte attr[8][8];
+    };
+
     union ppuctl_t {
         ubyte byte;
         struct {
@@ -51,11 +57,11 @@ public:
         ppuctl_t  ppuctl;
         ppumask_t ppumask;
         ppustat_t ppustat;
-        uint8_t   OAMADDR; // OAM read/write address
-        uint8_t   OAMDATA; // OAM read/write data
+        uint8_t   oamaddr; // OAM read/write address
+        uint8_t   oamdata; // OAM read/write data
         uint8_t   SCROLL;  // 
-        uint8_t   ADDR;    // VRAM read/write address (two writes: MSB then LSB)
-        uint8_t   DATA;    // VRAM read/write data
+        uint8_t   ppuaddr; // VRAM read/write address (two writes: MSB then LSB)
+        uint8_t   ppudata; // VRAM read/write data
     } __attribute__((packed));
 
     struct { // PinOut
@@ -63,7 +69,6 @@ public:
         ubyte *ioINT;
         ubyte *ioRES;
     };
-
 
     BaseHw()
     {

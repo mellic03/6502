@@ -67,6 +67,7 @@ int m6502::LoadIMP()
  */
 int m6502::LoadIND()
 {
+
     uint16_t ind_lo  = fetch08();
     uint16_t ind_hi  = fetch08();
     uint16_t ptr_ind = (ind_hi << 8) | ind_lo;
@@ -76,6 +77,7 @@ int m6502::LoadIND()
     if (ind_lo == 0x00FF) {
         abs_lo  = rdbus(ptr_ind + 0);
         abs_hi  = rdbus(ptr_ind & 0xFF00); // emulate page-wrap bug
+        mClock += 1;
     } else {
         abs_lo  = rdbus(ptr_ind + 0);
         abs_hi  = rdbus(ptr_ind + 1);
@@ -83,6 +85,7 @@ int m6502::LoadIND()
 
     ptr_abs = (abs_hi << 8) | abs_lo;
     mOpAddr = ptr_abs;
+
     return 0;
 }
 

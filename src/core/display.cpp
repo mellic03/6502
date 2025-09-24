@@ -5,7 +5,14 @@
 
 
 EmuFramebuffer::EmuFramebuffer( int w, int h )
-:   mSp{w, h}, mSurface(SDL_CreateSurface(w, h, mFormat)) {  }
+:   mSurface(SDL_CreateSurface(w, h, mFormat)),
+    mW(w), mH(h)
+{
+    mData  = mSurface->pixels;
+    mPitch = mSurface->pitch;
+    mBPP   = SDL_GetPixelFormatDetails(mFormat)->bytes_per_pixel;
+    mSp    = { w, h };
+}
 
 
 void EmuFramebuffer::blit( EmuFramebuffer *fb, int dstx, int dsty )
@@ -21,11 +28,8 @@ void EmuFramebuffer::pixel( int x, int y, uint8_t *src )
     x %= mSp.x;
     y %= mSp.y;
 
-    auto *info = SDL_GetPixelFormatDetails(mFormat);
-    auto pitch = mSurface->pitch;
-    auto bpp   = info->bytes_per_pixel;
+    ubyte *dst = (ubyte*)mData + mPitch*y + mBPP*x;
 
-    uint8_t *dst = ((uint8_t*)mSurface->pixels) + pitch*y + bpp*x;
     dst[0] = src[0];
     dst[1] = src[1];
     dst[2] = src[2];
@@ -63,6 +67,10 @@ EmuWindow::EmuWindow( const char *title, int w, int h, int s )
     SDL_SetWindowPosition(mWin, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 }
 
+ubyte *EmuWindow::data()
+{
+    return static_cast<ubyte*>(mSurface->pixels);
+}
 
 void EmuWindow::flush()
 {
@@ -80,7 +88,7 @@ EmuIO::EmuIO()
     mRunning = true;
     // memset(mKeyCurr, 0, 512);
     // memset(mKeyPrev, 0, 512);
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
 
 }
 

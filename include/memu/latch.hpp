@@ -7,18 +7,21 @@ namespace memu
 
     template <typename T>
     class DeltaLatch;
+
+    // template <typename T>
+    // class ShiftRegister;
 }
+
 
 
 class memu::DataLatch
 {
 private:
     bool nextIsHi = true;
+    uword &value;
 
 public:
-    uword value;
-
-    DataLatch( uword v ): value(v) { }
+    DataLatch( uword &v ): value(v) { }
 
     inline void reset() { nextIsHi=true; }
     inline uword read() { return value; }
@@ -56,3 +59,29 @@ public:
     }
 };
 
+
+
+
+// template <typename T>
+// class memu::ShiftRegister
+// {
+// private:
+//     T mValue;
+
+// public:
+//     ShiftRegister(): mValue() {  }
+//     ShiftRegister(T v): mValue(v) {  }
+
+//     void load( T value )
+//     {
+//         mValue = value;
+//     }
+
+//     bool read()
+//     {
+//         bool bit = bool(mValue & 0b0001);
+//         mValue >>= 1;
+//         return bit;
+//     }
+
+// };

@@ -3,56 +3,23 @@
 #include <memu/file.hpp>
 #include <memu/log.hpp>
 #include <memu/pinout.hpp>
+
+#include <cstdio>
 #include <cstring>
+#include <ctime>
 
 using namespace memu;
 
 
-/*
 
-    | Addr      | Size | Desc        | Mapped By |
-    | ----------|------|-------------|-----------|
-    | 0000-0FFF | 1000 | PtrnTable 0 | Cartridge |
-    | 1000-1FFF | 1000 | PtrnTable 1 | Cartridge |
-    | 2000-23BF | 03C0 | NameTable 0 | Cartridge |
-    | 23C0-23FF | 0040 | AttrTable 0 | Cartridge |
-    | 2400-27BF | 03c0 | Nametable 1 | Cartridge |
-    | 27C0-27FF | 0040 | AttrTable 1 | Cartridge |
-    | 2800-2BBF | 03c0 | Nametable 2 | Cartridge |
-    | 2BC0-2BFF | 0040 | AttrTable 2 | Cartridge |
-    | 2C00-2FBF | 03c0 | Nametable 3 | Cartridge |
-    | 2FC0-2FFF | 0040 | AttrTable 3 | Cartridge |
-    ----------------------------------------------
-
-    The NES has 2kB of RAM dedicated to the PPU, usually mapped to the
-    nametable address space from $2000-$2FFF, but this can be rerouted
-    through custom cartridge wiring. The mappings above are the addresses
-    from which the PPU uses to fetch data during rendering. The actual
-    devices that the PPU fetches pattern, name table and attribute table
-    data from is configured by the cartridge.
-
-    0000-1FFF normally mapped by the cartridge to a CHR-ROM or CHR-RAM,
-    often with a bank switching mechanism.
-
-    2000-2FFF normally mapped to the 2kB NES internal VRAM, providing 2
-    nametables with a mirroring configuration controlled by the cartridge,
-    but it can be partly or fully remapped to ROM or RAM on the cartridge,
-    allowing up to 4 simultaneous nametables.
-
-    3000-3EFF usually a mirror of the 2kB region from $2000-2EFF. The PPU
-    does not render from this address range, so this space has negligible
-    utility.
-
-    3F00-3FFF not configurable, always mapped to the internal palette control.
-*/
-#include <ctime>
-#include <cstdio>
-
-
-Ricoh2C02::Ricoh2C02(AddrSpace &bus)
-:   HwModule(bus), BaseHw(),
-    mCycle(0), mScanLine(0), mPrevLine(0),
-    mPpuAddr(0), mPpuData(0)
+Ricoh2C02::Ricoh2C02( AddrSpace &bus, ubyte *fb, size_t pitch, size_t bpp )
+:   HwModule(bus),
+    BaseHw(),
+    mFramebuffer(fb),
+    mPitch(pitch),
+    mBPP(bpp),
+    mCycle(0),
+    mScanLine(0)
 {
     static constexpr ubyte blue   [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
     static constexpr ubyte pink   [] = { 0x11, 246, 108, 92, 187, 42, 210, 95, 168, 78, 142, 98, 129, 239, 103, 87, 172, 13, 30, 101, 140, 87, 215, 181, 232, 143, 132, 245, 39, 10, 61, 155 };
@@ -64,89 +31,212 @@ Ricoh2C02::Ricoh2C02(AddrSpace &bus)
 }
 
 
+int Ricoh2C02::tickn( int nCycles )
+{
+    if (memu::ioRead(ioRES) == 0)
+    {
+        this->reset();
+    }
 
-/*
-    https://www.nesdev.org/wiki/PPU_frame_timing
+    bool visible = (0<=mScanLine && mScanLine<240 && 1<=mCycle && mCycle<=256);
+    int leftover = std::max(0, (mCycle+nCycles) - (visible ? 257 : 342));
 
-    Each PPU frame is 341*262=89342 PPU clocks long.
+    if (visible)
+    {
+        _quik(nCycles-leftover);
+    }
 
-*/
+    if (mScanLine==241 && mCycle==1)
+    {
+        ppustat.VBlank = 1;
+        // if (ppuctl.NMIEnabled)
+        {
+            memu::ioWrite(ioINT, 1);
+        }
+    }
 
-// void Ricoh2C02::tick( EmuFramebuffer *fb )
+
+    mCycle += nCycles-leftover;
+
+    if (mCycle >= 341)
+    {
+        mCycle = 0;
+        mScanLine++;
+
+        if (mScanLine >= 261)
+        {
+            ppustat.VBlank = 0;
+            mWin->flush();
+            mScanLine = -1;
+        }
+    }
+
+    return leftover;
+}
+
+
+
+// void Ricoh2C02::tick()
 // {
-//     if (-1<=mScanLine && mScanLine<240)
+//     if (memu::ioRead(ioRES) == 0)
 //     {
-//         if (mScanLine==0 && mCycle==0)
-// 		{   // "Odd Frame" cycle skip
-// 			mCycle = 1;
-// 		}
-
-// 		if (mScanLine==-1 && mCycle==1)
-// 		{   // Effectively start of new frame, so clear vertical blank flag
-// 			ppustat.VBlank = 0;
-// 		}
-
+//         this->reset();
 //     }
 
-//     // if (mScanDot >= 341)
-//     // {
-//     //     mScanLine = (mScanLine+1) % 262;
-//     //     mScanDot = 0;
-//     // }
-
-//     // if (mScanLine==241 & mScanDot==1)
-//     // {
-//     //     ppustat.VBlank = 1;
-//     //     ioWrite(ioINT, 1);
-//     // }
-
-//     // if (mScanLine==260)
-//     // {
-//     //     ppustat.VBlank = 0;
-//     // }
-
-// 	if (241<=mScanLine && mScanLine<261)
-// 	{
-// 		if (mScanLine==241 && mCycle==1)
-// 		{   // Effectively end of frame, so set vertical blank flag
-// 			ppustat.VBlank = 1;
-
-//             // printf("NMIEnabled=%u\n", ppuctl.NMIEnabled);
-            
-//             if (ppuctl.NMIEnabled)
-//             {
-//                 ioWrite(ioINT, 1);
-//             }
-// 		}
-// 	}
-
-//     if (ppumask.BackGndEnable)
-//     {
-//         // do stuff
-//     }
-
-
-//     if (0<=lcurr && lcurr<240)
+//     if (onRange(0, 240))
 //     {
 //         uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-//         drawNameTableRow(fb, base, lcurr);
+//         _drawNameTableRow(ubyte(mScanLine/8));
+//     }
+
+//     if (mScanLine==241 && mCycle==1)
+//     {
+//         ppustat.VBlank = 1;
+    
+//         // if (ppuctl.NMIEnabled)
+//         {
+//             memu::ioWrite(ioINT, 1);
+//         }
 //     }
 
 
-//     mCycle++;
+//     if ((++mCycle) >= 341)
+//     {
+//         mCycle = 0;
+//         mScanLine++;
 
-// 	if (mCycle >= 341)
-// 	{
-// 		mCycle = 0;
-// 		mScanLine++;
+//         if (mScanLine >= 261)
+//         {
+//             ppustat.VBlank = 0;
+//             mWin->flush();
+//             mScanLine = -1;
+//         }
 
-// 		if (mScanLine >= 261)
-// 		{
-// 			mScanLine = -1;
-// 		}
-// 	}
-
+//         // if (0<=mScanLine && mScanLine<261)
+//         // {
+//         //     uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+//         //     drawNameTableRow(win, base, mScanLine);
+//         // }
+//     }
 // }
+
+
+union AttrCell {
+    ubyte byte;
+    struct {
+        ubyte tl :2;
+        ubyte tr :2;
+        ubyte bl :2;
+        ubyte br :2;
+    } __attribute__((packed));
+};
+
+
+void Ricoh2C02::_quik( int nCycles )
+{
+    // uword base   = 0x2000 + 0x400*ppuctl.NameTabSel;
+    auto *ntab   = (NTable*)(&mVRAM[0x400*ppuctl.NameTabSel]);
+    ubyte bgSel  = (ppuctl.BgTileSel) ? 1 : 0;
+    ubyte spTile = (ppuctl.SpriteTileSel) ? 1 : 0;
+
+    for (int i=0; i<nCycles; i++)
+    {
+        ubyte y = ubyte(mScanLine);
+        ubyte x = ubyte((mCycle-1) + i);
+
+        ubyte row = y / 8;
+        ubyte col = x / 8;
+        // ubyte patternIdx = rdbus(base + 32*row + col);
+        // ubyte paletteIdx = rdbus(base + 960 + 8*row + col);
+        ubyte patternIdx = ntab->tile[row][col];
+        ubyte paletteIdx = ntab->attr[row/4][col/4];
+
+        // ubyte tileIdx = rdbus(base + 32*nameRow + nameCol);
+        uword addr   = 0x1000*bgSel + 16*patternIdx + y%8;
+        AttrCell lsb = { rdbus(addr+0) };
+        AttrCell msb = { rdbus(addr+8) };
+
+        ubyte pxl = 0;
+
+        if ( (x%8<4) &&  (y%8<4)) { pxl = (msb.tl << 4) | lsb.tl; }
+        if ( (x%8<4) && !(y%8<4)) { pxl = (msb.bl << 4) | lsb.bl; }
+        if (!(x%8<4) &&  (y%8<4)) { pxl = (msb.tr << 4) | lsb.tr; }
+        if (!(x%8<4) && !(y%8<4)) { pxl = (msb.br << 4) | lsb.br; }
+
+        // ubyte plane0 = rdbus(addr+0);
+        // ubyte plane1 = rdbus(addr+8);
+        // ubyte bit = 7 - (x%8);
+        // ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
+        ubyte off = mPaletteCtl[4*paletteIdx + pxl] & 0x3F;
+
+        mWin->pixel(x, y, &mPalette[3*off]);
+        // mWin->pixel(x, y, patternIdx, patternIdx, patternIdx);
+        // mWin->pixel(x, y, paletteIdx, paletteIdx, paletteIdx);
+    }
+}
+
+
+void Ricoh2C02::_drawPattern( int dstx, int dsty, ubyte bgTile, ubyte row, ubyte col )
+{
+    for (int i=0; i<8; i++)
+    {
+        for (int j=0; j<8; j++)
+        {
+            int y = 16*row + i;
+            int x = 16*col + j;
+            int tidx = 16*row + col;
+
+            uword addr   = 0x1000*bgTile + 16*tidx + y%8;
+            ubyte plane0 = rdbus(addr+0);
+            ubyte plane1 = rdbus(addr+8);
+
+            ubyte bit = 7 - (x % 8);
+            ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
+
+            size_t dstidx = mPitch*((dsty+i)%240) + mBPP*((dstx+j)%256);
+            ubyte  srcidx = 3 * (mPaletteCtl[4*mPalNo + pxl] & 0x3F);
+
+            mWin->pixel(dstx+j, dsty+i, &mPalette[srcidx]);
+            // memcpy(mFramebuffer+dstidx, mPalette+srcidx, 3);
+            // ubyte *dst = &mFramebuffer[dstidx];
+            // ubyte *src = &mPalette[srcidx];
+
+            // dst[0] = src[0];
+            // dst[1] = src[1];
+            // dst[2] = src[2];
+        }
+    }
+}
+
+
+void Ricoh2C02::_drawNameTableRow( ubyte row )
+{
+    // uword base   = 0x2000 + 0x400*ppuctl.NameTabSel;
+    uword base   = 0x400*ppuctl.NameTabSel;
+    ubyte bgTile = (ppuctl.BgTileSel) ? 1 : 0;
+    ubyte spTile = (ppuctl.SpriteTileSel) ? 1 : 0;
+
+    for (uword col=0; col<32; col+=1)
+    {
+        ubyte idx = mVRAM[base + 32*row+col];
+        _drawPattern(8*col, 8*row, bgTile, idx/16, idx%16);
+    }
+}
+
+
+void Ricoh2C02::_drawNameTableCell( ubyte row, ubyte col )
+{
+    // uword base   = 0x2000 + 0x400*ppuctl.NameTabSel;
+    uword base   = 0x400*ppuctl.NameTabSel;
+    ubyte bgTile = (ppuctl.BgTileSel) ? 1 : 0;
+    ubyte spTile = (ppuctl.SpriteTileSel) ? 1 : 0;
+
+    // for (uword col=0; col<32; col+=1)
+    // {
+        ubyte idx = mVRAM[base + 32*row+col];
+        _drawPattern(8*col, 8*row, bgTile, idx/16, idx%16);
+    // }
+}
 
 
 void Ricoh2C02::reset()
@@ -154,18 +244,14 @@ void Ricoh2C02::reset()
     ppuctl  = {0};
     ppumask = {0};
     ppustat = {0};
-    OAMADDR = 0;
-    OAMDATA = 0;
+    oamaddr = 0;
+    oamdata = 0;
     SCROLL  = 0;
-    ADDR    = 0;
-    DATA    = 0;
+    ppuaddr = 0;
+    ppudata = 0;
 
     mCycle    = 0;
     mScanLine = 0;
-
-    mPpuAddr.reset();
-    mPpuAddr.value = 0;
-
 }
 
 
@@ -173,9 +259,50 @@ void Ricoh2C02::loadPalette( const std::string &path )
 {
     size_t res = loadFileRaw(path, mPalette, sizeof(mPalette));
     LogAsrt(res==sizeof(mPalette), "Error loading .pal file \"%s\"\n", path.c_str());
-
-    // std::vector<ubyte> temp = loadFileRaw(path);
-    // LogAsrt(temp.size() == 192, "Error loading .pal file \"%s\"\n", path.c_str());
-    // memcpy(mPalette, temp.data(), temp.size());
 }
 
+
+
+// uint8_t Ricoh2C02::read2002()
+// {
+//     // printf("[read2002] vblank cleared\n");
+//     uint8_t res = ppustat.byte;
+//     ppustat.VBlank = 0;
+//     ppuAddrLatch = true;
+//     return res;
+// }
+
+// uint8_t Ricoh2C02::read2007()
+// {
+//     ubyte res = ppudata;
+
+//     ppudata = rdbus(ppuaddr);
+//     if (ppuaddr >= 0x3F00)
+//         res = ppudata;
+//     ppuaddr += (ppuctl.Increment) ? 32 : 1;
+//     ppuaddr &= 0x3FFF;
+
+//     return res;
+// }
+
+// void Ricoh2C02::write2005( uint8_t data )
+// {
+
+// }
+
+// void Ricoh2C02::write2006( uint8_t data )
+// {
+//     switch (ppuAddrLatch)
+//     {
+//         case true:  ppuaddr = (ppuaddr & 0x00FF) | (uword(data) << 8); break;
+//         case false: ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); break;
+//     }
+//     ppuAddrLatch = !ppuAddrLatch;
+// }
+
+// void Ricoh2C02::write2007( uint8_t data )
+// {
+//     wtbus(ppuaddr, data);
+//     ppuaddr += (ppuctl.Increment) ? 32 : 1;
+//     ppuaddr &= 0x3FFF;
+// }
