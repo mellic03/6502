@@ -22,23 +22,9 @@ int main( int argc, char **argv )
     srand(clock());
 
     nes = new NesEmu::System();
-    auto *win0 = nes->mWin;
     auto &conf = NesEmu::CONF;
-
     nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
     nes->mPPU.loadPalette(conf["video"]["palette"]);
-
-    if (conf["boot"]["jump"])
-    {
-        // nes->mCPU.PC = (uint16_t)strtol(conf["boot"]["jump"], NULL, 16);
-    }
-
-    // auto *win1 = new EmuWindow("CHR-ROM", 128, 256, 4);
-    // uint64_t tcurr = SDL_GetTicksNS();
-    // uint64_t tprev = tcurr;
-    // uint64_t tdiff = 0;
-    // uint64_t accum = 0;
-
     // SDL_LoadBMP("data/font/atlas.png");
 
     while (io.mRunning)
@@ -46,36 +32,10 @@ int main( int argc, char **argv )
         using namespace memu;
 
         nes->tick();
-
         if (nes->mCPU.mInvalidOp)
         {
             break;
         }
-
-        // auto &ppu     = nes->mPPU;
-        // auto &ppuctl  = ppu.ppuctl;
-        // auto &ppustat = ppu.ppustat;
-
-        // static int16_t lprev = 0;
-        // int16_t lcurr = ppu.mScanLine;
-
-        // if (lprev < lcurr)
-        // {
-        //     if (0<=lcurr && lcurr<240)
-        //     {
-        //         uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-        //         ppu.drawNameTableRow(win0, base, lcurr);
-        //     }
-        
-        //     if (lcurr == 240)
-        //     {
-        //         // uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-        //         // nes->mPPU.drawNameTable(win0, base);
-        //         win0->flush();
-        //     }
-        // }
-        // lprev = lcurr;
-  
 
         SDL_Event e;
         while (SDL_PollEvent(&e))
