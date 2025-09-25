@@ -45,7 +45,7 @@ public:
      ubyte readNameTile( uword base, ubyte row, ubyte col );
      void drawNameTableCell( EmuFramebuffer*, uword base, ubyte row, ubyte col );
      void drawNameTableRow( EmuFramebuffer*, uword base, ubyte row );
-     void drawNameTable( EmuFramebuffer*, uword base );
+     void drawNameTable();
 };
 
 

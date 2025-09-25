@@ -7,8 +7,6 @@
 
 
 
-
-
 void NesPPU::tick()
 {
     if (memu::ioRead(ioRES) == 0)
@@ -41,7 +39,8 @@ void NesPPU::tick()
         if (mScanLine >= 261)
         {
             ppustat.VBlank = 0;
-            _entire_frame();
+            // _entire_frame();
+            drawNameTable();
             mWin->flush();
             mScanLine = -1;
         }
@@ -59,13 +58,13 @@ void NesPPU::tick()
 
 void NesPPU::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
 {
-    printf("%u\n", tidx);
-    // ubyte bgSel = (ppuctl.BgTileSel) ? 1 : 0;
+    ubyte bgSel = (ppuctl.BgTileSel) ? 1 : 0;
+
+    printf("%u, %u\n", bgSel, tidx);
 
     for (int y=0; y<8; y++)
     {
-        // uword base = 0x400*bgSel + 16*tidx + y%8;
-        uword base = 16*tidx + y%8;
+        uword base = 0x400*bgSel + 16*tidx + y%8;
         ubyte lo   = rdbus(base + 0);
         ubyte hi   = rdbus(base + 8);
 
@@ -190,9 +189,10 @@ void NesPPU::drawNameTableRow( EmuFramebuffer *fb, uword base, ubyte row )
 }
 
 
-void NesPPU::drawNameTable( EmuFramebuffer *fb, uword base )
+void NesPPU::drawNameTable()
 {
-    uword off = 0;
+    uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+    uword off  = 0;
 
     for (uword row=0; row<30; row+=1)
     {
@@ -201,7 +201,7 @@ void NesPPU::drawNameTable( EmuFramebuffer *fb, uword base )
             ubyte idx    = rdbus(base+off);
             ubyte bgTile = (ppuctl.BgTileSel) ? 1 : 0;
             ubyte spTile = (ppuctl.SpriteTileSel) ? 1 : 0;
-            drawPattern(fb, 8*col, 8*row, bgTile, idx/16, idx%16);
+            drawPattern(mWin, 8*col, 8*row, bgTile, idx/16, idx%16);
             off += 1;
         }
     }

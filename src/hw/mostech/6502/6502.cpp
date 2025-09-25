@@ -3,13 +3,20 @@
 #include <memu/pinout.hpp>
 #include <stdio.h>
 #include <string.h>
-#include <SDL2/SDL.h>
+
+
+// #define M6502_LOGGING
+
+#ifdef M6502_LOGGING
+    #define M605_LOG printf
+#else
+    #define M605_LOG(...)
+#endif
 
 
 void m6502::_fetch()
 {
-    // printf("%lu\t%04X %02X  ", mOpCount+1, PC, rdbus(PC));
-    printf("%04X %02X  ", PC, rdbus(PC));
+    M605_LOG("%04X %02X  ", PC, rdbus(PC));
 
     mOpAC   = false;
     mCurrOp = rdbus(PC++);
@@ -18,22 +25,18 @@ void m6502::_fetch()
 void m6502::_decode()
 {
     mCurrInstr = &mFtab[mCurrOp];
-    printf("%s    ", mCurrInstr->label);
+    M605_LOG("%s    ", mCurrInstr->label);
 }
 
 
 void m6502::_execute()
 {
-    int cycles = mCurrInstr->cycles;
-
     (this->*mCurrInstr->fA)();
-    // printf("%04X\t", (mOpAC) ? AC : mOpAddr);
-    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
-    printf("\n");
-    // printf("PPU: %u,%u CYC:%lu\n", mScanLine, mScanDot, clockTime());
+    M605_LOG("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
+    M605_LOG("\n");
     (this->*mCurrInstr->fE)();
 
-    mCurrClock += cycles;
+    mClock += mCurrInstr->cycles;
     mOpCount += 1;
 }
 
@@ -87,8 +90,7 @@ void m6502::reset()
     mWaiting   = false;
     mInvalidOp = 0;
     mCurrOp    = 0;
-    mCurrClock = 0;
-    mPrevClock = 0;
+    mClock     = 0;
     mOpCount   = 0;
 
     _RES();

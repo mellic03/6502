@@ -106,8 +106,8 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
 void NesEmu::System::tick()
 {
     mCPU.tick();
-    ioRES = 1;
     mPPU.tick();
+    ioRES = 1;
     mPPU.tick();
     mPPU.tick();
 
