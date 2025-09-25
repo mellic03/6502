@@ -82,7 +82,7 @@ void m6502::_NMI()
 
 void m6502::_RES()
 {
-    // printf("\t\t RES  PC:%04X\n", PC);
+    printf("\t\t RES  PC:%04X\n", PC);
     mWaiting = false;
     SP = 0xFD;
     SSR.I = 1;
@@ -91,6 +91,7 @@ void m6502::_RES()
 
 void m6502::_IRQ()
 {
+    printf("\t\t IRQ  PC:%04X\n", PC);
     mWaiting = false;
     _IntPush(0);
     _IntJump(0xFFFE);
@@ -98,6 +99,7 @@ void m6502::_IRQ()
 
 void m6502::_BRK()
 {
+    printf("\t\t BRK  PC:%04X\n", PC);
     _IntPush(1);
     _IntJump(0xFFFE);
 }

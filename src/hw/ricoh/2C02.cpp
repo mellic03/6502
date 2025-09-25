@@ -60,7 +60,7 @@ Ricoh2C02::Ricoh2C02(AddrSpace &bus)
     static constexpr ubyte luigi  [] = { 0x11, 89, 54, 254, 96, 12, 40, 67, 229, 115, 37, 146, 57, 101, 190, 224, 85, 64, 203, 98, 106, 182, 27, 196, 254, 231, 87, 157, 17, 71, 189, 134 };
     static constexpr ubyte ginger [] = { 0x11, 16, 22, 214, 245, 224, 70, 255, 64, 116, 122, 27, 99, 72, 85, 139, 182, 112, 82, 127, 92, 88, 47, 23, 185, 17, 132, 75, 47, 215, 16, 147 };
 
-    memcpy(mPaletteCtl, blue, sizeof(mPaletteCtl));
+    memcpy(mPaletteCtl.data(), blue, mPaletteCtl.size());
 }
 
 
@@ -171,8 +171,8 @@ void Ricoh2C02::reset()
 
 void Ricoh2C02::loadPalette( const std::string &path )
 {
-    size_t res = loadFileRaw(path, mPalette, sizeof(mPalette));
-    LogAsrt(res==sizeof(mPalette), "Error loading .pal file \"%s\"\n", path.c_str());
+    size_t res = loadFileRaw(path, mPalette.data(), mPalette.size());
+    LogAsrt(res==mPalette.size(), "Error loading .pal file \"%s\"\n", path.c_str());
 
     // std::vector<ubyte> temp = loadFileRaw(path);
     // LogAsrt(temp.size() == 192, "Error loading .pal file \"%s\"\n", path.c_str());

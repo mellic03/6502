@@ -8,11 +8,8 @@ class EmuFramebuffer;
 class NesPPU: public memu::Ricoh2C02
 {
 private:
-     bool onRange( int16_t beg, int16_t end )
-     { return (mPrevLine!=mScanLine) && (beg<=mScanLine && mScanLine<end); }
-
-     bool onLine( int16_t line )
-     { return (mPrevLine!=mScanLine) && (mScanLine==line); }
+     void _entire_tile( int x0, int y0, uword tidx, uword palIdx );
+     void _entire_frame();
 
      union PtrnAddr {
           uword word;
@@ -33,10 +30,10 @@ private:
 
 public:
      int mPalNo = 0;
+     EmuWindow *mWin;
      using Ricoh2C02::Ricoh2C02;
 
-     void tick( EmuWindow* );
-     virtual void tick() final {  };
+     virtual void tick() final;
 
      ubyte *readPalette( int palNo, ubyte pxl );
      void drawPattern( EmuFramebuffer*, int dstx, int dsty, ubyte bgTile, ubyte row, ubyte col );

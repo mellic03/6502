@@ -74,16 +74,20 @@ class memu::MemoryRW
 private:
     ubyte *mData;
     size_t mSize;
-    void _check(addr_t);
+
+protected:
+    ubyte *get(addr_t);
 
 public:
     MemoryRW(): MemoryRW(nullptr, 0) {  };
     MemoryRW(void *p, size_t s): mData((ubyte*)p), mSize(s) {  };
     size_t size() { return mSize; };
     ubyte *data() { return mData; }
-    ubyte *get(addr_t);
-    virtual ubyte read(addr_t i) { return *get(i); }
-    virtual void write(addr_t i, ubyte v) { *get(i) = v; };
+
+    ubyte read(addr_t i) { return *get(i); }
+    void write(addr_t i, ubyte v) { *get(i) = v; }
+    ubyte &operator[](addr_t i) { return *get(i); }
+
 };
 
 
@@ -92,9 +96,13 @@ public:
  */
 class memu::MemoryRO: public MemoryRW
 {
+private:
+    ubyte mDummy;
+
 public:
     using MemoryRW::MemoryRW;
-    virtual void write(addr_t, ubyte) final;
+    void write(addr_t, ubyte);
+    ubyte &operator[](addr_t) { return mDummy; }
 };
 
 
@@ -105,7 +113,8 @@ class memu::MemoryWO: public MemoryRW
 {
 public:
     using MemoryRW::MemoryRW;
-    virtual ubyte read(addr_t) final;
+    ubyte read(addr_t);
+    ubyte operator[](addr_t i) { return read(i); }
 };
 
 
@@ -117,6 +126,7 @@ struct MemoryXkRW: public memu::MemoryRW
 {
     MemoryXkRW(void *p): MemoryRW(p, Xk) {  }
     MemoryXkRW(): MemoryXkRW(new ubyte[Xk]) {  }
+    constexpr size_t size() const { return Xk; };
 };
 
 template <size_t Xk>
@@ -124,6 +134,7 @@ struct MemoryXkRO: public memu::MemoryRO
 {
     MemoryXkRO(void *p): MemoryRO(p, Xk) {  };
     MemoryXkRO(): MemoryXkRO(new ubyte[Xk]) {  };
+    constexpr size_t size() const { return Xk; };
 };
 
 template <size_t Xk>
@@ -131,6 +142,7 @@ struct MemoryXkWO: public memu::MemoryWO
 {
     MemoryXkWO(void *p): MemoryWO(p, Xk) {  };
     MemoryXkWO(): MemoryXkWO(new ubyte[Xk]) {  };
+    constexpr size_t size() const { return Xk; };
 };
 
 using Memory1pRW = MemoryXkRW<1*256>;

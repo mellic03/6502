@@ -32,9 +32,9 @@ public:
     DataLatch mPpuAddr;
     uint8_t   mPpuData;
 
-    Memory2kRW mVRAM;
-    uint8_t mPalette[192];
-    uint8_t mPaletteCtl[32];
+    MemoryXkRW<2048> mVRAM;
+    MemoryXkRW<192>  mPalette;
+    MemoryXkRW<32>   mPaletteCtl;
 
 
     Ricoh2C02(AddrSpace&);

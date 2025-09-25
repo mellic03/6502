@@ -39,6 +39,7 @@ NesEmu::System::System()
     mWin(new EmuWindow("NesEmu", 256, 240, 4))
 {
     using namespace memu;
+    mPPU.mWin = mWin;
 
     // pinout mappings
     // -------------------------------------------------------------------------
@@ -106,9 +107,9 @@ void NesEmu::System::tick()
 {
     mCPU.tick();
     ioRES = 1;
-    mPPU.tick(mWin);
-    mPPU.tick(mWin);
-    mPPU.tick(mWin);
+    mPPU.tick();
+    mPPU.tick();
+    mPPU.tick();
 
     // static size_t accum = 0;
     // static size_t prev = 0;
