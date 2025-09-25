@@ -64,7 +64,7 @@ NesEmu::System::System()
     // CPU --> CPU RAM.
     mBusCPU.mapRWRange(0x0000, 0x1FFF, cpuram, cpursz);
 
-    // // CPU --> PPU MMIO registers.
+    // CPU --> PPU MMIO registers.
     mBusCPU.mapRange(0x2000, 0x3FFF, new NesPPU::CpuAccess(mPPU));
 
     // CPU --> APU and IO registers. 4000 - 401F
@@ -74,8 +74,8 @@ NesEmu::System::System()
 
     // PPU Mapping
     // -------------------------------------------------------------------------
-    uint8_t *ppuram = mPPU.mVRAM.data();
-    size_t   ppursz = mPPU.mVRAM.size();
+    uint8_t *ppuram = mPPU.mVRAM;
+    size_t   ppursz = 2048;
 
     // PPU --> PPU VRAM
     mBusPPU.mapRWRange(0x2000, 0x2FFF, ppuram, ppursz);
@@ -101,33 +101,30 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
     else
     {
         mCPU.PC = (mBusCPU.read(0xFFFD) << 8) | mBusCPU.read(0xFFFC);
+        printf("PC: %04X\n", mCPU.PC);
+        // exit(1);
     }
 }
 
 
 void NesEmu::System::tick()
 {
-    size_t start = mCPU.clockTime();
-    mCPU.tick();
-    ioRES = 1;
+    // size_t start = mCPU.clockTime();
+    // mCPU.tick();
+    // ioRES = 1;
 
-    mPPU.tickn(1);
-    mPPU.tickn(1);
-    mPPU.tickn(1);
-
-    // size_t rem = mPPU.tickn(3 * (mCPU.clockTime() - start));
-
+    // int rem = mPPU.tickn(mCPU.clockTime() - start);
     // if (rem)
     // {
     //     mPPU.tickn(rem);
     // }
 
+    mCPU.tick();
+    ioRES = 1;
 
-    // mPPU.tick();
-    // mCPU.tick();
-    // ioRES = 1;
-    // mPPU.tick();
-    // mPPU.tick();
+    mPPU.tick();
+    mPPU.tick();
+    mPPU.tick();
 
 
     // if (mPPU.mFrameDone == true)

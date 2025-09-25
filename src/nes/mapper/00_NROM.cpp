@@ -117,7 +117,6 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
 
         // PPU --> CHR ROM
         bus.mapRdRange(0x0000, 0x1FFF, mChrRom.base, mChrRom.size);
-
     }
 
 }

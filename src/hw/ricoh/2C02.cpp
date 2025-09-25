@@ -31,68 +31,24 @@ Ricoh2C02::Ricoh2C02( AddrSpace &bus, ubyte *fb, size_t pitch, size_t bpp )
 }
 
 
-int Ricoh2C02::tickn( int nCycles )
-{
-    if (memu::ioRead(ioRES) == 0)
-    {
-        this->reset();
-    }
-
-    bool visible = (0<=mScanLine && mScanLine<240 && 1<=mCycle && mCycle<=256);
-    int leftover = std::max(0, (mCycle+nCycles) - (visible ? 257 : 342));
-
-    if (visible)
-    {
-        _quik(nCycles-leftover);
-    }
-
-    if (mScanLine==241 && mCycle==1)
-    {
-        ppustat.VBlank = 1;
-        // if (ppuctl.NMIEnabled)
-        {
-            memu::ioWrite(ioINT, 1);
-        }
-    }
-
-
-    mCycle += nCycles-leftover;
-
-    if (mCycle >= 341)
-    {
-        mCycle = 0;
-        mScanLine++;
-
-        if (mScanLine >= 261)
-        {
-            ppustat.VBlank = 0;
-            mWin->flush();
-            mScanLine = -1;
-        }
-    }
-
-    return leftover;
-}
-
-
-
-// void Ricoh2C02::tick()
+// int Ricoh2C02::tickn( int nCycles )
 // {
 //     if (memu::ioRead(ioRES) == 0)
 //     {
 //         this->reset();
 //     }
 
-//     if (onRange(0, 240))
+//     bool visible = (0<=mScanLine && mScanLine<240 && 1<=mCycle && mCycle<=256);
+//     int leftover = std::max(0, (mCycle+nCycles) - (visible ? 257 : 342));
+
+//     if (visible)
 //     {
-//         uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-//         _drawNameTableRow(ubyte(mScanLine/8));
+//         // _quik(nCycles-leftover);
 //     }
 
 //     if (mScanLine==241 && mCycle==1)
 //     {
 //         ppustat.VBlank = 1;
-    
 //         // if (ppuctl.NMIEnabled)
 //         {
 //             memu::ioWrite(ioINT, 1);
@@ -100,7 +56,9 @@ int Ricoh2C02::tickn( int nCycles )
 //     }
 
 
-//     if ((++mCycle) >= 341)
+//     mCycle += nCycles-leftover;
+
+//     if (mCycle >= 341)
 //     {
 //         mCycle = 0;
 //         mScanLine++;
@@ -108,34 +66,116 @@ int Ricoh2C02::tickn( int nCycles )
 //         if (mScanLine >= 261)
 //         {
 //             ppustat.VBlank = 0;
+//             _entire_frame();
 //             mWin->flush();
 //             mScanLine = -1;
 //         }
-
-//         // if (0<=mScanLine && mScanLine<261)
-//         // {
-//         //     uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-//         //     drawNameTableRow(win, base, mScanLine);
-//         // }
 //     }
+
+//     return leftover;
 // }
 
 
-union AttrCell {
-    ubyte byte;
-    struct {
-        ubyte tl :2;
-        ubyte tr :2;
-        ubyte bl :2;
-        ubyte br :2;
-    } __attribute__((packed));
-};
+
+void Ricoh2C02::tick()
+{
+    if (memu::ioRead(ioRES) == 0)
+    {
+        this->reset();
+    }
+
+    // if (onRange(0, 240))
+    // {
+    //     uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+    //     _drawNameTableRow(ubyte(mScanLine/8));
+    // }
+
+    if (mScanLine==241 && mCycle==1)
+    {
+        ppustat.VBlank = 1;
+    
+        // if (ppuctl.NMIEnabled)
+        {
+            memu::ioWrite(ioINT, 1);
+        }
+    }
+
+
+    if ((++mCycle) >= 341)
+    {
+        mCycle = 0;
+        mScanLine++;
+
+        if (mScanLine >= 261)
+        {
+            ppustat.VBlank = 0;
+            _entire_frame();
+            mWin->flush();
+            mScanLine = -1;
+        }
+
+        // if (0<=mScanLine && mScanLine<261)
+        // {
+        //     uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+        //     drawNameTableRow(win, base, mScanLine);
+        // }
+    }
+}
+
+
+void Ricoh2C02::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
+{
+    // printf("%u\n", tidx);
+    ubyte bgSel = (ppuctl.BgTileSel) ? 1 : 0;
+
+    for (int y=0; y<8; y++)
+    {
+        uword base = 0x1000*bgSel + 16*tidx;
+        ubyte low  = rdbus(base + y+0);
+        ubyte high = rdbus(base + y+8);
+
+        for (int x=0; x<8; x++)
+        {
+            ubyte bit = 7 - (x % 8);
+            ubyte lsb = (low  >> bit) & 0x01;
+            ubyte msb = (high >> bit) & 0x01;
+            ubyte pxl = msb + lsb;
+            ubyte off = mPaletteCtl[4*palIdx + pxl] & 0x3F;
+            // mWin->pixel(x, y, &mPalette[3*off]);
+
+            ubyte val = 64*pxl;
+            mWin->pixel(x0+x, y0+y, val, val, val);
+
+            // ubyte val = 4 * (8*y + x);
+            // ubyte val = 4 * (x*y);
+            // mWin->pixel(x0+x, y0+y, 32*x, 32*y, 255);
+        }
+    }
+}
+
+
+void Ricoh2C02::_entire_frame()
+{
+    // auto *ntab = (NTable*)(&mVRAM[0x400*ppuctl.NameTabSel]);
+    uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+
+    for (uword row=0; row<30; row++)
+    {
+        for (uword col=0; col<32; col++)
+        {
+            int patIdx = mVRAM[32*row + col]; //  rdbus(base + 32*row + col);
+            int palIdx = 0; // rdbus(base + 960 + ... );
+            _entire_tile(8*col, 8*row, patIdx, palIdx);
+        }
+    }
+
+}
 
 
 void Ricoh2C02::_quik( int nCycles )
 {
-    // uword base   = 0x2000 + 0x400*ppuctl.NameTabSel;
-    auto *ntab   = (NTable*)(&mVRAM[0x400*ppuctl.NameTabSel]);
+    // auto *ntab   = (NTable*)(&mVRAM[0x400*ppuctl.NameTabSel]);
+    uword base   = 0x2000 + 0x400*ppuctl.NameTabSel;
     ubyte bgSel  = (ppuctl.BgTileSel) ? 1 : 0;
     ubyte spTile = (ppuctl.SpriteTileSel) ? 1 : 0;
 
@@ -146,31 +186,23 @@ void Ricoh2C02::_quik( int nCycles )
 
         ubyte row = y / 8;
         ubyte col = x / 8;
-        // ubyte patternIdx = rdbus(base + 32*row + col);
-        // ubyte paletteIdx = rdbus(base + 960 + 8*row + col);
-        ubyte patternIdx = ntab->tile[row][col];
-        ubyte paletteIdx = ntab->attr[row/4][col/4];
+
+        ubyte patternIdx = rdbus(base + 32*row + col);
+        ubyte paletteIdx = rdbus(base + 960 + 8*row + col);
+        // ubyte patternIdx = ntab->tile[row][col];
+        // ubyte paletteIdx = ntab->attr[row/4][col/4];
 
         // ubyte tileIdx = rdbus(base + 32*nameRow + nameCol);
-        uword addr   = 0x1000*bgSel + 16*patternIdx + y%8;
-        AttrCell lsb = { rdbus(addr+0) };
-        AttrCell msb = { rdbus(addr+8) };
+        uword addr = 0x1000*bgSel + 16*patternIdx + y%8;
+        ubyte plane0 = rdbus(addr+0);
+        ubyte plane1 = rdbus(addr+8);
+        ubyte bit = 7 - (x%8);
+        ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
 
-        ubyte pxl = 0;
-
-        if ( (x%8<4) &&  (y%8<4)) { pxl = (msb.tl << 4) | lsb.tl; }
-        if ( (x%8<4) && !(y%8<4)) { pxl = (msb.bl << 4) | lsb.bl; }
-        if (!(x%8<4) &&  (y%8<4)) { pxl = (msb.tr << 4) | lsb.tr; }
-        if (!(x%8<4) && !(y%8<4)) { pxl = (msb.br << 4) | lsb.br; }
-
-        // ubyte plane0 = rdbus(addr+0);
-        // ubyte plane1 = rdbus(addr+8);
-        // ubyte bit = 7 - (x%8);
-        // ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
         ubyte off = mPaletteCtl[4*paletteIdx + pxl] & 0x3F;
-
         mWin->pixel(x, y, &mPalette[3*off]);
-        // mWin->pixel(x, y, patternIdx, patternIdx, patternIdx);
+
+        // mWin->pixel(x, y, 12*patternIdx, 12*patternIdx, 12*patternIdx);
         // mWin->pixel(x, y, paletteIdx, paletteIdx, paletteIdx);
     }
 }

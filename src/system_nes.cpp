@@ -29,7 +29,6 @@ int main( int argc, char **argv )
     nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
     nes->mPPU.loadPalette(conf["video"]["palette"]);
 
-
     // auto *win1 = new EmuWindow("CHR-ROM", 128, 256, 4);
     // SDL_LoadBMP("data/font/atlas.png");
 

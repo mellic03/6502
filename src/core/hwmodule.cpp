@@ -32,8 +32,8 @@ ubyte memu::HwModule::rdbus( addr_t addr )
 
 uword memu::HwModule::rdbusw( addr_t addr )
 {
-    ubyte lo = mBus.read(addr+0);
-    ubyte hi = mBus.read(addr+1);
+    uint16_t lo = (uint16_t)rdbus(addr+0);
+    uint16_t hi = (uint16_t)rdbus(addr+1);
     return (hi << 8) | lo;
 }
 

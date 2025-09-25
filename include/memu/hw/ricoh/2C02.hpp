@@ -24,8 +24,8 @@ namespace memu
 class memu::Ricoh2C02: public memu::HwModule, public RP2C02_detail::BaseHw
 {
 private:
-    bool ppuAddrLatch = true;
-
+    void _entire_tile( int x0, int y0, uword tileIdx, uword palIdx );
+    void _entire_frame();
     void _quik( int n );
     void _drawPattern( int dstx, int dsty, ubyte bgTile, ubyte row, ubyte col );
     void _drawNameTableRow( ubyte row );
@@ -59,15 +59,16 @@ public:
     int mScanLine;
     int mPalNo = 0;
 
-    std::array<ubyte, 2*1024> mVRAM;
+    // std::array<ubyte, 2*1024> mVRAM;
+    uint8_t mVRAM[2048];
     uint8_t mPalette[192];
     uint8_t mPaletteCtl[32];
 
 
     Ricoh2C02(AddrSpace&, ubyte *fb, size_t pitch, size_t bpp);
-    virtual void tick() override {  };
+    virtual void tick() override;
     virtual void reset() override;
-    int tickn( int n );
+    // int tickn( int n );
     void loadPalette(const std::string&);
 
 };

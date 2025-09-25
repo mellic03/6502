@@ -38,6 +38,7 @@ ubyte NesPPU::CpuAccess::read(addr_t addr)
             break;
 
         case 0x2002: // REG_PPUSTATUS
+            printf("REG_PPUSTATUS read\n");
             data = ppustat.byte;
             ppustat.VBlank = 0;
             mAddrLatch = true;
@@ -50,6 +51,7 @@ ubyte NesPPU::CpuAccess::read(addr_t addr)
             break;
 
         case 0x2007: // REG_PPUDATA
+            printf("REG_PPUDATA read\n");
             data = ppudata;
             ppudata = ppu.rdbus(ppuaddr);
             if (ppuaddr >= 0x3F00)
@@ -76,13 +78,17 @@ void NesPPU::CpuAccess::write(addr_t addr, ubyte data)
     auto &ppuaddr = ppu.ppuaddr;
     auto &ppudata = ppu.ppudata;
 
+    printf("%04X --> %04X\n", addr, 0x2000 + (addr%8));
+
     switch (0x2000 + (addr % 8))
     {
         case 0x2000: // REG_PPUCTRL
+            printf("REG_PPUCTRL write %02X\n", data);
             ppu.ppuctl = { data };
             break;
             
         case 0x2001: // REG_PPUMASK
+            printf("REG_PPUMASK write %02X\n", data);
             ppu.ppumask = { data };
             break;
 
@@ -99,11 +105,14 @@ void NesPPU::CpuAccess::write(addr_t addr, ubyte data)
             break;
 
         case 0x2006: // REG_PPUADDR
+            printf("REG_PPUADDR write %02X\n", data);
             if (mAddrLatch) { ppuaddr = (ppuaddr & 0x00FF) | (uword(data) << 8); }
             else            { ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); }
             mAddrLatch = !mAddrLatch;
 
         case 0x2007: // REG_PPUDATA
+            printf("REG_PPUDATA write %02X\n", data);
+            // printf("*%04X: %02X\n", ppuaddr, data);
             ppu.wtbus(ppuaddr, data);
             ppuaddr += (ppuctl.Increment) ? 32 : 1;
             ppuaddr &= 0x3FFF;
