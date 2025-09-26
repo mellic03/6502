@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// #define M6502_LOGGING
+#define M6502_LOGGING
 
 #ifdef M6502_LOGGING
     #define M605_LOG printf
@@ -75,13 +75,13 @@ void m6502::tick()
         _NMI();
     }
 
-    if (*ioLineRES & 0xFF)
+    else if (*ioLineRES & 0xFF)
     {
         *ioLineRES &= 0x00;
         this->reset();
     }
 
-    if (*ioLineIRQ & 0xFF)
+    else if (*ioLineIRQ & 0xFF)
     {
         *ioLineIRQ &= 0x00;
         _IRQ();
@@ -89,7 +89,7 @@ void m6502::tick()
 
     if (mWaiting)
     {
-        mClock += 12;
+        mClock += 3;
         return;
     }
 

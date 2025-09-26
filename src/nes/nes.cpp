@@ -31,7 +31,7 @@
 NesEmu::System::System( EmuIO *io )
 :   mConf("nes.conf"),
     mGameWin(io->makeWin("NesEmu", 256, 240, 4, 0)),
-    mChrWin(io->makeWin("CHR-ROM", 256, 128, 4, 0)),
+    mChrWin(io->makeWin("CHR-ROM", 128, 256, 4, 0)),
     mCPU(mBusCPU),
     mPPU(mBusPPU, mGameWin, mChrWin),
     ioLineNMI(0), ioLineRES(0), ioLineIRQ(0), ioLineCLK(0)
