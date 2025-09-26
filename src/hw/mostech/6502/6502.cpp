@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define M6502_LOGGING
+// #define M6502_LOGGING
 
 #ifdef M6502_LOGGING
     #define M605_LOG printf
