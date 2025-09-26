@@ -140,6 +140,12 @@ ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
         return read_ppu(addr);
     }
 
+
+    if (0x4000<=addr && addr<=0x4015)
+    {
+        return 0;
+    }
+
     if (0x4016<=addr && addr<=0x4017)
     {
         ubyte *mmio = nes.mCPU.mMMIO;
@@ -148,7 +154,7 @@ ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
         return data;
     }
 
-    if (0x6000<=addr && addr<=0x1FFF)
+    if (0x6000<=addr && addr<=0x7FFF)
     {
         ubyte *ram  = nrom.mPrgRam.base;
         size_t size = nrom.mPrgRam.size;
@@ -161,6 +167,7 @@ ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
         return prgrom[(addr - 0x8000) % nrom.mPrgRom.size];
     }
 
+    printf("[CpuAccess::read] addr=0x%04X\n", addr);
     assert(false);
     return 0;
 }
@@ -330,6 +337,7 @@ ubyte Mapper000_NROM::PpuAccess::read(addr_t addr)
         return pctl[(addr - 0x3F00) % 32];
     }
 
+    printf("[PpuAccess::read] addr=0x%04X\n", addr);
     assert(false);
     return 0;
 }

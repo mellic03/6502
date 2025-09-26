@@ -31,55 +31,60 @@ using uword = uint16_t;
 
 
 
-struct ivec1
+template <size_t N, typename T>
+struct vec;
+
+
+template <typename T>
+struct vec<1, T>
 {
-    union { int x, r; };
-    // int &operator[](int) { return x; }
+    union { T x, r; };
 };
 
 
-struct ivec2: ivec1
+template <typename T>
+struct vec<2, T>: public vec<1, T>
 {
-    union { int y, g; };
-    // int &operator[](int i)
+    union { T y, g; };
+};
+
+
+template <typename T>
+struct vec<3, T>: public vec<2, T>
+{
+    union { T z, b; };
+};
+
+
+template <typename T>
+struct vec<4, T>: public vec<3, T>
+{
+    union { T w, a; };
+
+    // void sasad()
+    // {
+    //     vec<3, T>::
+    // }
+
+    // T &operator[](int i)
     // {
     //     switch (i)
     //     {
-    //         default: return ivec1::operator[](i);
+    //         default: return x;
+    //         case 0: return x;
     //         case 1: return y;
+    //         case 2: return vec<3, T>::z;
+    //         case 3: return w;
     //     }
     // }
 };
 
 
-struct ivec3: ivec2
-{
-    union { int z, b; };
-    // int &operator[](int i)
-    // {
-    //     switch (i)
-    //     {
-    //         default: return ivec2::operator[](i);
-    //         case 2: return z;
-    //     }
-    // }
-};
+using ivec2 = vec<2, int>;
+using ivec3 = vec<2, int>;
+using ivec4 = vec<3, int>;
 
-
-struct ivec4: ivec3
-{
-    union { int w, a; };
-
-    int &operator[](int i)
-    {
-        switch (i)
-        {
-            default: return x;
-            case 0: return x;
-            case 1: return y;
-            case 2: return z;
-            case 3: return w;
-        }
-    }
-};
+using uvec2 = vec<2, uint32_t>;
+using uvec3 = vec<3, uint32_t>;
+using uvec4 = vec<4, uint32_t>;
 

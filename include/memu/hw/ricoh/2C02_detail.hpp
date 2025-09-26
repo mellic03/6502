@@ -68,11 +68,6 @@ public:
         ubyte ppudata; // VRAM read/write data
     };
 
-    struct { // PinOut
-        ubyte *ioCLK;
-        ubyte *ioINT;
-        ubyte *ioRES;
-    };
 
     BaseHw()
     {

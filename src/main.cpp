@@ -11,36 +11,31 @@
 #include <memu/nes/nes.hpp>
 
 
+
 static void NesEmu_HandleEvent( SDL_Event *e );
 static void NesEmu_PlayerCtl( SDL_Event *e );
 
 
-static EmuIO *io;
+static EmuIO *emuio;
 static NesEmu::System *nes;
+
+#define VA_ARGS(...) , ##__VA_ARGS__
+#define gwprintf(Fmt, ...) gwin->print(font, Fmt VA_ARGS(__VA_ARGS__));
+
 
 int main( int argc, char **argv )
 {
     srand(clock());
 
-    nes = new NesEmu::System();
-    io  = &(nes->mEmuIO);
+    emuio = new EmuIO();
+    nes   = new NesEmu::System(emuio);
+    nes->loadGamePak(new NesEmu::GamePak(nes->mConf["boot"]["rom"]));
 
     auto *gwin = nes->mGameWin;
     auto *cwin = nes->mChrWin;
-    auto &conf = nes->mConf;
+    auto *font = new EmuImageFont("font/cutive-w12hf18.bmp");
 
-    nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
-
-    // ubyte A = nes->mBusCPU.read(0xFFFA);
-    // ubyte B = nes->mBusCPU.read(0xFFFB);
-    // ubyte C = nes->mBusCPU.read(0xFFFC);
-    // ubyte D = nes->mBusCPU.read(0xFFFD);
-    // ubyte E = nes->mBusCPU.read(0xFFFE);
-    // ubyte F = nes->mBusCPU.read(0xFFFF);
-    // printf("%02X %02X %02X %02X %02X %02X\n", A, B, C, D, E, F);
-    // exit(1);
-
-    while (io->mRunning)
+    while (emuio->running())
     {
         using namespace memu;
 
@@ -63,11 +58,49 @@ int main( int argc, char **argv )
             NesEmu_PlayerCtl(&e);
             NesEmu_HandleEvent(&e);
         }
-
-        io->update();
-    
         SDL_PumpEvents();
+
+        // {
+        //     gwin->setBounds(32, 32, 512, 512);
+        //     gwin->print(font, "PC   %04X\n", nes->mCPU.PC);
+        //     gwin->print(font, "AC   %02X\n", nes->mCPU.AC);
+        //     gwin->print(font, "XR   %02X\n", nes->mCPU.XR);
+        //     gwin->print(font, "YR   %02X\n", nes->mCPU.YR);
+
+
+        //     uword SP = nes->mCPU.SP;
+        //     uword count = 0;
+
+        //     gwprintf("SP   ");
+        //     SP = nes->mCPU.SP;
+        //     count = 0;
+        //     while (SP <= 0xFF && count++ < 10)
+        //         gwprintf("%02X ", SP++);
+        //     gwprintf("\n");
+
+        //     gwprintf("     ");
+        //     SP  = nes->mCPU.SP;
+        //     count = 0;
+        //     while (SP <= 0xFF && count++ < 10)
+        //         gwprintf("%02X ", nes->mCPU.rdbus(SP++));
+        //     gwprintf("\n");
+
+        //     gwprintf("SSR  N V B U D I Z C\n");
+        //     gwprintf("     ");
+        //     for (int i=7; i>=0; i--)
+        //         gwprintf("%u ", (nes->mCPU.SSR.byte & (1<<i)) ? 1 : 0);
+        //     gwprintf("\n");
+
+        //     gwin->setBounds(512, 32, 1024, 512);
+        //     gwprintf("PPUSTAT %02X\n", nes->mPPU.ppustat.byte);
+        //     gwprintf("PPUADDR %04X\n", nes->mPPU.ppuaddr);
+        //     gwprintf("PPUDATA %02X\n", nes->mPPU.ppudata);
+        // }
+    
+        emuio->update();
     }
+
+    SDL_Quit();
 
     return 0;
 }
@@ -80,7 +113,7 @@ static void NesEmu_HandleEvent( SDL_Event *e )
     {
         case SDL_EVENT_QUIT:
         case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-            io->quit();
+            emuio->quit();
         default:
             break;
     }
@@ -93,7 +126,7 @@ static void NesEmu_HandleEvent( SDL_Event *e )
     switch (e->key.key)
     {
         case SDLK_ESCAPE:
-            io->quit();
+            emuio->quit();
             break;
 
         case SDLK_SPACE:
@@ -103,17 +136,17 @@ static void NesEmu_HandleEvent( SDL_Event *e )
 
         case SDLK_I:
             printf("Key I --> IRQ\n");
-            nes->mBusCPU.pend_irq = 1;
+            nes->ioLineIRQ |= 0xFF;
             break;
 
         case SDLK_R:
             printf("Key R --> RESET\n");
-            nes->reset();
+            nes->ioLineRES |= 0xFF;
             break;
 
         case SDLK_N:
             printf("Key N --> NMI\n");
-            nes->mBusCPU.pend_nmi = 1;
+            nes->ioLineNMI |= 0xFF;
             break;
 
         case SDLK_TAB:

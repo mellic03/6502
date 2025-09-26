@@ -1,36 +1,37 @@
 #pragma once
 
-#include <SDL3/SDL.h>
 #include <memu/types.hpp>
+#include <SDL3/SDL.h>
+
+#include <stdarg.h>
 #include <string>
 #include <vector>
 
 
+class EmuImageBuffer;
+class EmuImageFont;
+class EmuFramebuffer;
+class EmuWindow;
+class EmuIO;
+
 
 class EmuImageBuffer
 {
-protected:
-    EmuImageBuffer( SDL_Surface*, int w, int h, ubyte *pxl, int pitch, int bpp );
-
 public:
-    static constexpr SDL_PixelFormat mFormat    = SDL_PIXELFORMAT_RGB24;
-    static constexpr SDL_ScaleMode   mScaleMode = SDL_SCALEMODE_NEAREST;
-
+    // static constexpr SDL_PixelFormat mFormat    = SDL_PIXELFORMAT_RGB24;
+    // static constexpr SDL_ScaleMode   mScaleMode = SDL_SCALEMODE_NEAREST;
     SDL_Surface *mSurface;
-    int    mW;
-    int    mH;
-    size_t mPitch;
-    size_t mBPP;
+    int mW, mH, mPitch, mBPP;
 
     EmuImageBuffer( int w, int h, SDL_PixelFormat fmt=SDL_PIXELFORMAT_RGB24 );
     EmuImageBuffer( SDL_Surface* );
-    EmuImageBuffer(): mSurface(0), mW(0), mH(0), mPitch(0), mBPP(0) {  }
+    // EmuImageBuffer(): mSurface(0), mW(0), mH(0), mPitch(0), mBPP(0) {  };
     ubyte *getPixel( int x, int y );
 };
 
 
 
-struct EmuImageFont: public EmuImageBuffer
+class EmuImageFont: public EmuImageBuffer
 {
 private:
     // vec2 glyph_scale;
@@ -41,9 +42,8 @@ public:
     // :   mData((uint8_t*)p), mW(w), mH(h), mBpp(bpp), mPitch(pitch) {  };
 
     ivec2 getGlyphExtents();
-    ivec2 getGlyphCorner( char c );
+    ivec2 getGlyphCorner( char ch );
 };
-
 
 
 
@@ -54,8 +54,8 @@ class EmuFramebuffer: public EmuImageBuffer
 public:
     using EmuImageBuffer::EmuImageBuffer;
 
-    void blit( EmuImageBuffer *buf, int x0, int y0 );
-    void blit( EmuImageBuffer *buf, int x0, int y0, int x1, int y1, int w1, int h1 );
+    void blit( int x, int y, EmuImageBuffer *src );
+    void blit( int x, int y, int w, int h, EmuImageBuffer *src, int sx, int sy, int sw, int sh );
     void pixel( int x, int y, uint8_t *src );
     void pixel( int x, int y, uint8_t r ) { pixel(x, y, r, r, r); };
     void pixel( int x, int y, uint8_t r, uint8_t g, uint8_t b );
@@ -63,41 +63,66 @@ public:
 
 
 
-
-class EmuWindow: public EmuFramebuffer
+class EmuWindow
 {
 private:
     friend class EmuIO;
 
-    SDL_Window  *mWin;
-    SDL_Surface *mWinSurface;
-    const int    mScale;
-    const int    mRate;
-    int          mTicks;
-    bool         mFlushPending;
+    struct glyph_t
+    {
+        EmuImageFont *f;
+        char c;
+        int x, y, s;
+        bool l;
+    };
 
-    EmuWindow( const char *title, int w, int h, int s=1, int r=1 );
+    struct margin_t
+    {
+        int xmin, xmax, ymin, ymax;
+    };
+
+    std::vector<glyph_t> mGlyphs;
+
+    ivec2          mGlyphPos;
+    margin_t       mGlyphMargin;
+
+    SDL_Window    *mWin;
+    EmuFramebuffer mWinBuf;
+    EmuFramebuffer mRealBuf;
+
+    const int      mScale;
+    const bool     mAutoUpdate;
+    const size_t   mRate;
+    int            mTicks;
+    bool           mFlushPending;
+
+    void _glyph( EmuImageFont*, char, int, int, int, bool );
     void _flush();
     
 public:
-    ubyte *data();
-    void  flush();
+    EmuWindow( const char *title, int w, int h, int s=1, size_t r=1 );
+    EmuFramebuffer *frameBuffer() { return &mRealBuf; }
+    void glyph( EmuImageFont*, char ch, int x, int y, int scale=1, bool linear=false );
+    void str( EmuImageFont*, const char *str, int x, int y, int scale=1, bool linear=false );
+    void setMargin( int xmin, int xmax, int ymin, int ymax );
+    void setBounds( int x, int y, int w, int h );
+    void print( EmuImageFont*, const char *fmt, ... );
+    void flush() { mFlushPending = true; }
 };
+
 
 
 class EmuIO
 {
-public:
-    bool mRunning;
-    // Uint8 mKeyCurr[512];
-    // Uint8 mKeyPrev[512];
-
-    EmuIO();
-    void update();
-    void quit();
-    EmuWindow *makeWin( const char *title, int w, int h, int scale, int rate=1 );
-
 private:
-    std::vector<EmuWindow*> mWindows;
+    std::vector<EmuWindow*> mWinAuto;
+    std::vector<EmuWindow*> mWinExplicit;
+    bool mRunning;
 
+public:
+    EmuIO();
+    EmuWindow *makeWin( const char *title, int w, int h, int scale, size_t rate=1 );
+    bool running();
+    void quit();
+    void update();
 };

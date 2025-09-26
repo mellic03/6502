@@ -13,11 +13,10 @@ include_directories("${CMAKE_SOURCE_DIR}/include")
 add_subdirectory("${CMAKE_SOURCE_DIR}/src/core")
 add_subdirectory("${CMAKE_SOURCE_DIR}/src/hw")
 add_subdirectory("${CMAKE_SOURCE_DIR}/src/nes")
-# add_subdirectory("${CMAKE_SOURCE_DIR}/src/hw/mos6502")
 
 add_executable(
     nesemu
-    "${CMAKE_SOURCE_DIR}/src/system_nes.cpp"
+    "${CMAKE_SOURCE_DIR}/src/main.cpp"
     ${SOURCES}
 )
 
@@ -27,22 +26,6 @@ target_link_libraries(
     memu_hw
     memu_nes
 )
-
-
-
-add_executable(
-    test_m6502
-    "${CMAKE_SOURCE_DIR}/src/test_m6502.cpp"
-    ${SOURCES}
-)
-
-target_link_libraries(
-    test_m6502 PRIVATE
-    memu_core
-    memu_hw
-    memu_nes
-)
-
 
 
 file(

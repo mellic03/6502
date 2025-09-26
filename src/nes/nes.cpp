@@ -28,35 +28,28 @@
     |-------------------------------------------------------------------------------|
 */
 
-NesEmu::System::System()
+NesEmu::System::System( EmuIO *io )
 :   mConf("nes.conf"),
-    mEmuIO(),
-    mGameWin(mEmuIO.makeWin("NesEmu", 256, 240, 4, 1)),
-    mChrWin(mEmuIO.makeWin("CHR-ROM", 128, 256, 4, 1)),
-    // mChrWin(new EmuFramebuffer(128, 128)),
+    mGameWin(io->makeWin("NesEmu", 256, 240, 4, 0)),
+    mChrWin(io->makeWin("CHR-ROM", 128, 256, 4, 0)),
     mCPU(mBusCPU),
-    mPPU(mBusPPU, mGameWin, mChrWin)
+    mPPU(mBusPPU, mGameWin, mChrWin),
+    ioLineNMI(0), ioLineRES(0), ioLineIRQ(0), ioLineCLK(0)
 {
     using namespace memu;
     memset(mPlayerCtl, 0, sizeof(mPlayerCtl));
 
     // pinout mappings
     // -------------------------------------------------------------------------
-    ioCLK = 0;
-    ioIRQ = 0;
-    ioNMI = 0;
-    ioRES = 0;
+    mCPU.ioLineCLK = &ioLineCLK;
+    mCPU.ioLineIRQ = &ioLineIRQ;
+    mCPU.ioLineNMI = &ioLineNMI;
+    mCPU.ioLineRES = &ioLineRES;
 
-    mCPU.ioLineCLK = &ioCLK;
-    mCPU.ioLineIRQ = &ioIRQ;
-    mCPU.ioLineNMI = &ioNMI;
-    mCPU.ioLineRES = &ioRES;
-
-    mPPU.ioCLK = &ioCLK;
-    mPPU.ioINT = &ioNMI;
-    mPPU.ioRES = &ioRES;
+    mPPU.ioLineCLK = &ioLineCLK;
+    mPPU.ioLineNMI = &ioLineNMI;
+    mPPU.ioLineRES = &ioLineRES;
     // -------------------------------------------------------------------------
-
 }
 
 
@@ -68,9 +61,7 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
     mPPU.loadPalette(mConf["video"]["palette"]);
     mPPU.preRenderChrRom(mChrWin);
     mChrWin->flush();
-
     mCPU.reset();
-    // mCPU.PC = mCPU.rdbusw(0xFFFC);
 
     if (mConf["boot"]["jump"])
     {
@@ -90,52 +81,24 @@ void NesEmu::System::tick()
     mCPU.tick();
     accum += (mCPU.clockTime() - clocks);
 
-    while ((3*accum) - 3 >= 0)
+    while (3*accum - 3 >= 0)
     {
         clocks = mPPU.clockTime();
         mPPU.tick();
         accum -= (mPPU.clockTime() - clocks);
     }
 
-    // int rem = mPPU.tick(mCPU.clockTime() - start);
-    // if (rem)
-    // {
-    //     mPPU.tick(rem);
-    // }
+    // // int rem = mPPU.tick(mCPU.clockTime() - start);
+    // // if (rem)
+    // // {
+    // //     mPPU.tick(rem);
+    // // }
 
     // mCPU.tick();
     // mPPU.tick();
-    // // ioRES = 1;
     // mPPU.tick();
     // mPPU.tick();
 
-
-    // if (mPPU.mFrameDone == true)
-    // {
-    //     mWin->flush();
-    //     mPPU.mFrameDone = false;
-    // }
-
-    // static size_t accum = 0;
-    // static size_t prev = 0;
-
-    // accum += mPPU.clockTime() - prev;
-    // prev   = mPPU.clockTime();
-
-    // while (accum > 3)
-    // {
-    //     mBusCPU.tick();
-        
-    // }
-
-    // {
-    //     mPPU.tick(mWin);
-    //     mBusPPU.tick();
-    //     mBusPPU.tick();
-    //     mBusPPU.tick();
-    // }
-
-    mClocks += 1;
 }
 
 

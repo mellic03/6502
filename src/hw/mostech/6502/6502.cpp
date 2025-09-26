@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// #define M6502_LOGGING
+#define M6502_LOGGING
 
 #ifdef M6502_LOGGING
     #define M605_LOG printf
@@ -24,6 +24,12 @@ void m6502::_decode()
 {
     mCurrInstr = &mFtab[mCurrOp];
     M605_LOG("%s ", mCurrInstr->label);
+}
+
+
+void m6502::_execute()
+{
+    (this->*mCurrInstr->fA)();
 
     #ifdef M6502_LOGGING
         auto &ld = mCurrInstr->fA;
@@ -43,19 +49,14 @@ void m6502::_decode()
         if (ld == &m6502::LoadZPGY) opsz = 1;
 
         if (opsz == 0) printf("     ");
-        if (opsz == 1) printf("%02X   ", rdbus(PC));
-        if (opsz == 2) printf("%04X ", rdbusw(PC));
+        if (opsz == 1) printf("%02X   ", rdbus(mOpAddr));
+        if (opsz == 2) printf("%04X ", rdbusw(mOpAddr));
         if (opsz == 9) printf("%04X ", mOpAddr);
     #endif
 
-}
-
-
-void m6502::_execute()
-{
-    (this->*mCurrInstr->fA)();
     M605_LOG("   A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
     M605_LOG("\n");
+
     (this->*mCurrInstr->fE)();
 
     mClock += mCurrInstr->cycles;
@@ -74,10 +75,11 @@ void m6502::tick()
         _NMI();
     }
 
-    // if (ioLineRES & 0xFF)
-    // {
-    //     this->reset();
-    // }
+    if (*ioLineRES & 0xFF)
+    {
+        *ioLineRES &= 0x00;
+        this->reset();
+    }
 
     if (*ioLineIRQ & 0xFF)
     {

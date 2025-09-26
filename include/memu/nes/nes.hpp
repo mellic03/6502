@@ -58,17 +58,9 @@ class NesEmu::System
 private:
     size_t mClocks = 0;
 
-    struct {
-        ubyte ioNMI;
-        ubyte ioRES;
-        ubyte ioIRQ;
-        ubyte ioCLK;
-    };
-
 public:
     memu::ConfigParser mConf;
 
-    EmuIO           mEmuIO;
     EmuWindow      *mGameWin;
     EmuWindow      *mChrWin;
 
@@ -78,11 +70,17 @@ public:
     NesPPU          mPPU;
     NesController   mPlayerCtl[2];
 
-    System();
+    ubyte ioLineNMI;
+    ubyte ioLineRES;
+    ubyte ioLineIRQ;
+    ubyte ioLineCLK;
+
+    
+    System( EmuIO* );
     System(const System&) = delete;
     System &operator=(const System&) = delete;
     void loadGamePak(GamePak*);
     void tick();
-    void reset() { ioRES=0; }
+    void reset() { ioLineRES |= 0xFF; }
 };
 

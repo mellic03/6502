@@ -13,7 +13,7 @@ EmuImageBuffer::EmuImageBuffer( int w, int h, SDL_PixelFormat fmt )
 
 EmuImageBuffer::EmuImageBuffer( SDL_Surface *S )
 :   mSurface(S), mW(S->w), mH(S->h), mPitch(S->pitch),
-    mBPP(SDL_GetPixelFormatDetails(S->format)->bits_per_pixel)
+    mBPP(SDL_GetPixelFormatDetails(S->format)->bytes_per_pixel)
 {
     SDL_assert((S != nullptr));
 }
@@ -21,8 +21,7 @@ EmuImageBuffer::EmuImageBuffer( SDL_Surface *S )
 
 ubyte *EmuImageBuffer::getPixel( int x, int y )
 {
-    x %= mW;  y %= mH;
-    return (ubyte*)(mSurface->pixels) + mPitch*y + mBPP*x;
+    return (ubyte*)(mSurface->pixels) + mPitch*(y%mH) + mBPP*(x%mW);
 }
 
 
@@ -54,12 +53,12 @@ ivec2 EmuImageFont::getGlyphExtents()
 }
 
 
-ivec2 EmuImageFont::getGlyphCorner( char c )
+ivec2 EmuImageFont::getGlyphCorner( char ch )
 {
     static constexpr char cmin = ' ';
     static constexpr char cmax = '~';
 
-    if ((cmin<=c && c<=cmax) == false)
+    if ((cmin<=ch && ch<=cmax) == false)
     {
         return ivec2{-1, -1};
     }
@@ -70,7 +69,7 @@ ivec2 EmuImageFont::getGlyphCorner( char c )
     const int GLYPH_W = mW / GLYPH_COLS;
     const int GLYPH_H = mH / GLYPH_ROWS;
 
-    int idx = int(c - cmin);
+    int idx = int(ch - cmin);
     int row = idx / GLYPH_COLS;
     int col = idx % GLYPH_COLS;
 
@@ -83,21 +82,21 @@ ivec2 EmuImageFont::getGlyphCorner( char c )
 
 
 
-
-void EmuFramebuffer::blit( EmuImageBuffer *buf, int x0, int y0 )
+void EmuFramebuffer::blit( int x, int y, EmuImageBuffer *sbuf )
 {
-    SDL_Rect src = { 0, 0, buf->mW, buf->mH };
-    SDL_Rect dst = { x0, y0, mW, mH };
-    SDL_BlitSurfaceScaled(buf->mSurface, &src, mSurface, &dst, mScaleMode);
+    blit(x, y, mW, mH, sbuf, 0, 0, sbuf->mW, sbuf->mH);
+    // SDL_Rect src = { 0, 0, buf->mW, buf->mH };
+    // SDL_Rect dst = { x0, y0, mW, mH };
+    // SDL_BlitSurfaceScaled(buf->mSurface, &src, mSurface, &dst, SDL_SCALEMODE_NEAREST);
 }
 
 
-void EmuFramebuffer::blit( EmuImageBuffer *buf, int x0, int y0,
-                           int x1, int y1, int w1, int h1 )
+void EmuFramebuffer::blit( int x, int y, int w, int h,
+                           EmuImageBuffer *sbuf, int sx, int sy, int sw, int sh )
 {
-    SDL_Rect src = { x1, y1, w1, h1 };
-    SDL_Rect dst = { x0, y0, mW, mH };
-    SDL_BlitSurfaceScaled(buf->mSurface, &src, mSurface, &dst, mScaleMode);
+    SDL_Rect src = { sx, sy, sw, sh };
+    SDL_Rect dst = { x, y, w, h };
+    SDL_BlitSurfaceScaled(sbuf->mSurface, &src, mSurface, &dst, SDL_SCALEMODE_NEAREST);
 }
 
 
@@ -120,77 +119,190 @@ void EmuFramebuffer::pixel( int x, int y, ubyte r, ubyte g, ubyte b )
 
 
 
+// :   EmuFramebuffer(SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGB24)),
 
-
-
-
-
-
-
-
-EmuWindow::EmuWindow( const char *title, int w, int h, int scale, int rate )
-:   EmuFramebuffer(w, h),
-    mWin(SDL_CreateWindow(title, scale*w, scale*h, 0)),
-    mWinSurface(SDL_GetWindowSurface(mWin)),
-    mScale(scale), mRate(rate), mTicks(rate), mFlushPending(false)
+EmuWindow::EmuWindow( const char *title, int w, int h, int scale, size_t rate )
+:   mWin     (SDL_CreateWindow(title, scale*w, scale*h, 0)),
+    mWinBuf  (SDL_GetWindowSurface(mWin)),
+    mRealBuf (SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGB24)),
+    mScale(scale), mAutoUpdate(mRate==-1), mRate(rate), mTicks(rate), mFlushPending(false)
 {
     SDL_SetWindowPosition(mWin, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+
+    mGlyphMargin = {0, w, 0, h};
 }
 
-ubyte *EmuWindow::data()
+void EmuWindow::_glyph( EmuImageFont *f, char c, int x, int y, int s, bool l )
 {
-    return static_cast<ubyte*>(mSurface->pixels);
+    ivec2 tl = f->getGlyphCorner(c);
+    ivec2 sp = f->getGlyphExtents();
+    SDL_Rect src = { tl.x, tl.y, sp.x, sp.y };
+    SDL_Rect dst = { x, y, s*sp.x, s*sp.y };
+
+    if (s > 1)
+    {
+        SDL_ScaleMode mode = (l) ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST;
+        SDL_BlitSurfaceScaled(f->mSurface, &src, mWinBuf.mSurface, &dst, mode);
+    }
+    else
+    {
+        SDL_BlitSurface(f->mSurface, &src, mWinBuf.mSurface, &dst);
+    }
 }
 
 void EmuWindow::_flush()
 {
-    SDL_Rect src = { 0, 0, mW, mH };
-    SDL_Rect dst = { 0, 0, mScale*mW, mScale*mH };
-    SDL_BlitSurfaceScaled(mSurface, &src, mWinSurface, &dst, mScaleMode);
+    mGlyphPos = {0, 0};
+    mWinBuf.blit(0, 0, mWinBuf.mW, mWinBuf.mH, &mRealBuf, 0, 0, mRealBuf.mW, mRealBuf.mH);
+
+    for (auto &G: mGlyphs)
+        _glyph(G.f, G.c, G.x, G.y, G.s, G.l);
+    mGlyphs.clear();
+
     SDL_UpdateWindowSurface(mWin);
 }
 
-void EmuWindow::flush()
+void EmuWindow::glyph( EmuImageFont *f, char c, int x, int y, int scale, bool linear )
 {
-    mFlushPending = true;
+    mGlyphs.push_back({f, c, x, y, scale, linear});
 }
+
+
+void EmuWindow::str( EmuImageFont *f, const char *str, int x, int y, int scale, bool linear )
+{
+    ivec2 sp = f->getGlyphExtents();
+
+    while (char ch = *(str++))
+    {
+        if (ch == '\n')
+            x = scale*sp.x;
+
+        else
+            mGlyphs.push_back({f, ch, x, y, scale, linear});
+
+        x += scale*sp.x;
+    
+        if (x >= mWinBuf.mW)
+        {
+            x = 0;
+            y += scale*sp.y;
+        }
+    
+        if (y >= mWinBuf.mH)
+            return;
+    }
+}
+
+void EmuWindow::setMargin( int xmin, int xmax, int ymin, int ymax )
+{
+    mGlyphMargin = { xmin, xmax, ymin, ymax };
+    mGlyphPos    = { xmin, ymin };
+}
+
+void EmuWindow::setBounds( int x, int y, int w, int h )
+{
+    mGlyphMargin = { x, x+w, y, y+h };
+    mGlyphPos    = { x, y };
+}
+
+
+void EmuWindow::print( EmuImageFont *f, const char *fmt, ... )
+{
+    static char buf[256];
+    const char *str = &buf[0];
+
+    va_list vlist;
+    va_start(vlist, fmt);
+    vsnprintf(buf, 256, fmt, vlist);
+    va_end(vlist);
+
+    ivec2 sp = f->getGlyphExtents();
+    auto [xmin, xmax, ymin, ymax] = mGlyphMargin;
+    auto &x = mGlyphPos.x;
+    auto &y = mGlyphPos.y;
+
+    if (x<xmin || x>xmax) x=xmin;
+    if (y<ymin || y>ymax) y=ymin;
+
+    while (char ch = *(str++))
+    {
+        if (ch == '\n')
+            x = xmax+1;
+        else
+            mGlyphs.push_back({f, ch, x, y, 1, false});
+
+        x += (3*sp.x)/4;
+
+        if (x >= xmax)
+        {
+            x = xmin;
+            y += sp.y;
+        }
+    
+        if (y >= ymax)
+        {
+            return;
+        }
+    }
+}
+
+
+
 
 
 
 EmuIO::EmuIO()
+:   mRunning(true)
 {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
-    mRunning = true;
+}
+
+
+EmuWindow *EmuIO::makeWin( const char *title, int w, int h, int scale, size_t rate )
+{
+    auto &winv = (rate==0) ? mWinExplicit : mWinAuto;
+    winv.push_back(new EmuWindow(title, w, h, scale, rate));
+    return winv.back();
+}
+
+bool EmuIO::running()
+{
+    return mRunning;
+}
+
+void EmuIO::quit()
+{
+    mRunning = false;
 }
 
 void EmuIO::update()
 {
-    for (auto *win: mWindows)
+    for (auto *win: mWinAuto)
     {
-        SDL_assert((win->mSurface != nullptr));
+        if (++(win->mTicks) >= win->mRate)
+        {
+            win->_flush();
+            win->mTicks = 0;
+        }
+    }
 
+    for (auto *win: mWinExplicit)
+    {
         if (win->mFlushPending == true)
         {
             win->_flush();
             win->mFlushPending = false;
         }
-        // if (++(win->mTicks) >= win->mRate)
-        // {
-        //     win->flush();
-        //     win->mTicks = 0;
-        // }
     }
+
+    // for (auto *win: mWinExplicit)
+    //     win->_flush();
+
+    // for (auto *win: mWinAuto)
+    //     win->_flush();
 }
 
-void EmuIO::quit()
-{
-    SDL_Quit();
-    mRunning = false;
-}
 
-EmuWindow *EmuIO::makeWin( const char *title, int w, int h, int s, int r )
-{
-    mWindows.push_back(new EmuWindow(title, w, h, s, r));
-    return mWindows.back();
-}
+
+
 
