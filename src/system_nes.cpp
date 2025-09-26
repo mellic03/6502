@@ -15,7 +15,7 @@ static void NesEmu_HandleEvent( SDL_Event *e );
 static void NesEmu_PlayerCtl( SDL_Event *e );
 
 
-static EmuIO io;
+static EmuIO *io;
 static NesEmu::System *nes;
 
 int main( int argc, char **argv )
@@ -23,21 +23,24 @@ int main( int argc, char **argv )
     srand(clock());
 
     nes = new NesEmu::System();
-    auto *win0 = nes->mWin;
-    auto &conf = NesEmu::CONF;
+    io  = &(nes->mEmuIO);
+
+    auto *gwin = nes->mGameWin;
+    auto *cwin = nes->mChrWin;
+    auto &conf = nes->mConf;
 
     nes->loadGamePak(new NesEmu::GamePak(conf["boot"]["rom"]));
-    nes->mPPU.loadPalette(conf["video"]["palette"]);
 
-    // auto *win1 = new EmuWindow("CHR-ROM", 128, 256, 4);
-    // SDL_LoadBMP("data/font/atlas.png");
+    // ubyte A = nes->mBusCPU.read(0xFFFA);
+    // ubyte B = nes->mBusCPU.read(0xFFFB);
+    // ubyte C = nes->mBusCPU.read(0xFFFC);
+    // ubyte D = nes->mBusCPU.read(0xFFFD);
+    // ubyte E = nes->mBusCPU.read(0xFFFE);
+    // ubyte F = nes->mBusCPU.read(0xFFFF);
+    // printf("%02X %02X %02X %02X %02X %02X\n", A, B, C, D, E, F);
+    // exit(1);
 
-    // uint64_t tcurr = SDL_GetTicksNS();
-    // uint64_t tprev = tcurr;
-    // uint64_t tdiff = 0;
-    // uint64_t accum = 0;
-
-    while (io.mRunning)
+    while (io->mRunning)
     {
         using namespace memu;
 
@@ -47,17 +50,6 @@ int main( int argc, char **argv )
         {
             break;
         }
-
-        // for (int i=0; i<16; i++)
-        // {
-        //     for (int j=0; j<16; j++)
-        //     {
-        //         nes->mPPU.drawPattern(win1, 0, 8*j,     8*i, j, i);
-        //         nes->mPPU.drawPattern(win1, 1, 8*j, 128+8*i, j, i);
-        //     }
-        // }
-        // win1->flush();
-
 
         SDL_Event e;
         while (SDL_PollEvent(&e))
@@ -72,6 +64,8 @@ int main( int argc, char **argv )
             NesEmu_HandleEvent(&e);
         }
 
+        io->update();
+    
         SDL_PumpEvents();
     }
 
@@ -86,7 +80,7 @@ static void NesEmu_HandleEvent( SDL_Event *e )
     {
         case SDL_EVENT_QUIT:
         case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-            io.quit();
+            io->quit();
         default:
             break;
     }
@@ -99,7 +93,7 @@ static void NesEmu_HandleEvent( SDL_Event *e )
     switch (e->key.key)
     {
         case SDLK_ESCAPE:
-            io.quit();
+            io->quit();
             break;
 
         case SDLK_SPACE:

@@ -13,9 +13,14 @@
 
 namespace NesEmu
 {
-    #define X(Nm) class Nm;
-    NESEMU_MAPPER_TYPES
-    #undef X
+    class Mapper000_NROM;
+    class Mapper001_MMC1;
+    class Mapper002_UxROM;
+    class Mapper003_CNROM;
+    class Mapper004_MMC3;
+    // #define X(Nm) class Nm;
+    // NESEMU_MAPPER_TYPES
+    // #undef X
 }
 
 
@@ -33,6 +38,34 @@ private:
     PakBank mPrgRam;
     PakBank mPrgRom;
     PakBank mChrRom;
+
+
+    class CpuAccess: public memu::iPageHandler
+    {
+    public:
+        CpuAccess(System &n, Mapper000_NROM &m)
+        :   mAddrLatch(true), nes(n), nrom(m) {  }
+        virtual ubyte read(addr_t) final;
+        virtual void write(addr_t, ubyte) final;
+
+    private:
+        bool mAddrLatch;
+        NesEmu::System &nes;
+        Mapper000_NROM &nrom;
+        ubyte read_ppu(addr_t);
+        void write_ppu(addr_t, ubyte);
+    };
+
+    class PpuAccess: public memu::iPageHandler
+    {
+    private:
+        NesEmu::System &nes;
+        Mapper000_NROM &nrom;
+    public:
+        PpuAccess(System &n, Mapper000_NROM &m): nes(n), nrom(m) {  }
+        virtual ubyte read(addr_t) final;
+        virtual void write(addr_t, ubyte) final;
+    };
 
 public:
     Mapper000_NROM(NesEmu::System&, GamePak*);

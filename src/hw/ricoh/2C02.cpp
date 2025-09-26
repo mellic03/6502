@@ -12,15 +12,16 @@ using namespace memu;
 
 
 
-Ricoh2C02::Ricoh2C02( AddrSpace &bus, ubyte *fb, size_t pitch, size_t bpp )
+Ricoh2C02::Ricoh2C02( AddrSpace &bus, EmuWindow *gamewin, EmuFramebuffer *chrwin )
 :   HwModule(bus),
     BaseHw(),
-    mFramebuffer(fb),
-    mPitch(pitch),
-    mBPP(bpp),
+    mGameWin(gamewin),
+    mChrWin(chrwin),
     mCycle(0),
     mScanLine(0)
 {
+    this->reset();
+
     static constexpr ubyte blue   [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
     static constexpr ubyte pink   [] = { 0x11, 246, 108, 92, 187, 42, 210, 95, 168, 78, 142, 98, 129, 239, 103, 87, 172, 13, 30, 101, 140, 87, 215, 181, 232, 143, 132, 245, 39, 10, 61, 155 };
     static constexpr ubyte purple [] = { 0x11, 227, 188, 126, 51, 108, 242, 50, 62, 34, 86, 167, 40, 63, 8, 141, 51, 132, 202, 219, 88, 130, 97, 206, 73, 196, 175, 197, 55, 172, 109, 187 };
@@ -31,77 +32,29 @@ Ricoh2C02::Ricoh2C02( AddrSpace &bus, ubyte *fb, size_t pitch, size_t bpp )
 }
 
 
-// int Ricoh2C02::tickn( int nCycles )
-// {
-//     if (memu::ioRead(ioRES) == 0)
-//     {
-//         this->reset();
-//     }
-
-//     bool visible = (0<=mScanLine && mScanLine<240 && 1<=mCycle && mCycle<=256);
-//     int leftover = std::max(0, (mCycle+nCycles) - (visible ? 257 : 342));
-
-//     if (visible)
-//     {
-//         // _quik(nCycles-leftover);
-//     }
-
-//     if (mScanLine==241 && mCycle==1)
-//     {
-//         ppustat.VBlank = 1;
-//         // if (ppuctl.NMIEnabled)
-//         {
-//             memu::ioWrite(ioINT, 1);
-//         }
-//     }
-
-
-//     mCycle += nCycles-leftover;
-
-//     if (mCycle >= 341)
-//     {
-//         mCycle = 0;
-//         mScanLine++;
-
-//         if (mScanLine >= 261)
-//         {
-//             ppustat.VBlank = 0;
-//             _entire_frame();
-//             mWin->flush();
-//             mScanLine = -1;
-//         }
-//     }
-
-//     return leftover;
-// }
-
-
 
 void Ricoh2C02::tick()
 {
-    if (memu::ioRead(ioRES) == 0)
-    {
-        this->reset();
-    }
-
-    // if (onRange(0, 240))
+    // if (memu::ioRead(ioRES) == 0)
     // {
-    //     uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-    //     _drawNameTableRow(ubyte(mScanLine/8));
+    //     this->reset();
     // }
 
     if (mScanLine==241 && mCycle==1)
     {
         ppustat.VBlank = 1;
-    
+        printf("VBLANK\n");
+
         // if (ppuctl.NMIEnabled)
         {
             memu::ioWrite(ioINT, 1);
         }
     }
 
+    mClock++;
+    mCycle++;
 
-    if ((++mCycle) >= 341)
+    if (mCycle >= 341)
     {
         mCycle = 0;
         mScanLine++;
@@ -110,22 +63,15 @@ void Ricoh2C02::tick()
         {
             ppustat.VBlank = 0;
             _entire_frame();
-            mWin->flush();
+            mGameWin->flush();
             mScanLine = -1;
         }
-
-        // if (0<=mScanLine && mScanLine<261)
-        // {
-        //     uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-        //     drawNameTableRow(win, base, mScanLine);
-        // }
     }
 }
 
 
-void Ricoh2C02::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
+void Ricoh2C02::preRenderChrTile( EmuFramebuffer *fb, int x0, int y0, uword tidx, uword palIdx )
 {
-    // printf("%u\n", tidx);
     ubyte bgSel = (ppuctl.BgTileSel) ? 1 : 0;
 
     for (int y=0; y<8; y++)
@@ -143,8 +89,50 @@ void Ricoh2C02::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
             ubyte off = mPaletteCtl[4*palIdx + pxl] & 0x3F;
             // mWin->pixel(x, y, &mPalette[3*off]);
 
-            ubyte val = 64*pxl;
-            mWin->pixel(x0+x, y0+y, val, val, val);
+            ubyte val = (255/3) * pxl;
+            fb->pixel(x0+x, y0+y, val, val, val);
+
+            // ubyte val = 4 * (8*y + x);
+            // ubyte val = 4 * (x*y);
+            // mWin->pixel(x0+x, y0+y, 32*x, 32*y, 255);
+        }
+    }
+}
+
+
+void Ricoh2C02::preRenderChrRom( EmuFramebuffer *fb )
+{
+    // auto *ntab = (NTable*)(&mVRAM[0x400*ppuctl.NameTabSel]);
+    uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+
+    for (uword row=0; row<32; row++)
+    {
+        for (uword col=0; col<16; col++)
+        {
+            int idx = 16*row + col;
+            preRenderChrTile(fb, 8*col, 8*row, idx, 0);
+        }
+    }
+
+}
+
+
+
+void Ricoh2C02::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
+{
+    ubyte bgSel = (ppuctl.BgTileSel) ? 1 : 0;
+
+    int srcy = 8*(tidx / 16);
+    int srcx = 8*(tidx % 16);
+
+    for (int y=0; y<8; y++)
+    {
+        for (int x=0; x<8; x++)
+        {
+            // ubyte *C = mChrWin->pixelOffset(srcx+x, srcy+y);
+            // mGameWin->pixel(x0+x, y0+y, C);
+
+            mGameWin->pixel(x0+x, y0+y, tidx/2);
 
             // ubyte val = 4 * (8*y + x);
             // ubyte val = 4 * (x*y);
@@ -156,20 +144,20 @@ void Ricoh2C02::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
 
 void Ricoh2C02::_entire_frame()
 {
-    // auto *ntab = (NTable*)(&mVRAM[0x400*ppuctl.NameTabSel]);
     uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
 
     for (uword row=0; row<30; row++)
     {
         for (uword col=0; col<32; col++)
         {
-            int patIdx = mVRAM[32*row + col]; //  rdbus(base + 32*row + col);
+            int patIdx = rdbus(base + 32*row + col);
             int palIdx = 0; // rdbus(base + 960 + ... );
+
             _entire_tile(8*col, 8*row, patIdx, palIdx);
         }
     }
-
 }
+
 
 
 void Ricoh2C02::_quik( int nCycles )
@@ -200,7 +188,7 @@ void Ricoh2C02::_quik( int nCycles )
         ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
 
         ubyte off = mPaletteCtl[4*paletteIdx + pxl] & 0x3F;
-        mWin->pixel(x, y, &mPalette[3*off]);
+        mGameWin->pixel(x, y, &mPalette[3*off]);
 
         // mWin->pixel(x, y, 12*patternIdx, 12*patternIdx, 12*patternIdx);
         // mWin->pixel(x, y, paletteIdx, paletteIdx, paletteIdx);
@@ -224,11 +212,9 @@ void Ricoh2C02::_drawPattern( int dstx, int dsty, ubyte bgTile, ubyte row, ubyte
 
             ubyte bit = 7 - (x % 8);
             ubyte pxl = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1);
-
-            size_t dstidx = mPitch*((dsty+i)%240) + mBPP*((dstx+j)%256);
             ubyte  srcidx = 3 * (mPaletteCtl[4*mPalNo + pxl] & 0x3F);
 
-            mWin->pixel(dstx+j, dsty+i, &mPalette[srcidx]);
+            mGameWin->pixel(dstx+j, dsty+i, &mPalette[srcidx]);
             // memcpy(mFramebuffer+dstidx, mPalette+srcidx, 3);
             // ubyte *dst = &mFramebuffer[dstidx];
             // ubyte *src = &mPalette[srcidx];

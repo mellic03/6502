@@ -27,104 +27,87 @@
     | 8000 - FFFF   | 8000 | Usually cartridge ROM and mapper registers.            |
     |-------------------------------------------------------------------------------|
 */
-memu::ConfigParser NesEmu::CONF("./nes.conf");
-
-
 
 NesEmu::System::System()
-:   mWin(new EmuWindow("NesEmu", 256, 240, 4)),
+:   mConf("nes.conf"),
+    mEmuIO(),
+    mGameWin(mEmuIO.makeWin("NesEmu", 256, 240, 4, 1)),
+    mChrWin(mEmuIO.makeWin("CHR-ROM", 128, 256, 4, 1)),
+    // mChrWin(new EmuFramebuffer(128, 128)),
     mCPU(mBusCPU),
-    mPPU(mBusPPU, mWin->data(), mWin->mPitch, mWin->mBPP),
-    mGPak(nullptr)
+    mPPU(mBusPPU, mGameWin, mChrWin)
 {
     using namespace memu;
-
-    mPPU.mWin = mWin;
     memset(mPlayerCtl, 0, sizeof(mPlayerCtl));
 
-    
     // pinout mappings
     // -------------------------------------------------------------------------
-    mCPU.ioCLK = &ioCLK;
-    mCPU.ioIRQ = &ioIRQ;
-    mCPU.ioNMI = &ioNmi;
-    mCPU.ioRES = &ioRES;
+    ioCLK = 0;
+    ioIRQ = 0;
+    ioNMI = 0;
+    ioRES = 0;
+
+    mCPU.ioLineCLK = &ioCLK;
+    mCPU.ioLineIRQ = &ioIRQ;
+    mCPU.ioLineNMI = &ioNMI;
+    mCPU.ioLineRES = &ioRES;
 
     mPPU.ioCLK = &ioCLK;
-    mPPU.ioINT = &ioNmi;
+    mPPU.ioINT = &ioNMI;
     mPPU.ioRES = &ioRES;
     // -------------------------------------------------------------------------
 
-
-    // CPU Mapping
-    // -------------------------------------------------------------------------
-    ubyte *cpuram = mCPU.mRAM.data();
-    size_t cpursz = mCPU.mRAM.size();
-
-    // CPU --> CPU RAM.
-    mBusCPU.mapRWRange(0x0000, 0x1FFF, cpuram, cpursz);
-
-    // CPU --> PPU MMIO registers.
-    mBusCPU.mapRange(0x2000, 0x3FFF, new NesPPU::CpuAccess(mPPU));
-
-    // CPU --> APU and IO registers. 4000 - 401F
-    mBusCPU.mapRange(0x4000, 0x40FF, new NesCPU::PageHandlerMMIO(*this));
-    // -------------------------------------------------------------------------
-
-
-    // PPU Mapping
-    // -------------------------------------------------------------------------
-    uint8_t *ppuram = mPPU.mVRAM;
-    size_t   ppursz = 2048;
-
-    // PPU --> PPU VRAM
-    mBusPPU.mapRWRange(0x2000, 0x2FFF, ppuram, ppursz);
-    mBusPPU.mapRWRange(0x3000, 0x3EFF, ppuram, ppursz);
-
-    // PPU --> PPU Pallete Indices. 3F00 - 3F1F. Mirrored to 3FFF
-    mBusPPU.mapRWRange(0x3F00, 0x3FFF, mPPU.mPaletteCtl, sizeof(mPPU.mPaletteCtl));
-    // -------------------------------------------------------------------------
 }
 
 
 
 void NesEmu::System::loadGamePak( GamePak *gpak )
 {
-    mGPak = gpak;
     Mapper::MapGamePak(*this, gpak);
 
-    if (CONF["boot"]["jump"])
+    mPPU.loadPalette(mConf["video"]["palette"]);
+    mPPU.preRenderChrRom(mChrWin);
+    mChrWin->flush();
+
+    mCPU.reset();
+    // mCPU.PC = mCPU.rdbusw(0xFFFC);
+
+    if (mConf["boot"]["jump"])
     {
-        (uint16_t)strtol(CONF["boot"]["jump"], NULL, 16);
+        mCPU.PC = (uint16_t)strtol(mConf["boot"]["jump"], NULL, 16);
     }
 
-    else
-    {
-        mCPU.PC = (mBusCPU.read(0xFFFD) << 8) | mBusCPU.read(0xFFFC);
-        printf("PC: %04X\n", mCPU.PC);
-        // exit(1);
-    }
+    printf("PC: %04X\n", mCPU.PC);
 }
 
 
 void NesEmu::System::tick()
 {
-    // size_t start = mCPU.clockTime();
-    // mCPU.tick();
-    // ioRES = 1;
+    static int accum = 0;
+    int clocks = 0;
 
-    // int rem = mPPU.tickn(mCPU.clockTime() - start);
+    clocks = mCPU.clockTime();
+    mCPU.tick();
+    accum += (mCPU.clockTime() - clocks);
+
+    while ((3*accum) - 3 >= 0)
+    {
+        clocks = mPPU.clockTime();
+        mPPU.tick();
+        accum -= (mPPU.clockTime() - clocks);
+    }
+
+    // int rem = mPPU.tick(mCPU.clockTime() - start);
     // if (rem)
     // {
-    //     mPPU.tickn(rem);
+    //     mPPU.tick(rem);
     // }
 
-    mCPU.tick();
-    ioRES = 1;
-
-    mPPU.tick();
-    mPPU.tick();
-    mPPU.tick();
+    // mCPU.tick();
+    // mPPU.tick();
+    // // ioRES = 1;
+    // mPPU.tick();
+    // mPPU.tick();
 
 
     // if (mPPU.mFrameDone == true)

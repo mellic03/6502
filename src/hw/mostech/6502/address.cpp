@@ -125,8 +125,8 @@ int m6502::LoadINDY()
  */
 int m6502::LoadREL()
 {
-    int8_t offset = (int8_t)fetch08();
-    mOpAddr = PC + offset;
+    mOpOfst = (int8_t)fetch08();
+    mOpAddr = PC + mOpOfst;
 
     // uint8_t byte = fetch08();
     // mOpAddr = PC + *(int8_t*)(&byte);

@@ -58,8 +58,8 @@ void m6502::_IntPush( ubyte B, ubyte U )
     push16(PC);
 
     stat = SSR;
-    stat.B = (B) ? 1 : 0;
-    stat.U = (U) ? 1 : stat.U;
+    stat.B = B;
+    stat.U = U;
     push08(stat.byte);
 
     SSR.I = 1;
@@ -67,8 +67,7 @@ void m6502::_IntPush( ubyte B, ubyte U )
 
 void m6502::_IntJump( uword addr )
 {
-    PC_lo = rdbus(addr+0);
-    PC_hi = rdbus(addr+1);
+    PC = rdbusw(addr);
 }
 
 
@@ -83,17 +82,17 @@ void m6502::_NMI()
 void m6502::_RES()
 {
     // printf("\t\t RES  PC:%04X\n", PC);
-    mWaiting = false;
-    SP = 0xFD;
-    SSR.I = 1;
-    PC = rdbusw(0xFFFC);
+    this->reset();
 }
 
 void m6502::_IRQ()
 {
-    mWaiting = false;
-    _IntPush(0);
-    _IntJump(0xFFFE);
+    if (SSR.I == 0)
+    {
+        mWaiting = false;
+        _IntPush(0);
+        _IntJump(0xFFFE);
+    }
 }
 
 void m6502::_BRK()

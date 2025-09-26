@@ -102,25 +102,245 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
 
     // CPU Mapping
     {
-        auto &bus = nes.mBusCPU;
+        nes.mBusCPU.mapRange(0x0000, 0xFFFF, new CpuAccess(nes, *this));
 
-        // CPU --> PRG RAM
-        bus.mapRWRange(0x6000, 0x7FFF, mPrgRam.base, mPrgRam.size);
+        // auto &bus = nes.mBusCPU;
 
-        // CPU --> PRG ROM
-        bus.mapRdRange(0x8000, 0xFFFF, mPrgRom.base, mPrgRom.size);
+        // // CPU --> PRG RAM
+        // bus.mapRWRange(0x6000, 0x7FFF, mPrgRam.base, mPrgRam.size);
+
+        // // CPU --> PRG ROM
+        // bus.mapRdRange(0x8000, 0xFFFF, mPrgRom.base, mPrgRom.size);
     }
 
     // PPU Mapping
     {
-        auto &bus = nes.mBusPPU;
+        nes.mBusPPU.mapRange(0x0000, 0x3FFF, new PpuAccess(nes, *this));
 
-        // PPU --> CHR ROM
-        bus.mapRdRange(0x0000, 0x1FFF, mChrRom.base, mChrRom.size);
+        // auto &bus = nes.mBusPPU;
+
+        // // PPU --> CHR ROM
+        // bus.mapRdRange(0x0000, 0x1FFF, mChrRom.base, mChrRom.size);
     }
 
 }
 
 
 
+ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
+{
+    if (0x0000<=addr && addr<=0x1FFF)
+    {
+        ubyte *cpuram = nes.mCPU.mRAM.data();
+        return cpuram[addr % 2048];
+    }
 
+    if (0x2000<=addr && addr<=0x3FFF)
+    {
+        return read_ppu(addr);
+    }
+
+    if (0x4016<=addr && addr<=0x4017)
+    {
+        ubyte *mmio = nes.mCPU.mMMIO;
+        ubyte data = (mmio[addr-0x4000] & 0b01);
+        mmio[addr-0x4000] >>= 1;
+        return data;
+    }
+
+    if (0x6000<=addr && addr<=0x1FFF)
+    {
+        ubyte *ram  = nrom.mPrgRam.base;
+        size_t size = nrom.mPrgRam.size;
+        return ram[(addr - 0x6000) % size];
+    }
+
+    if (0x8000<=addr && addr<=0xFFFF)
+    {
+        ubyte *prgrom = nrom.mPrgRom.base;
+        return prgrom[(addr - 0x8000) % nrom.mPrgRom.size];
+    }
+
+    assert(false);
+    return 0;
+}
+
+
+void Mapper000_NROM::CpuAccess::write(addr_t addr, ubyte data)
+{
+    if (0x4016<=addr && addr<=0x4016) // controller strobe
+    {
+        ubyte *mmio = nes.mCPU.mMMIO;
+        ubyte *gpad = (ubyte*)(nes.mPlayerCtl);
+        ubyte  prev = (mmio[0x16] & 0b01);
+        ubyte  curr = (data & 0b01);
+        mmio[0x16] = curr;
+
+        // if released, load state of all 8 buttons into shift registers
+        if (prev==1 && curr==0)
+        {
+            mmio[0x16] = gpad[0];
+            mmio[0x17] = gpad[1];
+        }
+
+        else
+        {
+            mmio[0x16] = curr;
+        }
+    }
+
+    if (0x6000<=addr && addr<=0x7FFF)
+    {
+        ubyte *ram  = nrom.mPrgRam.base;
+        size_t size = nrom.mPrgRam.size;
+        ram[(addr - 0x6000) % size] = data;
+    }
+}
+
+
+
+ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
+{
+    auto &ppu     = nes.mPPU;
+    auto &ppuctl  = ppu.ppuctl;
+    auto &ppumask = ppu.ppumask;
+    auto &ppustat = ppu.ppustat;
+    ubyte &oamaddr = ppu.oamaddr;
+    ubyte &oamdata = ppu.oamdata;
+    uword ppuaddr = ppu.ppuaddr;
+    ubyte ppudata = ppu.ppudata;
+    uint8_t data = 0;
+
+    switch (0x2000 + (addr % 8))
+    {
+        case 0x2000: // REG_PPUCTRL
+        case 0x2001: // REG_PPUMASK
+            break;
+
+        case 0x2002: // REG_PPUSTATUS
+            // printf("REG_PPUSTATUS read\n");
+            data = ppustat.byte;
+            ppustat.VBlank = 0;
+            mAddrLatch = true;
+            break;
+
+        case 0x2003: // REG_OAMADDR
+        case 0x2004: // REG_OAMDATA
+        case 0x2005: // REG_PPUSCROLL
+        case 0x2006: // REG_PPUADDR
+            break;
+
+        case 0x2007: // REG_PPUDATA
+            // printf("REG_PPUDATA read\n");
+            data = ppudata;
+            ppudata = ppu.rdbus(ppuaddr);
+            if (ppuaddr >= 0x3F00)
+                data = ppudata;
+            ppuaddr += (ppuctl.Increment) ? 32 : 1;
+            ppuaddr &= 0x3FFF;
+            break;
+
+        default:
+            break;
+    }
+
+    return data;
+}
+
+
+void Mapper000_NROM::CpuAccess::write_ppu(addr_t addr, ubyte data)
+{
+    auto &ppu     = nes.mPPU;
+    auto &ppuctl  = ppu.ppuctl;
+    auto &ppumask = ppu.ppumask;
+    auto &ppustat = ppu.ppustat;
+    auto &oamaddr = ppu.oamaddr;
+    auto &oamdata = ppu.oamdata;
+    auto &ppuaddr = ppu.ppuaddr;
+    auto &ppudata = ppu.ppudata;
+
+    switch (0x2000 + (addr % 8))
+    {
+        case 0x2000: // REG_PPUCTRL
+            // printf("REG_PPUCTRL write %02X\n", data);
+            ppu.ppuctl = { data };
+            break;
+            
+        case 0x2001: // REG_PPUMASK
+            // printf("REG_PPUMASK write %02X\n", data);
+            ppu.ppumask = { data };
+            break;
+
+        case 0x2002: // REG_PPUSTATUS
+            break;
+
+        case 0x2003: // REG_OAMADDR
+            break;
+
+        case 0x2004: // REG_OAMDATA
+            break;
+
+        case 0x2005: // REG_PPUSCROLL
+            break;
+
+        case 0x2006: // REG_PPUADDR
+            // printf("REG_PPUADDR write %02X\n", data);
+            if ( mAddrLatch) ppu.ppuaddr_hi = data;
+            if (!mAddrLatch) ppu.ppuaddr_lo = data;
+            mAddrLatch = !mAddrLatch;
+            // if (mAddrLatch) { ppuaddr = (ppuaddr & 0x00FF) | (uword(data) << 8); }
+            // else            { ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); }
+
+        case 0x2007: // REG_PPUDATA
+            // printf("REG_PPUDATA write %02X\n", data);
+            // printf("*%04X: %02X\n", ppuaddr, data);
+            ppu.wtbus(ppuaddr, data);
+            ppuaddr += (ppuctl.Increment) ? 32 : 1;
+            ppuaddr &= 0x3FFF;
+            break;
+
+        default:
+            break;
+    }
+}
+
+
+
+
+
+
+ubyte Mapper000_NROM::PpuAccess::read(addr_t addr)
+{
+    if (0x0000<=addr && addr<=0x1FFF)
+    {
+        ubyte *rom  = nrom.mChrRom.base;
+        size_t size = nrom.mChrRom.size;
+        return rom[addr % size];
+    }
+
+    if (0x2000<=addr && addr<=0x3EFF)
+    {
+        ubyte *vram = nes.mPPU.mVRAM;
+        return vram[(addr - 0x2000) % 2048];
+    }
+
+    if (0x3F00<=addr && addr<=0x3FFF)
+    {
+        ubyte *pctl = nes.mPPU.mPaletteCtl;
+        return pctl[(addr - 0x3F00) % 32];
+    }
+
+    assert(false);
+    return 0;
+}
+
+
+void Mapper000_NROM::PpuAccess::write(addr_t addr, ubyte data)
+{
+    ubyte *pctl = nes.mPPU.mPaletteCtl;
+
+    if (0x3F00<=addr && addr<=0x3FFF)
+    {
+        pctl[(addr - 0x3F00) % 32] = data;
+    }
+}

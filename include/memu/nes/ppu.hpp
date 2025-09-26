@@ -14,16 +14,6 @@ private:
 public:
      using Ricoh2C02::Ricoh2C02;
 
-     class CpuAccess: public memu::iPageHandler
-     {
-     private:
-          NesPPU &ppu;
-          bool mAddrLatch;
-     public:
-          CpuAccess(NesPPU &p): ppu(p), mAddrLatch(true) {  }
-          virtual ubyte read(addr_t) final;
-          virtual void write(addr_t, ubyte) final;
-     };
 };
 
 

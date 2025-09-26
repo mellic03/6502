@@ -9,6 +9,10 @@ namespace RP2C02_detail
 };
 
 
+#define WORD_LOHI(Nm) \
+union { uword Nm; struct {ubyte Nm##_lo, Nm##_hi; }; }
+
+
 struct RP2C02_detail::BaseHw
 {
 public:
@@ -57,12 +61,12 @@ public:
         ppuctl_t  ppuctl;
         ppumask_t ppumask;
         ppustat_t ppustat;
-        uint8_t   oamaddr; // OAM read/write address
-        uint8_t   oamdata; // OAM read/write data
-        uint8_t   SCROLL;  // 
-        uint8_t   ppuaddr; // VRAM read/write address (two writes: MSB then LSB)
-        uint8_t   ppudata; // VRAM read/write data
-    } __attribute__((packed));
+        ubyte oamaddr; // OAM read/write address
+        ubyte oamdata; // OAM read/write data
+        ubyte SCROLL;  // 
+        WORD_LOHI(ppuaddr);
+        ubyte ppudata; // VRAM read/write data
+    };
 
     struct { // PinOut
         ubyte *ioCLK;
@@ -76,3 +80,6 @@ public:
     }
 
 };
+
+
+#undef WORD_LOHI

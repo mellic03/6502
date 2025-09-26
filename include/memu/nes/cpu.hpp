@@ -14,20 +14,20 @@ class NesCPU: public memu::Ricoh2A03
 {
 public:
     using Ricoh2A03::Ricoh2A03;
+    ubyte mMMIO[0x17 + 1];
 
-    class PageHandlerMMIO: public memu::iPageHandler
-    {
-    private:
-        NesEmu::System &nes;
-    public:
-        PageHandlerMMIO(NesEmu::System &n): nes(n) {  }
-        virtual ubyte read(addr_t) final;
-        virtual void write(addr_t, ubyte) final;
-    };
+    // class PageHandlerMMIO: public memu::iPageHandler
+    // {
+    // private:
+    //     NesEmu::System &nes;
+    // public:
+    //     PageHandlerMMIO(NesEmu::System &n): nes(n) {  }
+    //     virtual ubyte read(addr_t) final;
+    //     virtual void write(addr_t, ubyte) final;
+    // };
 
 private:
-    friend class PageHandlerMMIO;
-    ubyte mmio[0x17 + 1];
+    // friend class PageHandlerMMIO;
 
 };
 

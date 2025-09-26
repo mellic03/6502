@@ -17,6 +17,7 @@ public:
     uint8_t    mCurrOp;
     size_t     mOpCount;
     bool       mOpAC;
+    int8_t     mOpOfst;
     uint16_t   mOpAddr;
 
     // uint16_t   mScanLine = 0;

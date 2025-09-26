@@ -14,11 +14,7 @@ static void nofunc( void* )
 
 
 memu::HwModule::HwModule( memu::AddrSpace &bus )
-:   mBus(bus),
-    mClock(0),
-    mCallbackArg(nullptr),
-    on_rdbus(nofunc),
-    on_wtbus(nofunc)
+:   mBus(bus), mClock(0)
 {
     mBus.attach(this);
 }
@@ -26,7 +22,6 @@ memu::HwModule::HwModule( memu::AddrSpace &bus )
 
 ubyte memu::HwModule::rdbus( addr_t addr )
 {
-    on_rdbus(mCallbackArg);
     return mBus.read(addr);
 }
 
@@ -39,6 +34,5 @@ uword memu::HwModule::rdbusw( addr_t addr )
 
 void memu::HwModule::wtbus( addr_t addr, ubyte v )
 {
-    on_wtbus(mCallbackArg);
     mBus.write(addr, v);
 }

@@ -11,7 +11,6 @@
 
 namespace NesEmu
 {
-    extern memu::ConfigParser CONF;
     class GamePak;
     class System;
 }
@@ -60,19 +59,23 @@ private:
     size_t mClocks = 0;
 
     struct {
-        ubyte ioNmi;
+        ubyte ioNMI;
         ubyte ioRES;
         ubyte ioIRQ;
         ubyte ioCLK;
     };
 
 public:
-    EmuWindow      *mWin;
+    memu::ConfigParser mConf;
+
+    EmuIO           mEmuIO;
+    EmuWindow      *mGameWin;
+    EmuWindow      *mChrWin;
+
     memu::AddrSpace mBusCPU;
     memu::AddrSpace mBusPPU;
     NesCPU          mCPU;
     NesPPU          mPPU;
-    GamePak        *mGPak;
     NesController   mPlayerCtl[2];
 
     System();

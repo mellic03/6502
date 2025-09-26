@@ -16,9 +16,6 @@ private:
 
 protected:
     size_t mClock;
-    void *mCallbackArg;
-    void (*on_rdbus)(void*);
-    void (*on_wtbus)(void*);
 
 public:
     AddrSpace &mBus;
@@ -29,7 +26,6 @@ public:
     ubyte rdbus(addr_t);
     uword rdbusw(addr_t);
     void  wtbus(addr_t, ubyte);
-
 
     HwModule &operator=(const HwModule&) = delete;
     size_t clockTime() { return mClock; }

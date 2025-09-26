@@ -3,8 +3,6 @@
 #include <memu/pinout.hpp>
 #include <stdio.h>
 #include <string.h>
-#include <SDL2/SDL.h>
-
 
 // #define M6502_LOGGING
 
@@ -13,8 +11,6 @@
 #else
     #define M605_LOG(...)
 #endif
-
-
 
 void m6502::_fetch()
 {
@@ -27,14 +23,38 @@ void m6502::_fetch()
 void m6502::_decode()
 {
     mCurrInstr = &mFtab[mCurrOp];
-    M605_LOG("%s    ", mCurrInstr->label);
+    M605_LOG("%s ", mCurrInstr->label);
+
+    #ifdef M6502_LOGGING
+        auto &ld = mCurrInstr->fA;
+        ubyte opsz = 1;
+        if (ld == &m6502::LoadACC)  opsz = 0;
+        if (ld == &m6502::LoadABS)  opsz = 2;
+        if (ld == &m6502::LoadABSX) opsz = 2;
+        if (ld == &m6502::LoadABSY) opsz = 2;
+        if (ld == &m6502::LoadIMM)  opsz = 1;
+        if (ld == &m6502::LoadIMP)  opsz = 0;
+        if (ld == &m6502::LoadIND)  opsz = 2;
+        if (ld == &m6502::LoadINDX) opsz = 1;
+        if (ld == &m6502::LoadINDY) opsz = 1;
+        if (ld == &m6502::LoadREL)  opsz = 9;
+        if (ld == &m6502::LoadZPG)  opsz = 1;
+        if (ld == &m6502::LoadZPGX) opsz = 1;
+        if (ld == &m6502::LoadZPGY) opsz = 1;
+
+        if (opsz == 0) printf("     ");
+        if (opsz == 1) printf("%02X   ", rdbus(PC));
+        if (opsz == 2) printf("%04X ", rdbusw(PC));
+        if (opsz == 9) printf("%04X ", mOpAddr);
+    #endif
+
 }
 
 
 void m6502::_execute()
 {
     (this->*mCurrInstr->fA)();
-    M605_LOG("A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
+    M605_LOG("   A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
     M605_LOG("\n");
     (this->*mCurrInstr->fE)();
 
@@ -48,24 +68,26 @@ void m6502::tick()
 {
     using namespace memu;
 
-    if (ioRead(ioNMI))
+    if (*ioLineNMI & 0xFF)
     {
+        *ioLineNMI &= 0x00;
         _NMI();
-        ioWrite(ioNMI, 0);
     }
 
-    else if (ioRead(ioRES) == 0)
-    {
-        this->reset();
-    }
+    // if (ioLineRES & 0xFF)
+    // {
+    //     this->reset();
+    // }
 
-    else if (ioRead(ioIRQ) == 0)
+    if (*ioLineIRQ & 0xFF)
     {
+        *ioLineIRQ &= 0x00;
         _IRQ();
     }
 
     if (mWaiting)
     {
+        mClock += 12;
         return;
     }
 
@@ -86,7 +108,7 @@ void m6502::reset()
     XR  = 0x00;
     YR  = 0x99;
     SP  = 0xFD;
-    PC  = 0xFFFC;
+    PC  = rdbusw(0xFFFC);
     SSR = {0b00100100};
 
     mWaiting   = false;
@@ -95,7 +117,8 @@ void m6502::reset()
     mClock     = 0;
     mOpCount   = 0;
 
-    _RES();
+    SSR.I = 1;
+    PC = rdbusw(0xFFFC);
 }
 
 void m6502::push08( uint8_t byte )
@@ -130,6 +153,8 @@ m6502::m6502( memu::AddrSpace &bus )
     mCurrOp(0),
     mOpCount(0)
 {
+    this->reset();
+
     using X = m6502;
 
     mFtab = new Inst[256];
