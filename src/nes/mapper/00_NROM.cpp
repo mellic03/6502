@@ -131,7 +131,7 @@ ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
 {
     if (0x0000<=addr && addr<=0x1FFF)
     {
-        ubyte *cpuram = nes.mCPU.mRAM.data();
+        ubyte *cpuram = cpu.mRAM.data();
         return cpuram[addr % 2048];
     }
 
@@ -148,7 +148,7 @@ ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
 
     if (0x4016<=addr && addr<=0x4017)
     {
-        ubyte *mmio = nes.mCPU.mMMIO;
+        ubyte *mmio = cpu.mMMIO;
         ubyte data = (mmio[addr-0x4000] & 0b01);
         mmio[addr-0x4000] >>= 1;
         return data;
@@ -177,7 +177,7 @@ void Mapper000_NROM::CpuAccess::write(addr_t addr, ubyte data)
 {
     if (0x4016<=addr && addr<=0x4016) // controller strobe
     {
-        ubyte *mmio = nes.mCPU.mMMIO;
+        ubyte *mmio = cpu.mMMIO;
         ubyte *gpad = (ubyte*)(nes.mPlayerCtl);
         ubyte  prev = (mmio[0x16] & 0b01);
         ubyte  curr = (data & 0b01);
@@ -208,7 +208,6 @@ void Mapper000_NROM::CpuAccess::write(addr_t addr, ubyte data)
 
 ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
 {
-    auto &ppu     = nes.mPPU;
     auto &ppuctl  = ppu.ppuctl;
     auto &ppumask = ppu.ppumask;
     auto &ppustat = ppu.ppustat;
@@ -257,7 +256,6 @@ ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
 
 void Mapper000_NROM::CpuAccess::write_ppu(addr_t addr, ubyte data)
 {
-    auto &ppu     = nes.mPPU;
     auto &ppuctl  = ppu.ppuctl;
     auto &ppumask = ppu.ppumask;
     auto &ppustat = ppu.ppustat;
@@ -327,13 +325,13 @@ ubyte Mapper000_NROM::PpuAccess::read(addr_t addr)
 
     if (0x2000<=addr && addr<=0x3EFF)
     {
-        ubyte *vram = nes.mPPU.mVRAM;
+        ubyte *vram = ppu.mVRAM;
         return vram[(addr - 0x2000) % 2048];
     }
 
     if (0x3F00<=addr && addr<=0x3FFF)
     {
-        ubyte *pctl = nes.mPPU.mPaletteCtl;
+        ubyte *pctl = ppu.mPaletteCtl;
         return pctl[(addr - 0x3F00) % 32];
     }
 
@@ -345,7 +343,7 @@ ubyte Mapper000_NROM::PpuAccess::read(addr_t addr)
 
 void Mapper000_NROM::PpuAccess::write(addr_t addr, ubyte data)
 {
-    ubyte *pctl = nes.mPPU.mPaletteCtl;
+    ubyte *pctl = ppu.mPaletteCtl;
 
     if (0x3F00<=addr && addr<=0x3FFF)
     {

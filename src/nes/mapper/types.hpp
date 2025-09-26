@@ -44,13 +44,15 @@ private:
     {
     public:
         CpuAccess(System &n, Mapper000_NROM &m)
-        :   mAddrLatch(true), nes(n), nrom(m) {  }
+        :   mAddrLatch(true), nes(n), cpu(n.mCPU), ppu(n.mPPU), nrom(m) {  }
         virtual ubyte read(addr_t) final;
         virtual void write(addr_t, ubyte) final;
 
     private:
         bool mAddrLatch;
         NesEmu::System &nes;
+        NesCPU &cpu;
+        NesPPU &ppu;
         Mapper000_NROM &nrom;
         ubyte read_ppu(addr_t);
         void write_ppu(addr_t, ubyte);
@@ -60,9 +62,10 @@ private:
     {
     private:
         NesEmu::System &nes;
+        NesPPU &ppu;
         Mapper000_NROM &nrom;
     public:
-        PpuAccess(System &n, Mapper000_NROM &m): nes(n), nrom(m) {  }
+        PpuAccess(System &n, Mapper000_NROM &m): nes(n), ppu(n.mPPU), nrom(m) {  }
         virtual ubyte read(addr_t) final;
         virtual void write(addr_t, ubyte) final;
     };
