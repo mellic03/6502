@@ -32,8 +32,8 @@ int main( int argc, char **argv )
     nes   = new NesEmu::System(emuio);
     nes->loadGamePak(new NesEmu::GamePak(nes->mConf["boot"]["rom"]));
 
-    // NesTest::compare("nestest-data.log", nes->mCPU);
-    // return 0;
+    NesTest::compare("nestest-data.log", nes->mCPU);
+    return 0;
 
     auto *gwin = nes->mGameWin;
     auto *cwin = nes->mChrWin;
@@ -74,6 +74,10 @@ int main( int argc, char **argv )
             W->setBounds(0, 0, 128, 256);
             wprintf("CPU\n");
             wprintf("time  %lu\n", nes->mCPU.clockTime());
+            wprintf("PC    %04X\n", nes->mCPU.PC);
+            wprintf("AC    %02X\n", nes->mCPU.AC);
+            wprintf("XR    %02X\n", nes->mCPU.XR);
+            wprintf("YR    %02X\n", nes->mCPU.YR);
             wprintf("accum %d\n", nes->mCycleAccum);
             wprintf("wait  %u\n", nes->mCPU.mWaiting);
 
@@ -100,7 +104,6 @@ int main( int argc, char **argv )
             // gwin->print(font, "AC   %02X\n", nes->mCPU.AC);
             // gwin->print(font, "XR   %02X\n", nes->mCPU.XR);
             // gwin->print(font, "YR   %02X\n", nes->mCPU.YR);
-
 
             // uword SP = nes->mCPU.SP;
             // uword count = 0;
