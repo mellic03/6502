@@ -30,7 +30,6 @@ protected:
 
 public:
     EmuWindow *mGameWin;
-    EmuWindow *mChrWin;
 
     int mCycle;
     int mScanLine;
@@ -45,7 +44,7 @@ public:
     uint8_t mPalette[192];
     uint8_t mPaletteCtl[32];
 
-    Ricoh2C02(AddrSpace&, EmuWindow *gamewin, EmuWindow *chrwin);
+    Ricoh2C02(AddrSpace&, EmuWindow *gamewin);
     virtual void tick() override;
     virtual void reset() override;
 

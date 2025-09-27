@@ -22,6 +22,7 @@ public:
     // static constexpr SDL_ScaleMode   mScaleMode = SDL_SCALEMODE_NEAREST;
     SDL_Surface *mSurface;
     int mW, mH, mPitch, mBPP;
+    SDL_ScaleMode mScaleMode = SDL_SCALEMODE_NEAREST;
 
     EmuImageBuffer( int w, int h, SDL_PixelFormat fmt=SDL_PIXELFORMAT_RGB24 );
     EmuImageBuffer( SDL_Surface* );
@@ -72,8 +73,7 @@ private:
     {
         EmuImageFont *f;
         char c;
-        int x, y, s;
-        bool l;
+        int x, y;
     };
 
     struct margin_t
@@ -96,15 +96,17 @@ private:
     int            mTicks;
     bool           mFlushPending;
 
-    void _glyph( EmuImageFont*, char, int, int, int, bool );
+    void _glyph( EmuImageFont*, char, int, int );
     void _flush();
     
 public:
+    void (*mOnUpdate)(EmuWindow*) = nullptr;
     EmuWindow( const char *title, int w, int h, int s=1, size_t r=1 );
     EmuFramebuffer *frameBuffer() { return &mRealBuf; }
-    void glyph( EmuImageFont*, char ch, int x, int y, int scale=1, bool linear=false );
-    void str( EmuImageFont*, const char *str, int x, int y, int scale=1, bool linear=false );
+    void glyph( EmuImageFont*, char ch, int x, int y );
+    void str( EmuImageFont*, const char *str, int x, int y );
     void setMargin( int xmin, int xmax, int ymin, int ymax );
+    void setScaleMode( SDL_ScaleMode mode ) { mRealBuf.mScaleMode = mode; }
     void setBounds( int x, int y, int w, int h );
     void print( EmuImageFont*, const char *fmt, ... );
     void flush() { mFlushPending = true; }
@@ -121,7 +123,7 @@ private:
 
 public:
     EmuIO();
-    EmuWindow *makeWin( const char *title, int w, int h, int scale, size_t rate=1 );
+    EmuWindow *makeWin( const char*, int w, int h, int scale, size_t rate=1 );
     bool running();
     void quit();
     void update();

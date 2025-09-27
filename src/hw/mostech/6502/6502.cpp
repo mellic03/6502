@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define M6502_LOGGING
+// #define M6502_LOGGING
 
 #ifdef M6502_LOGGING
     #define M605_LOG printf
@@ -34,24 +34,19 @@ void m6502::_execute()
     #ifdef M6502_LOGGING
         auto &ld = mCurrInstr->fA;
         ubyte opsz = 1;
-        if (ld == &m6502::LoadACC)  opsz = 0;
-        if (ld == &m6502::LoadABS)  opsz = 2;
-        if (ld == &m6502::LoadABSX) opsz = 2;
-        if (ld == &m6502::LoadABSY) opsz = 2;
-        if (ld == &m6502::LoadIMM)  opsz = 1;
-        if (ld == &m6502::LoadIMP)  opsz = 0;
-        if (ld == &m6502::LoadIND)  opsz = 2;
-        if (ld == &m6502::LoadINDX) opsz = 1;
-        if (ld == &m6502::LoadINDY) opsz = 1;
-        if (ld == &m6502::LoadREL)  opsz = 9;
-        if (ld == &m6502::LoadZPG)  opsz = 1;
-        if (ld == &m6502::LoadZPGX) opsz = 1;
-        if (ld == &m6502::LoadZPGY) opsz = 1;
-
-        if (opsz == 0) printf("     ");
-        if (opsz == 1) printf("%02X   ", rdbus(mOpAddr));
-        if (opsz == 2) printf("%04X ", rdbusw(mOpAddr));
-        if (opsz == 9) printf("%04X ", mOpAddr);
+        if (ld == &m6502::LoadACC)  { printf("AC     "); }
+        if (ld == &m6502::LoadABS)  { printf("$%04X  ", mOpAddr); }
+        if (ld == &m6502::LoadABSX) { printf("$%04X,X   ", rdbusw(mOpAddr)); }
+        if (ld == &m6502::LoadABSY) { printf("$%04X,Y   ", rdbusw(mOpAddr)); }
+        if (ld == &m6502::LoadIMM)  { printf("#$%02X   ", rdbus(mOpAddr)); }
+        if (ld == &m6502::LoadIMP)  { printf("       "); }
+        if (ld == &m6502::LoadIND)  { printf("($%04X)  ", rdbusw(mOpAddr)); }
+        if (ld == &m6502::LoadINDX) { printf("($%02X,X)  ", rdbus(mOpAddr)); }
+        if (ld == &m6502::LoadINDY) { printf("($%02X),Y  ", rdbus(mOpAddr)); }
+        if (ld == &m6502::LoadREL)  { printf("$%04X  ", mOpAddr); }
+        if (ld == &m6502::LoadZPG)  { printf("$%02X    ", rdbus(mOpAddr)); }
+        if (ld == &m6502::LoadZPGX) { printf("$%02X,X    ", rdbus(mOpAddr)); }
+        if (ld == &m6502::LoadZPGY) { printf("$%02X,Y    ", rdbus(mOpAddr)); }
     #endif
 
     M605_LOG("   A:%02X X:%02X Y:%02X P:%02X SP:%02X  ", AC, XR, YR, SSR.byte, SP);
@@ -69,27 +64,26 @@ void m6502::tick()
 {
     using namespace memu;
 
-    if (*ioLineNMI & 0xFF)
+    if (ioRead(ioLineNMI))
     {
-        *ioLineNMI &= 0x00;
+        ioWrite(ioLineNMI, 0);
         _NMI();
     }
 
-    else if (*ioLineRES & 0xFF)
+    else if (ioRead(ioLineRES))
     {
-        *ioLineRES &= 0x00;
-        this->reset();
+        ioWrite(ioLineRES, 0);
+        _RES();
     }
 
-    else if (*ioLineIRQ & 0xFF)
+    else if (ioRead(ioLineIRQ))
     {
-        *ioLineIRQ &= 0x00;
+        ioWrite(ioLineIRQ, 0);
         _IRQ();
     }
 
     if (mWaiting)
     {
-        mClock += 3;
         return;
     }
 
@@ -108,7 +102,7 @@ void m6502::reset()
 {
     AC  = 0x00;
     XR  = 0x00;
-    YR  = 0x99;
+    YR  = 0x00;
     SP  = 0xFD;
     PC  = rdbusw(0xFFFC);
     SSR = {0b00100100};
@@ -125,7 +119,8 @@ void m6502::reset()
 
 void m6502::push08( uint8_t byte )
 {
-    wtbus(0x0100 + --SP, byte);
+    SP -= 1;
+    wtbus(0x0100 + SP, byte);
 }
 
 void m6502::push16( uint16_t word )
@@ -136,14 +131,16 @@ void m6502::push16( uint16_t word )
 
 uint8_t m6502::pop08()
 {
-    return rdbus(0x0100 + SP++);
+    ubyte data = rdbus(0x0100 + SP);
+    SP += 1;
+    return data;
 }
 
 uint16_t m6502::pop16()
 {
-    uint8_t lo = pop08();
-    uint8_t hi = pop08();
-    return ((uint16_t)hi << 8) | (uint16_t)lo;
+    ubyte lo = pop08();
+    ubyte hi = pop08();
+    return ((uword)hi << 8) | (uword)lo;
 }
 
 

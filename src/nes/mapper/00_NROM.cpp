@@ -92,7 +92,7 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
         log("PAL/NTSC:      %s", (fh->IsPAL) ? "PAL" : "NTSC");
     }
 
-    mPrgRam = {new ubyte[8*1024], 8*1024};
+    mPrgRam = {new ubyte[4*1024], 4*1024};
 
     mPrgRom = {fpos, fh->PrgRomNo16K * 16*1024};
     fpos += mPrgRom.size;
@@ -154,6 +154,11 @@ ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
         return data;
     }
 
+    // if (0x4018<=addr && addr<=0x5FFF)
+    // {
+    //     return 0;
+    // }
+
     if (0x6000<=addr && addr<=0x7FFF)
     {
         ubyte *ram  = nrom.mPrgRam.base;
@@ -175,6 +180,12 @@ ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
 
 void Mapper000_NROM::CpuAccess::write(addr_t addr, ubyte data)
 {
+    if (0x0000<=addr && addr<=0x1FFF)
+    {
+        ubyte *cpuram = cpu.mRAM.data();
+        cpuram[addr % 2048] = data;
+    }
+
     if (0x4016<=addr && addr<=0x4016) // controller strobe
     {
         ubyte *mmio = cpu.mMMIO;
@@ -208,6 +219,8 @@ void Mapper000_NROM::CpuAccess::write(addr_t addr, ubyte data)
 
 ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
 {
+    nes.cycleAccumFlush();
+
     auto &ppuctl  = ppu.ppuctl;
     auto &ppumask = ppu.ppumask;
     auto &ppustat = ppu.ppustat;
@@ -256,6 +269,8 @@ ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
 
 void Mapper000_NROM::CpuAccess::write_ppu(addr_t addr, ubyte data)
 {
+    nes.cycleAccumFlush();
+
     auto &ppuctl  = ppu.ppuctl;
     auto &ppumask = ppu.ppumask;
     auto &ppustat = ppu.ppustat;

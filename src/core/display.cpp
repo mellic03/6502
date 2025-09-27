@@ -96,7 +96,16 @@ void EmuFramebuffer::blit( int x, int y, int w, int h,
 {
     SDL_Rect src = { sx, sy, sw, sh };
     SDL_Rect dst = { x, y, w, h };
-    SDL_BlitSurfaceScaled(sbuf->mSurface, &src, mSurface, &dst, SDL_SCALEMODE_NEAREST);
+
+    if (w==sw && h==sh)
+    {
+        SDL_BlitSurface(sbuf->mSurface, &src, mSurface, &dst);
+    }
+
+    else
+    {
+        SDL_BlitSurfaceScaled(sbuf->mSurface, &src, mSurface, &dst, mScaleMode);
+    }
 }
 
 
@@ -132,60 +141,65 @@ EmuWindow::EmuWindow( const char *title, int w, int h, int scale, size_t rate )
     mGlyphMargin = {0, w, 0, h};
 }
 
-void EmuWindow::_glyph( EmuImageFont *f, char c, int x, int y, int s, bool l )
+void EmuWindow::_glyph( EmuImageFont *f, char c, int x, int y )
 {
     ivec2 tl = f->getGlyphCorner(c);
     ivec2 sp = f->getGlyphExtents();
     SDL_Rect src = { tl.x, tl.y, sp.x, sp.y };
-    SDL_Rect dst = { x, y, s*sp.x, s*sp.y };
+    SDL_Rect dst = { mScale*x, mScale*y, mScale*sp.x, mScale*sp.y };
 
-    if (s > 1)
-    {
-        SDL_ScaleMode mode = (l) ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST;
-        SDL_BlitSurfaceScaled(f->mSurface, &src, mWinBuf.mSurface, &dst, mode);
-    }
-    else
-    {
-        SDL_BlitSurface(f->mSurface, &src, mWinBuf.mSurface, &dst);
-    }
+    // if (s == 1)
+    // {
+    //     SDL_BlitSurface(f->mSurface, &src, mRealBuf.mSurface, &dst);
+    // }
+
+    // else
+    // {
+        SDL_BlitSurfaceScaled(f->mSurface, &src, mWinBuf.mSurface, &dst, SDL_SCALEMODE_LINEAR);
+    // }
 }
 
 void EmuWindow::_flush()
 {
-    mGlyphPos = {0, 0};
+    if (mOnUpdate)
+    {
+        mOnUpdate(this);
+    }
+
     mWinBuf.blit(0, 0, mWinBuf.mW, mWinBuf.mH, &mRealBuf, 0, 0, mRealBuf.mW, mRealBuf.mH);
 
+    mGlyphPos = {0, 0};
     for (auto &G: mGlyphs)
-        _glyph(G.f, G.c, G.x, G.y, G.s, G.l);
+        _glyph(G.f, G.c, G.x, G.y);
     mGlyphs.clear();
 
     SDL_UpdateWindowSurface(mWin);
 }
 
-void EmuWindow::glyph( EmuImageFont *f, char c, int x, int y, int scale, bool linear )
+void EmuWindow::glyph( EmuImageFont *f, char c, int x, int y )
 {
-    mGlyphs.push_back({f, c, x, y, scale, linear});
+    mGlyphs.push_back({f, c, x, y});
 }
 
 
-void EmuWindow::str( EmuImageFont *f, const char *str, int x, int y, int scale, bool linear )
+void EmuWindow::str( EmuImageFont *f, const char *str, int x, int y )
 {
     ivec2 sp = f->getGlyphExtents();
 
     while (char ch = *(str++))
     {
         if (ch == '\n')
-            x = scale*sp.x;
+            x = sp.x;
 
         else
-            mGlyphs.push_back({f, ch, x, y, scale, linear});
+            mGlyphs.push_back({f, ch, x, y});
 
-        x += scale*sp.x;
+        x += sp.x;
     
         if (x >= mWinBuf.mW)
         {
             x = 0;
-            y += scale*sp.y;
+            y += sp.y;
         }
     
         if (y >= mWinBuf.mH)
@@ -229,7 +243,7 @@ void EmuWindow::print( EmuImageFont *f, const char *fmt, ... )
         if (ch == '\n')
             x = xmax+1;
         else
-            mGlyphs.push_back({f, ch, x, y, 1, false});
+            mGlyphs.push_back({f, ch, x, y});
 
         x += (3*sp.x)/4;
 

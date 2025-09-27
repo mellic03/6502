@@ -7,32 +7,39 @@ void m6502::InstrUnimp()
     mInvalidOp = 1;
 }
 
-uint8_t m6502::_N(uint8_t x)
+uint8_t m6502::_N(uword x)
 {
     SSR.N = (x & (1 << 7)) ? 1 : 0;
     return x;
 }
 
-uint8_t m6502::_Z(uint8_t x)
+uint8_t m6502::_V(uword x, uint8_t a, uint8_t b)
+{
+    SSR.V = ((~(a^b)) & (a^x)) & 0x80;
+    return x;
+}
+
+uint8_t m6502::_Z(uword x)
 {
     SSR.Z = (x == 0) ? 1 : 0;
     return x;
 }
 
-uint8_t m6502::_NZ(uint8_t x)
+uint8_t m6502::_NZ(uword x)
 {
     _N(x); _Z(x);
     return x;
 }
 
-uint8_t m6502::_NZC(uint8_t x)
+uint8_t m6502::_NZC(uword x)
 {
-    SSR.C = (x & (1 << 8)) ? 1 : 0;
+    SSR.C = (0<=x && x<=255) ? 0 : 1;
+    // SSR.C = ((uword)x & (1 << 8)) ? 1 : 0;
     _N(x); _Z(x);
     return x;
 }
 
-uint8_t m6502::_NVZC(uint8_t x, uint8_t a, uint8_t b)
+uint8_t m6502::_NVZC(uword x, uint8_t a, uint8_t b)
 {
     SSR.V = ((~(a^b)) & (a^x)) & 0x80;
     _NZC(x);
@@ -83,18 +90,22 @@ void m6502::_NMI()
 
 void m6502::_RES()
 {
-    // printf("\t\t RES  PC:%04X\n", PC);
+    printf("\t\t RES  PC:%04X\n", PC);
+    mWaiting = false;
     this->reset();
 }
 
 void m6502::_IRQ()
 {
-    if (SSR.I == 0)
+    mWaiting = false;
+
+    if (SSR.I == 1)
     {
-        mWaiting = false;
-        _IntPush(0);
-        _IntJump(0xFFFE);
+        return;
     }
+
+    _IntPush(0);
+    _IntJump(0xFFFE);
 }
 
 void m6502::_BRK()
@@ -108,9 +119,9 @@ void m6502::_BRK()
 void m6502::_InstrADC( uint8_t b )
 {
     uint16_t sum = AC + b + SSR.C;
-    // SSR.C = (sum > 0xFF);
-    // SSR.V = (~(AC ^ b) & (AC ^ sum) & 0x80) != 0;
     AC = _NVZC(sum, AC, b);
+    // SSR.C = (sum > 0xFF);
+    SSR.V = (~(AC ^ b) & (AC ^ sum) & 0x80) != 0;
 }
 
 
@@ -130,9 +141,9 @@ void m6502::InstrBEQ() { if (SSR.Z==1) PC = mOpAddr; }
 void m6502::InstrBIT()
 {
     uint8_t value = rdbus(mOpAddr);
-    SSR.N = (value & 0x80) != 0;
-    SSR.V = (value & 0x40) != 0;
-    _Z(AC & value);
+    SSR.N = (value & (1<<7)) ? 1 : 0;
+    SSR.V = (value & (1<<6)) ? 1 : 0;
+    SSR.Z = ((value & AC) == 0) ? 1 : 0;
 }
 
 void m6502::InstrBMI() { if (SSR.N==1) PC = mOpAddr; }
@@ -147,9 +158,43 @@ void m6502::InstrCLD() { SSR.D = 0; }
 void m6502::InstrCLI() { SSR.I = 0; }
 void m6502::InstrCLV() { SSR.V = 0; }
 
-void m6502::InstrCMP() { _NZC(AC - rdbus(mOpAddr)); }
-void m6502::InstrCPX() { _NZC(AC - rdbus(mOpAddr)); }
-void m6502::InstrCPY() { _NZC(YR - rdbus(mOpAddr)); }
+
+#define instr_cmp \
+    _NZC(uword(AC) - rdbus(mOpAddr)); \
+    if (rg < op) { \
+        SSR.Z = 1; \
+        SSR.C = 1; \
+    } else if (rg == op) { \
+        SSR.Z = 1; \
+        SSR.C = 1; \
+    } else if (rg > op) { \
+        SSR.Z = 0; \
+        SSR.C = 1; \
+    }
+
+void m6502::InstrCMP()
+{
+    int rg = int(AC);
+    int op = int(rdbus(mOpAddr));
+    instr_cmp
+}
+
+void m6502::InstrCPX()
+{
+    int rg = int(XR);
+    int op = int(rdbus(mOpAddr));
+    instr_cmp
+}
+
+void m6502::InstrCPY()
+{
+    int rg = int(YR);
+    int op = int(rdbus(mOpAddr));
+    instr_cmp
+}
+
+
+
 void m6502::InstrDEC() { wtbus(mOpAddr, _NZ(rdbus(mOpAddr)-1)); }
 void m6502::InstrDEX() { XR = _NZ(XR-1); }
 void m6502::InstrDEY() { YR = _NZ(YR-1); }
@@ -174,9 +219,24 @@ void m6502::InstrLSR()
 void m6502::InstrNOP() {   }
 void m6502::InstrORA() { AC =_NZ(AC | rdbus(mOpAddr)); }
 void m6502::InstrPHA() { push08(AC); }
-void m6502::InstrPHP() { SSR.B=1; push08(SSR.byte); }
 void m6502::InstrPLA() { AC = _NZ(pop08()); }
-void m6502::InstrPLP() { SSR.byte = pop08(); SSR.B=0; }
+
+void m6502::InstrPHP()
+{
+    auto P = SSR;
+    P.B = 1;
+    P.U = 1;
+    push08(P.byte);
+}
+
+void m6502::InstrPLP()
+{
+    auto P = SSR;
+    P.byte = pop08();
+    P.B = SSR.B;
+    P.U = SSR.U;
+    SSR = P;
+}
 
 void m6502::InstrROL()
 {

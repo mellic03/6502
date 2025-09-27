@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memu/types.hpp>
 #include <memu/hw/ricoh/2A03.hpp>
 #include <memu/addrspace.hpp>
 
@@ -8,6 +9,8 @@ namespace NesEmu
 {
     class System;
 }
+
+class NesTest;
 
 
 class NesCPU: public memu::Ricoh2A03
@@ -27,8 +30,5 @@ public:
     // };
 
 private:
-    // friend class PageHandlerMMIO;
 
 };
-
-

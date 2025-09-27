@@ -12,11 +12,10 @@ using namespace memu;
 
 
 
-Ricoh2C02::Ricoh2C02( AddrSpace &bus, EmuWindow *gamewin, EmuWindow *chrwin )
+Ricoh2C02::Ricoh2C02( AddrSpace &bus, EmuWindow *gamewin )
 :   HwModule(bus),
     BaseHw(),
     mGameWin(gamewin),
-    mChrWin(chrwin),
     mCycle(0),
     mScanLine(0)
 {
@@ -35,7 +34,7 @@ Ricoh2C02::Ricoh2C02( AddrSpace &bus, EmuWindow *gamewin, EmuWindow *chrwin )
 
 void Ricoh2C02::tick()
 {
-    // if (memu::ioRead(ioRES) == 0)
+    // if (memu::ioRead(ioLineRES) == 0)
     // {
     //     this->reset();
     // }
@@ -43,11 +42,11 @@ void Ricoh2C02::tick()
     if (mScanLine==241 && mCycle==1)
     {
         ppustat.VBlank = 1;
-        // printf("VBLANK\n");
+        printf("VBLANK\n");
 
         if (ppuctl.NMIEnabled)
         {
-            *ioLineNMI &= 0xFF;
+            ioWrite(ioLineNMI, 1);
         }
     }
 
@@ -61,6 +60,8 @@ void Ricoh2C02::tick()
 
         if (mScanLine >= 261)
         {
+            ppustat.VBlank = 0;
+
             _entire_frame();
             mGameWin->flush();
             mScanLine = -1;
@@ -102,7 +103,7 @@ void Ricoh2C02::preRenderChrTile( EmuWindow *fb, int x0, int y0, uword tidx, uwo
 void Ricoh2C02::preRenderChrRom( EmuWindow *fb )
 {
     // auto *ntab = (NTable*)(&mVRAM[0x400*ppuctl.NameTabSel]);
-    uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+    uword base = 0x400*ppuctl.NameTabSel;
 
     for (uword row=0; row<32; row++)
     {
@@ -118,29 +119,23 @@ void Ricoh2C02::preRenderChrRom( EmuWindow *fb )
 
 void Ricoh2C02::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
 {
-    ubyte bgSel = (ppuctl.BgTileSel) ? 1 : 0;
-    // int srcy = 8*(tidx / 16);
-    // int srcx = 8*(tidx % 16);
+    uword bgsel = (ppuctl.BgTileSel) ? 1 : 0;
+    uword base  = 0x1000*bgsel + 16*tidx;
 
     for (int y=0; y<8; y++)
     {
         for (int x=0; x<8; x++)
         {
-            // int i = 16*row + y;
-            // int j = 16*col + x;
-            // int tidx = 16*row + col;
-
-            uword base = 0x1000*bgSel + 16*tidx;
-            ubyte low  = rdbus(base + y+0);
-            ubyte high = rdbus(base + y+8);
-
-            ubyte bit = 7 - (x % 8);
-            ubyte lsb = (low  >> bit) & 0x01;
-            ubyte msb = (high >> bit) & 0x01;
-            ubyte pxl = msb + lsb;
-            // ubyte off = mPaletteCtl[4*mPalNo + pxl] & 0x3F;
+            ubyte lsb  = rdbus(base + y+0);
+            ubyte msb  = rdbus(base + y+8);
+            ubyte lo   = (lsb >> (7-x)) & 0x01;
+            ubyte hi   = (msb >> (7-x)) & 0x01;
+            ubyte pxl  = (hi << 1) | lo;
+            ubyte off  = mPaletteCtl[4*mPalNo + pxl] & 0x3F;
+    
+            mGameWin->frameBuffer()->pixel(x0+x, y0+y, 64*pxl);
             // mGameWin->frameBuffer()->pixel(x0+x, y0+y, &mPalette[3*off]);
-            mGameWin->frameBuffer()->pixel(x0+x, y0+y, tidx);
+            // mGameWin->frameBuffer()->pixel(x0+x, y0+y, tidx);
 
             // ubyte *C = mChrWin->frameBuffer()->getPixel(srcx+x, srcy+y);
             // mGameWin->frameBuffer()->pixel(x0+x, y0+y, C);
@@ -152,14 +147,6 @@ void Ricoh2C02::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
 void Ricoh2C02::_entire_frame()
 {
     uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
-
-    for (uword i=0; i<30*32; i++)
-    {
-        uword tidx = rdbus(base + i);
-        _entire_tile(8*(i%32), 8*(i/32), tidx, 0);
-    }
-
-    return;
 
     for (uword row=0; row<30; row++)
     {

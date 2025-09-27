@@ -67,7 +67,6 @@ int m6502::LoadIMP()
  */
 int m6502::LoadIND()
 {
-
     uint16_t ind_lo  = fetch08();
     uint16_t ind_hi  = fetch08();
     uint16_t ptr_ind = (ind_hi << 8) | ind_lo;
@@ -77,7 +76,6 @@ int m6502::LoadIND()
     if (ind_lo == 0x00FF) {
         abs_lo  = rdbus(ptr_ind + 0);
         abs_hi  = rdbus(ptr_ind & 0xFF00); // emulate page-wrap bug
-        mClock += 1;
     } else {
         abs_lo  = rdbus(ptr_ind + 0);
         abs_hi  = rdbus(ptr_ind + 1);
@@ -139,7 +137,7 @@ int m6502::LoadREL()
  */
 int m6502::LoadZPG()
 {
-    mOpAddr = fetch08();
+    mOpAddr = uword(fetch08()) & 0x00FF;
     return 0;
 }
 
@@ -149,7 +147,7 @@ int m6502::LoadZPG()
  */
 int m6502::LoadZPGX()
 {
-    mOpAddr = (fetch08() + XR) & 0xFF;
+    mOpAddr = (fetch08() + XR) & 0x00FF;
     return 0;
 }
 
@@ -159,7 +157,7 @@ int m6502::LoadZPGX()
  */
 int m6502::LoadZPGY()
 {
-    mOpAddr = (fetch08() + YR) & 0xFF;
+    mOpAddr = (fetch08() + YR) & 0x00FF;
     return 0;
 }
 

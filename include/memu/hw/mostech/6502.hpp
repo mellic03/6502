@@ -30,15 +30,17 @@ public:
 
 
 private:
+    friend class NesTest;
     struct Inst;
     m6502::Inst *mCurrInstr;
     m6502::Inst *mFtab;
 
-    uint8_t _N(uint8_t);
-    uint8_t _Z(uint8_t);
-    uint8_t _NZ(uint8_t);
-    uint8_t _NZC(uint8_t);
-    uint8_t _NVZC(uint8_t x, uint8_t a, uint8_t b);
+    uint8_t _N(uword);
+    uint8_t _V(uword, uint8_t a, uint8_t b);
+    uint8_t _Z(uword);
+    uint8_t _NZ(uword);
+    uint8_t _NZC(uword);
+    uint8_t _NVZC(uword x, uint8_t a, uint8_t b);
 
     void   _fetch();
     void   _decode();
@@ -134,64 +136,6 @@ private:
     void InstrTXA();
     void InstrTXS();
     void InstrTYA();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
 };
 
 

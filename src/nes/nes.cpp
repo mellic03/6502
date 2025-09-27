@@ -31,9 +31,9 @@
 NesEmu::System::System( EmuIO *io )
 :   mConf("nes.conf"),
     mGameWin(io->makeWin("NesEmu", 256, 240, 4, 0)),
-    mChrWin(io->makeWin("CHR-ROM", 128, 256, 4, 0)),
+    // mChrWin(io->makeWin("CHR-ROM", 128, 256, 4, 0)),
     mCPU(mBusCPU),
-    mPPU(mBusPPU, mGameWin, mChrWin),
+    mPPU(mBusPPU, mGameWin),
     ioLineNMI(0), ioLineRES(0), ioLineIRQ(0), ioLineCLK(0)
 {
     using namespace memu;
@@ -59,8 +59,8 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
     Mapper::MapGamePak(*this, gpak);
 
     mPPU.loadPalette(mConf["video"]["palette"]);
-    mPPU.preRenderChrRom(mChrWin);
-    mChrWin->flush();
+    // mPPU.preRenderChrRom(mChrWin);
+    // mChrWin->flush();
     mCPU.reset();
 
     if (mConf["boot"]["jump"])
@@ -74,25 +74,33 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
 
 void NesEmu::System::tick()
 {
-    static int accum = 0;
-    int clocks = 0;
-
-    clocks = mCPU.clockTime();
-    mCPU.tick();
-    accum += (mCPU.clockTime() - clocks);
-
-    while (3*accum - 3 >= 0)
+    if (ioLineRES)
     {
-        clocks = mPPU.clockTime();
-        mPPU.tick();
-        accum -= (mPPU.clockTime() - clocks);
+        mCPU.reset();
+        mPPU.reset();
+        ioLineRES = 0;
     }
 
-    // // int rem = mPPU.tick(mCPU.clockTime() - start);
-    // // if (rem)
-    // // {
-    // //     mPPU.tick(rem);
-    // // }
+    int clocks = mCPU.clockTime();
+    mCPU.tick();
+    mCycleAccum += 3 * (mCPU.clockTime() - clocks);
+
+    if (mCPU.mWaiting)
+    {
+        mCycleAccum += 1;
+        cycleAccumFlush();
+    }
+
+    if (mCycleAccum > 241)
+    {
+        cycleAccumFlush();
+    }
+    // while (accum > 0)
+    // {
+    //     clocks = mPPU.clockTime();
+    //     mPPU.tick();
+    //     accum -= (mPPU.clockTime() - clocks);
+    // }
 
     // mCPU.tick();
     // mPPU.tick();
@@ -101,4 +109,144 @@ void NesEmu::System::tick()
 
 }
 
+
+
+
+
+
+#include <fstream>
+#include <sstream>
+
+
+
+
+void print_row( NesTest::Row &row )
+{
+    // pc, op, ac, xr, yr, ssr, sp, ppuLine, ppuDot, cycle;
+    // printf("C000 4C 00 00 00 24 FD 0000 0033 0007 \n");
+    
+    printf("%04X ", row.col[0]);
+    for (int i=1; i<5; i++)
+        printf("%02X ", row.col[i]);
+
+
+    printf("%02X ", row.col[6]);
+
+    for (int i=7; i>=0; i--)
+        printf("%u", bool(row.col[5] & (1<<i)));
+    printf(" ");
+
+    for (int i=7; i<10; i++)
+        printf("%04u ", row.col[i]);
+    printf("\n");
+}
+
+
+
+void NesTest::compare( const std::string &path, NesCPU &cpu )
+{
+    NesTest test0(path);
+
+    cpu.PC = 0xC000;
+
+    for (size_t i=0; i<test0.size(); i++)
+    {
+        using namespace memu;
+
+        uword pc = cpu.PC;
+        ubyte op = cpu.rdbus(cpu.PC);
+        Row row = {pc, op, cpu.AC, cpu.XR, cpu.YR, cpu.SSR.byte, cpu.SP, 0, 0, cpu.clockTime()};
+
+        cpu._fetch();
+        cpu._decode();
+        cpu._execute();
+
+        if (cpu.mInvalidOp)
+        {
+            printf("Invalid opcode (0x%02X)\n", cpu.mCurrOp);
+            break;
+        }
+
+
+        printf("%04d   ADDR OP AC XR YR SP NVBUDIZC \n", i+1);
+        printf("ideal  ");
+        print_row(test0[i]);
+
+        printf("actual ");
+        print_row(row);
+
+        if (test0[i] != row)
+        {
+            printf("Fail\n");
+            break;
+        }
+        printf("\n");
+    }
+}
+
+
+NesTest::NesTest( const std::string &path )
+{
+    std::ifstream stream(path);
+    std::string line = "";
+
+    while (std::getline(stream, line, '\n'))
+    {
+        std::stringstream ss(line);
+        std::string word = "";
+        Row row;
+        int col = 0;
+
+        while (std::getline(ss, word, ' '))
+        {
+            if (word.length()==0 || word[0]==' ')
+            {
+                continue;
+            }
+
+            row.col[col++] = (uint64_t)strtol(word.c_str(), NULL, 16);
+
+            if (col == 10)
+            {
+                mData.push_back(row);
+                col = 0;
+                // printf("%04X ", row.col[0]);
+                // for (int i=1; i<7; i++)
+                //     printf("%02X ", row.col[i]);
+                // for (int i=7; i<10; i++)
+                //     printf("%04u ", row.col[i]);
+                // printf("\n");
+            }
+        }
+    }
+}
+
+
+// #include <memu/pinout.hpp>
+
+// NesTest::NesTest( NesCPU &cpu )
+// {
+//     cpu.PC = 0xC000;
+//     int count = 0;
+
+//     while (!cpu.mInvalidOp && count++ < 512)
+//     {
+//         using namespace memu;
+
+//         uword pc = cpu.PC;
+//         ubyte op = cpu.rdbus(cpu.PC);
+//         Row row = {pc, op, cpu.AC, cpu.XR, cpu.YR, cpu.SSR.byte, cpu.SP, 0, 0, cpu.clockTime()};
+
+//         cpu._fetch();
+//         cpu._decode();
+//         cpu._execute();
+
+//         if (cpu.mInvalidOp)
+//         {
+//             printf("Invalid opcode (0x%02X)\n", cpu.mCurrOp);
+//         }
+
+//         mData.push_back(row);
+//     }
+// }
 

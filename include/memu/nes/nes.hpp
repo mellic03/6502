@@ -59,6 +59,7 @@ private:
     size_t mClocks = 0;
 
 public:
+    int mCycleAccum = 0;
     memu::ConfigParser mConf;
 
     EmuWindow      *mGameWin;
@@ -82,5 +83,48 @@ public:
     void loadGamePak(GamePak*);
     void tick();
     void reset() { ioLineRES |= 0xFF; }
+
+    void cycleAccumFlush()
+    {
+        for (int i=0; i<3*mCycleAccum; i++)
+            mPPU.tick();
+        mCycleAccum = 0;
+    };
 };
 
+
+
+
+
+
+#include <string>
+#include <vector>
+
+class NesTest
+{
+public:
+    union Row {
+        uint64_t col[10];
+        struct {
+            uint64_t pc, op, ac, xr, yr, ssr, sp, ppuLine, ppuDot, cycle;
+        };
+    
+        bool operator==(const Row &B) const
+        {
+            for (int i=0; i<7; i++)
+                if (col[i] != B.col[i])
+                return false;
+            return true;
+        }
+    };
+
+    static void compare( const std::string&, NesCPU& );
+    Row &operator[](int i) { return mData[i]; }
+    size_t size() { return mData.size(); }
+
+private:
+    NesTest( const std::string &filepath);
+    // NesTest( NesCPU &cpu );
+    NesTest() {  };
+    std::vector<Row> mData;
+};
