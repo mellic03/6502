@@ -21,7 +21,7 @@ uint8_t m6502::_V(uword x, uint8_t a, uint8_t b)
 
 uint8_t m6502::_Z(uword x)
 {
-    SSR.Z = (x == 0) ? 1 : 0;
+    SSR.Z = (x & 0xFF) ? 0 : 1;
     return x;
 }
 
@@ -82,7 +82,7 @@ void m6502::_IntJump( uword addr )
 
 void m6502::_NMI()
 {
-    printf("\t\t NMI  PC:%04X\n", PC);
+    // printf("\t\t NMI  PC:%04X\n", PC);
     mWaiting = false;
     _IntPush(0, 1);
     _IntJump(0xFFFA);
@@ -90,7 +90,7 @@ void m6502::_NMI()
 
 void m6502::_RES()
 {
-    printf("\t\t RES  PC:%04X\n", PC);
+    // printf("\t\t RES  PC:%04X\n", PC);
     mWaiting = false;
     this->reset();
 }
@@ -116,12 +116,11 @@ void m6502::_BRK()
 
 
 
-void m6502::_InstrADC( uint8_t b )
+void m6502::_InstrADC( uint8_t arg )
 {
-    uint16_t sum = AC + b + SSR.C;
-    AC = _NVZC(sum, AC, b);
-    // SSR.C = (sum > 0xFF);
-    SSR.V = (~(AC ^ b) & (AC ^ sum) & 0x80) != 0;
+    uword sum = AC + arg + (SSR.C ? 1 : 0);
+    SSR.V = ((AC ^ sum) & (arg ^ sum) & 0x80) ? 1 : 0;
+    AC    = _NZC(AC + arg + SSR.C);
 }
 
 
@@ -160,36 +159,38 @@ void m6502::InstrCLV() { SSR.V = 0; }
 
 
 #define instr_cmp \
-    _NZC(uword(AC) - rdbus(mOpAddr)); \
     if (rg < op) { \
-        SSR.Z = 1; \
-        SSR.C = 1; \
+        SSR.N = ((rg-op) & 128) ? 1 : 0; \
+        SSR.Z = 0; \
+        SSR.C = 0; \
     } else if (rg == op) { \
+        SSR.N = 0; \
         SSR.Z = 1; \
         SSR.C = 1; \
     } else if (rg > op) { \
+        SSR.N = ((rg-op) & 128) ? 1 : 0; \
         SSR.Z = 0; \
         SSR.C = 1; \
     }
 
 void m6502::InstrCMP()
 {
-    int rg = int(AC);
-    int op = int(rdbus(mOpAddr));
+    ubyte rg = AC;
+    ubyte op = rdbus(mOpAddr);
     instr_cmp
 }
 
 void m6502::InstrCPX()
 {
-    int rg = int(XR);
-    int op = int(rdbus(mOpAddr));
+    ubyte rg = XR;
+    ubyte op = rdbus(mOpAddr);
     instr_cmp
 }
 
 void m6502::InstrCPY()
 {
-    int rg = int(YR);
-    int op = int(rdbus(mOpAddr));
+    ubyte rg = YR;
+    ubyte op = rdbus(mOpAddr);
     instr_cmp
 }
 
@@ -298,4 +299,4 @@ void m6502::InstrTAY() { YR = _NZ(AC); }
 void m6502::InstrTSX() { XR = _NZ(SP); }
 void m6502::InstrTXA() { AC = _NZ(XR); }
 void m6502::InstrTXS() { SP = XR; }
-void m6502::InstrTYA() { YR = _NZ(AC); }
+void m6502::InstrTYA() { AC = _NZ(YR); }

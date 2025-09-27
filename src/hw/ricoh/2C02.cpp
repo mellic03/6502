@@ -42,7 +42,7 @@ void Ricoh2C02::tick()
     if (mScanLine==241 && mCycle==1)
     {
         ppustat.VBlank = 1;
-        printf("VBLANK\n");
+        // printf("VBLANK\n");
 
         if (ppuctl.NMIEnabled)
         {
@@ -61,7 +61,6 @@ void Ricoh2C02::tick()
         if (mScanLine >= 261)
         {
             ppustat.VBlank = 0;
-
             _entire_frame();
             mGameWin->flush();
             mScanLine = -1;
@@ -131,10 +130,10 @@ void Ricoh2C02::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
             ubyte lo   = (lsb >> (7-x)) & 0x01;
             ubyte hi   = (msb >> (7-x)) & 0x01;
             ubyte pxl  = (hi << 1) | lo;
-            ubyte off  = mPaletteCtl[4*mPalNo + pxl] & 0x3F;
+            ubyte off  = mPaletteCtl[4*palIdx + pxl] & 0x3F;
     
-            mGameWin->frameBuffer()->pixel(x0+x, y0+y, 64*pxl);
-            // mGameWin->frameBuffer()->pixel(x0+x, y0+y, &mPalette[3*off]);
+            // mGameWin->frameBuffer()->pixel(x0+x, y0+y, 64*pxl);
+            mGameWin->frameBuffer()->pixel(x0+x, y0+y, &mPalette[3*off]);
             // mGameWin->frameBuffer()->pixel(x0+x, y0+y, tidx);
 
             // ubyte *C = mChrWin->frameBuffer()->getPixel(srcx+x, srcy+y);
@@ -153,7 +152,7 @@ void Ricoh2C02::_entire_frame()
         for (uword col=0; col<32; col++)
         {
             int tileIdx = rdbus(base + 32*row + col);
-            int palIdx = mPalNo; // rdbus(base + 960 + ... );
+            int palIdx  = mPalNo; // rdbus(base + 960 + 8*row + col);
             _entire_tile(8*col, 8*row, tileIdx, palIdx);
         }
     }
@@ -269,6 +268,7 @@ void Ricoh2C02::reset()
     ppuaddr = 0;
     ppudata = 0;
 
+    mClock    = 0;
     mCycle    = 0;
     mScanLine = 0;
 }

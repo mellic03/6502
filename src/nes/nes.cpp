@@ -79,6 +79,7 @@ void NesEmu::System::tick()
         mCPU.reset();
         mPPU.reset();
         ioLineRES = 0;
+        mCycleAccum = 0;
     }
 
     int clocks = mCPU.clockTime();
@@ -87,26 +88,18 @@ void NesEmu::System::tick()
 
     if (mCPU.mWaiting)
     {
-        mCycleAccum += 1;
-        cycleAccumFlush();
+        mCycleAccum += 3*8;
     }
 
-    if (mCycleAccum > 241)
+    if (mCycleAccum >= 64)
     {
         cycleAccumFlush();
     }
-    // while (accum > 0)
-    // {
-    //     clocks = mPPU.clockTime();
-    //     mPPU.tick();
-    //     accum -= (mPPU.clockTime() - clocks);
-    // }
 
     // mCPU.tick();
     // mPPU.tick();
     // mPPU.tick();
     // mPPU.tick();
-
 }
 
 

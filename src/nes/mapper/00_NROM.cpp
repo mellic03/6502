@@ -186,6 +186,11 @@ void Mapper000_NROM::CpuAccess::write(addr_t addr, ubyte data)
         cpuram[addr % 2048] = data;
     }
 
+    if (0x2000<=addr && addr<=0x3FFF)
+    {
+        write_ppu(addr, data);
+    }
+
     if (0x4016<=addr && addr<=0x4016) // controller strobe
     {
         ubyte *mmio = cpu.mMMIO;
@@ -219,6 +224,7 @@ void Mapper000_NROM::CpuAccess::write(addr_t addr, ubyte data)
 
 ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
 {
+    // printf("[read_ppu] 0x%04X\n", addr);
     nes.cycleAccumFlush();
 
     auto &ppuctl  = ppu.ppuctl;
@@ -269,6 +275,7 @@ ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
 
 void Mapper000_NROM::CpuAccess::write_ppu(addr_t addr, ubyte data)
 {
+    // printf("[write_ppu] 0x%04X\n", addr);
     nes.cycleAccumFlush();
 
     auto &ppuctl  = ppu.ppuctl;
@@ -312,7 +319,7 @@ void Mapper000_NROM::CpuAccess::write_ppu(addr_t addr, ubyte data)
             // else            { ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); }
 
         case 0x2007: // REG_PPUDATA
-            // printf("REG_PPUDATA write %02X\n", data);
+            // printf("REG_PPUDATA write %04X %02X\n", ppuaddr, data);
             // printf("*%04X: %02X\n", ppuaddr, data);
             ppu.wtbus(ppuaddr, data);
             ppuaddr += (ppuctl.Increment) ? 32 : 1;

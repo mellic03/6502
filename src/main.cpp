@@ -32,8 +32,8 @@ int main( int argc, char **argv )
     nes   = new NesEmu::System(emuio);
     nes->loadGamePak(new NesEmu::GamePak(nes->mConf["boot"]["rom"]));
 
-    NesTest::compare("nestest-data.log", nes->mCPU);
-    return 0;
+    // NesTest::compare("nestest-data.log", nes->mCPU);
+    // return 0;
 
     auto *gwin = nes->mGameWin;
     auto *cwin = nes->mChrWin;
@@ -73,15 +73,29 @@ int main( int argc, char **argv )
 
             W->setBounds(0, 0, 128, 256);
             wprintf("CPU\n");
+            wprintf("time  %lu\n", nes->mCPU.clockTime());
             wprintf("accum %d\n", nes->mCycleAccum);
             wprintf("wait  %u\n", nes->mCPU.mWaiting);
 
+            wprintf("SSR   NVBUDIZC\n");
+            wprintf("      ");
+            for (int i=7; i>=0; i--)
+                wprintf("%u", (nes->mCPU.SSR.byte & (1<<i)) ? 1 : 0);
+            wprintf("\n");
+
             W->setBounds(128, 0, 128, 256);
             wprintf("PPU\n");
-            wprintf("line  %d\n", nes->mPPU.mScanLine);
-            wprintf("cycle %d\n", nes->mPPU.mCycle);
+            wprintf("time  %lu\n", nes->mPPU.clockTime());
+            wprintf("ctrl  %02X\n", nes->mPPU.ppuctl);
+            wprintf("mask  %02X\n", nes->mPPU.ppumask);
+
+            auto stat = nes->mPPU.ppustat;
+            wprintf("stat  VHO00000\n");
+            wprintf("      %u%u%u00000\n", stat.VBlank, stat.SpriteHit, stat.SpriteOverflow);
             wprintf("addr  %04X\n", nes->mPPU.ppuaddr);
             wprintf("data  %02X\n", nes->mPPU.ppudata);
+            wprintf("line  %d\n", nes->mPPU.mScanLine);
+            wprintf("cycle %d\n", nes->mPPU.mCycle);
             // gwin->print(font, "PC   %04X\n", nes->mCPU.PC);
             // gwin->print(font, "AC   %02X\n", nes->mCPU.AC);
             // gwin->print(font, "XR   %02X\n", nes->mCPU.XR);
@@ -118,7 +132,14 @@ int main( int argc, char **argv )
 
             #undef wprintf
         };
-    
+
+        static int wooo = 0;
+        if (wooo++ > 32*1024)
+        {
+            wooo = 0;
+            gwin->flush();
+        }
+
         emuio->update();
     }
 
