@@ -29,8 +29,7 @@ int main( int argc, char **argv )
 
     emuio = new EmuIO();
     font  = new EmuImageFont("font/SpaceMonoBold-w10h15f12.bmp");
-    nes   = new NesEmu::System(emuio);
-    nes->loadGamePak(new NesEmu::GamePak(nes->mConf["boot"]["rom"]));
+    nes   = new NesEmu::System(emuio, memu::ConfigParser("profile/debug.conf"));
 
     // NesTest::compare("nestest-data.log", nes->mCPU);
     // return 0;
@@ -39,8 +38,6 @@ int main( int argc, char **argv )
     auto *cwin = nes->mChrWin;
     auto *iwin = emuio->makeWin("Debug", 256, 256, 2, 1024);
           iwin->setScaleMode(SDL_SCALEMODE_LINEAR);
-
-    int count = 0;
 
     while (emuio->running())
     {
@@ -136,12 +133,12 @@ int main( int argc, char **argv )
             #undef wprintf
         };
 
-        static int wooo = 0;
-        if (wooo++ > 32*1024)
-        {
-            wooo = 0;
-            gwin->flush();
-        }
+        // static int wooo = 0;
+        // if (wooo++ > 32*1024)
+        // {
+        //     wooo = 0;
+        //     gwin->flush();
+        // }
 
         emuio->update();
     }

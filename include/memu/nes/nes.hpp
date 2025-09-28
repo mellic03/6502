@@ -77,7 +77,7 @@ public:
     ubyte ioLineCLK;
 
     
-    System( EmuIO* );
+    System( EmuIO*, const memu::ConfigParser& );
     System(const System&) = delete;
     System &operator=(const System&) = delete;
     void loadGamePak(GamePak*);

@@ -28,8 +28,8 @@
     |-------------------------------------------------------------------------------|
 */
 
-NesEmu::System::System( EmuIO *io )
-:   mConf("nes.conf"),
+NesEmu::System::System( EmuIO *io, const memu::ConfigParser &conf )
+:   mConf(conf),
     mGameWin(io->makeWin("NesEmu", 256, 240, 4, 0)),
     // mChrWin(io->makeWin("CHR-ROM", 128, 256, 4, 0)),
     mCPU(mBusCPU),
@@ -50,6 +50,8 @@ NesEmu::System::System( EmuIO *io )
     mPPU.ioLineNMI = &ioLineNMI;
     mPPU.ioLineRES = &ioLineRES;
     // -------------------------------------------------------------------------
+
+    loadGamePak(new NesEmu::GamePak(mConf["boot"]["rom"]));
 }
 
 
@@ -119,8 +121,6 @@ void NesEmu::System::tick()
 
 #include <fstream>
 #include <sstream>
-
-
 
 
 void print_row( NesTest::Row &row )
