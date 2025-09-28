@@ -23,7 +23,7 @@ private:
     void _drawPattern( int dstx, int dsty, ubyte bgTile, ubyte row, ubyte col );
     void _drawNameTableRow( ubyte row );
     void _drawNameTableCell( ubyte row, ubyte col );
-    void _entire_tile( int x0, int y0, uword tileIdx, uword palIdx );
+    void _entire_tile( int x0, int y0, ubyte tileIdx, ubyte palIdx );
     void _entire_frame();
 
 protected:

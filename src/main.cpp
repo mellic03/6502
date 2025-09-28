@@ -32,8 +32,8 @@ int main( int argc, char **argv )
     nes   = new NesEmu::System(emuio);
     nes->loadGamePak(new NesEmu::GamePak(nes->mConf["boot"]["rom"]));
 
-    NesTest::compare("nestest-data.log", nes->mCPU);
-    return 0;
+    // NesTest::compare("nestest-data.log", nes->mCPU);
+    // return 0;
 
     auto *gwin = nes->mGameWin;
     auto *cwin = nes->mChrWin;

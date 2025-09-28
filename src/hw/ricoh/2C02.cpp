@@ -116,28 +116,41 @@ void Ricoh2C02::preRenderChrRom( EmuWindow *fb )
 
 
 
-void Ricoh2C02::_entire_tile( int x0, int y0, uword tidx, uword palIdx )
+union PtrnAddr
+{
+    uword value;
+    struct {
+        uword y      :3;
+        uword plane  :1;
+        uword idx_lo :4;
+        uword idx_hi :4;
+        uword sel    :1;
+        uword zero   :3;
+    } __attribute__((packed));
+};
+
+
+
+void Ricoh2C02::_entire_tile( int x0, int y0, ubyte tidx, ubyte pidx )
 {
     uword bgsel = (ppuctl.BgTileSel) ? 1 : 0;
     uword base  = 0x1000*bgsel + 16*tidx;
 
-    for (int y=0; y<8; y++)
+    for (ubyte y=0; y<8; y++)
     {
-        for (int x=0; x<8; x++)
+        for (ubyte x=0; x<8; x++)
         {
             ubyte lsb  = rdbus(base + y+0);
             ubyte msb  = rdbus(base + y+8);
+
             ubyte lo   = (lsb >> (7-x)) & 0x01;
             ubyte hi   = (msb >> (7-x)) & 0x01;
             ubyte pxl  = (hi << 1) | lo;
-            ubyte off  = mPaletteCtl[4*palIdx + pxl] & 0x3F;
+            ubyte off  = mPaletteCtl[4*pidx + pxl] & 0x3F;
     
-            // mGameWin->frameBuffer()->pixel(x0+x, y0+y, 64*pxl);
             mGameWin->frameBuffer()->pixel(x0+x, y0+y, &mPalette[3*off]);
+            // mGameWin->frameBuffer()->pixel(x0+x, y0+y, 64*pxl);
             // mGameWin->frameBuffer()->pixel(x0+x, y0+y, tidx);
-
-            // ubyte *C = mChrWin->frameBuffer()->getPixel(srcx+x, srcy+y);
-            // mGameWin->frameBuffer()->pixel(x0+x, y0+y, C);
         }
     }
 }
@@ -151,9 +164,10 @@ void Ricoh2C02::_entire_frame()
     {
         for (uword col=0; col<32; col++)
         {
-            int tileIdx = rdbus(base + 32*row + col);
-            int palIdx  = mPalNo; // rdbus(base + 960 + 8*row + col);
-            _entire_tile(8*col, 8*row, tileIdx, palIdx);
+            ubyte tidx = rdbus(base + 32*row + col);
+            ubyte palIdx = rdbus(base + 960 + 8*(row/4) + col/4);
+            _entire_tile(8*col, 8*row, tidx, palIdx);
+            // mGameWin->frameBuffer()->pixel(8*col, 8*row, tidx);
         }
     }
 }

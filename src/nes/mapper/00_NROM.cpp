@@ -312,11 +312,11 @@ void Mapper000_NROM::CpuAccess::write_ppu(addr_t addr, ubyte data)
 
         case 0x2006: // REG_PPUADDR
             // printf("REG_PPUADDR write %02X\n", data);
-            if ( mAddrLatch) ppu.ppuaddr_hi = data;
-            if (!mAddrLatch) ppu.ppuaddr_lo = data;
+            // if ( mAddrLatch) ppu.ppuaddr_hi = data;
+            // if (!mAddrLatch) ppu.ppuaddr_lo = data;
+            if (mAddrLatch) { ppuaddr = (ppuaddr & 0x00FF) | (uword(data) << 8); }
+            else            { ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); }
             mAddrLatch = !mAddrLatch;
-            // if (mAddrLatch) { ppuaddr = (ppuaddr & 0x00FF) | (uword(data) << 8); }
-            // else            { ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); }
 
         case 0x2007: // REG_PPUDATA
             // printf("REG_PPUDATA write %04X %02X\n", ppuaddr, data);
@@ -365,7 +365,13 @@ ubyte Mapper000_NROM::PpuAccess::read(addr_t addr)
 
 void Mapper000_NROM::PpuAccess::write(addr_t addr, ubyte data)
 {
+    ubyte *vram = ppu.mVRAM;
     ubyte *pctl = ppu.mPaletteCtl;
+
+    if (0x2000<=addr && addr<=0x3EFF)
+    {
+        vram[(addr - 0x2000) % 2048] = data;
+    }
 
     if (0x3F00<=addr && addr<=0x3FFF)
     {
