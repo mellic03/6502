@@ -89,6 +89,8 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
         log("PrgRomNo16K:   %u", fh->PrgRomNo16K);
         log("ChrRomNo8K:    %u", fh->ChrRomNo8K);
         log("BankNo8K:      %u", fh->BankNo8K);
+        log("MirrorMode:    %u", fh->MirroringMode);
+        log("4ScreenVRAM:   %u", fh->FourScreenVRAM);
         log("PAL/NTSC:      %s", (fh->IsPAL) ? "PAL" : "NTSC");
     }
 
@@ -125,8 +127,6 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
 
 }
 
-
-
 ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
 {
     if (0x0000<=addr && addr<=0x1FFF)
@@ -139,7 +139,6 @@ ubyte Mapper000_NROM::CpuAccess::read(addr_t addr)
     {
         return read_ppu(addr);
     }
-
 
     if (0x4000<=addr && addr<=0x4015)
     {
@@ -227,9 +226,9 @@ ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
     // printf("[read_ppu] 0x%04X\n", addr);
     nes.cycleAccumFlush();
 
-    auto &ppuctl  = ppu.ppuctl;
-    auto &ppumask = ppu.ppumask;
-    auto &ppustat = ppu.ppustat;
+    auto  &ppuctl  = ppu.ppuctl;
+    auto  &ppumask = ppu.ppumask;
+    auto  &ppustat = ppu.ppustat;
     ubyte &oamaddr = ppu.oamaddr;
     ubyte &oamdata = ppu.oamdata;
     uword ppuaddr = ppu.ppuaddr;
@@ -312,11 +311,13 @@ void Mapper000_NROM::CpuAccess::write_ppu(addr_t addr, ubyte data)
 
         case 0x2006: // REG_PPUADDR
             // printf("REG_PPUADDR write %02X\n", data);
-            // if ( mAddrLatch) ppu.ppuaddr_hi = data;
-            // if (!mAddrLatch) ppu.ppuaddr_lo = data;
-            if (mAddrLatch) { ppuaddr = (ppuaddr & 0x00FF) | (uword(data) << 8); }
-            else            { ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); }
+            if ( mAddrLatch) ppu.ppuaddr_hi = data;
+            if (!mAddrLatch) ppu.ppuaddr_lo = data;
             mAddrLatch = !mAddrLatch;
+            // if (mAddrLatch) { ppuaddr = (ppuaddr & 0x00FF) | (uword(data) << 8); }
+            // else            { ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); }
+            // mAddrLatch = !mAddrLatch;
+            break;
 
         case 0x2007: // REG_PPUDATA
             // printf("REG_PPUDATA write %04X %02X\n", ppuaddr, data);
@@ -330,8 +331,6 @@ void Mapper000_NROM::CpuAccess::write_ppu(addr_t addr, ubyte data)
             break;
     }
 }
-
-
 
 
 
@@ -353,8 +352,13 @@ ubyte Mapper000_NROM::PpuAccess::read(addr_t addr)
 
     if (0x3F00<=addr && addr<=0x3FFF)
     {
-        ubyte *pctl = ppu.mPaletteCtl;
-        return pctl[(addr - 0x3F00) % 32];
+        addr &= 0x1F;
+        addr &= ~0x10;
+        if (addr == 0x10) addr = 0x00;
+        if (addr == 0x14) addr = 0x04;
+        if (addr == 0x18) addr = 0x08;
+        if (addr == 0x1C) addr = 0x0C;
+        return ppu.mPaletteCtl[addr];
     }
 
     printf("[PpuAccess::read] addr=0x%04X\n", addr);
@@ -365,16 +369,18 @@ ubyte Mapper000_NROM::PpuAccess::read(addr_t addr)
 
 void Mapper000_NROM::PpuAccess::write(addr_t addr, ubyte data)
 {
-    ubyte *vram = ppu.mVRAM;
-    ubyte *pctl = ppu.mPaletteCtl;
-
     if (0x2000<=addr && addr<=0x3EFF)
     {
-        vram[(addr - 0x2000) % 2048] = data;
+        ppu.mVRAM[(addr - 0x2000) % 2048] = data;
     }
 
     if (0x3F00<=addr && addr<=0x3FFF)
     {
-        pctl[(addr - 0x3F00) % 32] = data;
+        addr &= 0x1F;
+        if (addr == 0x10) addr = 0x00;
+        if (addr == 0x14) addr = 0x04;
+        if (addr == 0x18) addr = 0x08;
+        if (addr == 0x1C) addr = 0x0C;
+        ppu.mPaletteCtl[addr & 0x1F] = data;
     }
 }

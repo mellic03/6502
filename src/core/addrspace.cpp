@@ -47,10 +47,9 @@ ubyte EADS::read( uint16_t i )
     return mPages[i>>8]->read(i);
 }
 
-
-void EADS::write( uint16_t i, ubyte data )
+void EADS::write( uint16_t i, ubyte v )
 {
-    mPages[i>>8]->write(i, data);
+    mPages[i>>8]->write(i, v);
 }
 
 

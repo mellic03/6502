@@ -28,8 +28,8 @@
     |-------------------------------------------------------------------------------|
 */
 
-NesEmu::System::System( EmuIO *io, const memu::ConfigParser &conf )
-:   mConf(conf),
+NesEmu::System::System( EmuIO *io )
+:   mConf("nes.conf"),
     mGameWin(io->makeWin("NesEmu", 256, 240, 4, 0)),
     // mChrWin(io->makeWin("CHR-ROM", 128, 256, 4, 0)),
     mCPU(mBusCPU),
@@ -52,6 +52,10 @@ NesEmu::System::System( EmuIO *io, const memu::ConfigParser &conf )
     // -------------------------------------------------------------------------
 
     loadGamePak(new NesEmu::GamePak(mConf["boot"]["rom"]));
+
+    mPPU.flush();
+    mPPU.flush();
+    mPPU.flush();
 }
 
 
@@ -74,6 +78,7 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
 }
 
 
+
 void NesEmu::System::tick()
 {
     if (ioLineRES)
@@ -88,31 +93,13 @@ void NesEmu::System::tick()
     mCPU.tick();
     mCycleAccum += 3 * (mCPU.clockTime() - clocks);
 
-    if (mCPU.mWaiting)
-    {
-        mCycleAccum += 3*8;
-    }
-
-    if (mCycleAccum >= 512)
+    if (mCPU.mWaiting || mCycleAccum >= 12)
     {
         cycleAccumFlush();
     }
 
-    // while (mCPU.clockTime() <=  mPPU.clockTime()/3)
-    // {
-    //     mCPU.tick();
-    // }
-
-    // while ( mPPU.clockTime()/3 <= mCPU.clockTime())
-    // {
-    //     mPPU.tick();
-    // }
-
-    mCPU.tick();
-    mPPU.tick();
-    mPPU.tick();
-    mPPU.tick();
 }
+
 
 
 
@@ -132,16 +119,15 @@ void print_row( NesTest::Row &row )
     for (int i=1; i<5; i++)
         printf("%02X ", row.col[i]);
 
-
-    printf("%02X ", row.col[6]);
-
     for (int i=7; i>=0; i--)
         printf("%u", bool(row.col[5] & (1<<i)));
     printf(" ");
 
-    for (int i=7; i<10; i++)
-        printf("%04u ", row.col[i]);
-    printf("\n");
+    printf("%02X ", row.sp);
+
+    // for (int i=7; i<10; i++)
+    //     printf("%04u ", row.col[i]);
+    // printf("\n");
 }
 
 
@@ -171,12 +157,18 @@ void NesTest::compare( const std::string &path, NesCPU &cpu )
         }
 
 
-        printf("%04d   ADDR OP AC XR YR SP NVBUDIZC \n", i+1);
+        printf("%04d   ADDR OP AC XR YR NVBUDIZC SP \n", i+1);
         printf("ideal  ");
         print_row(test0[i]);
+        printf("\n");
 
         printf("actual ");
         print_row(row);
+        printf("[ ");
+        ubyte sp = row.sp;
+        for (int i=0; i<10&&sp+i<0xFF; i++)
+            printf("%02X ", cpu.rdbus(0x0100 + sp+i));
+        printf("]\n");
 
         if (test0[i] != row)
         {

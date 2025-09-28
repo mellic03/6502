@@ -46,8 +46,8 @@ public:
     void attach(HwModule*);
     
     virtual ubyte read(addr_t);
-    virtual void  write(addr_t, ubyte);
-    ubyte operator[](int i) { return read(i); }
+    virtual void write(addr_t, ubyte);
+    // ubyte operator[](int i) { return read(i); }
 
     // void mapPage(addr_t base, uint16_t mask, RWX_, void*);
     // void mapRdRange(addr_t base, addr_t end, void *buf, size_t bufsz, ubyte mask=0xFF);

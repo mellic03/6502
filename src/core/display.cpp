@@ -274,6 +274,8 @@ EmuIO::EmuIO()
 
 EmuWindow *EmuIO::makeWin( const char *title, int w, int h, int scale, size_t rate )
 {
+    printf("makeWin\n");
+
     auto &winv = (rate==0) ? mWinExplicit : mWinAuto;
     winv.push_back(new EmuWindow(title, w, h, scale, rate));
     return winv.back();

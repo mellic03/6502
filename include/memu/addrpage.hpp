@@ -3,6 +3,7 @@
 #include "types.hpp"
 #include "rwx.hpp"
 #include "hwmodule.hpp"
+#include <cassert>
 
 namespace memu
 {
@@ -12,8 +13,8 @@ namespace memu
 class memu::iPageHandler
 {
 public:
-    virtual ubyte read(addr_t) { return 0; };
-    virtual void write(addr_t, ubyte) { return; };
+    virtual ubyte read(addr_t) { assert(false); return 0; };
+    virtual void write(addr_t, ubyte) { assert(false); };
 
 };
 

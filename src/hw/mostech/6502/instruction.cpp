@@ -116,12 +116,27 @@ void m6502::_BRK()
 
 
 
+
+
 void m6502::_InstrADC( uint8_t arg )
 {
     uword sum = AC + arg + (SSR.C ? 1 : 0);
     SSR.V = ((AC ^ sum) & (arg ^ sum) & 0x80) ? 1 : 0;
     AC    = _NZC(AC + arg + SSR.C);
 }
+
+ubyte m6502::_InstrReadAccMaybe()
+{
+    return (mOpAC) ? AC : rdbus(mOpAddr);
+}
+
+void m6502::_InstrWriteAccMaybe( ubyte value )
+{
+    if (mOpAC) AC = value;
+    else wtbus(mOpAddr, value);
+}
+
+
 
 
 void m6502::InstrADC() { _InstrADC(rdbus(mOpAddr)); }
@@ -211,10 +226,9 @@ void m6502::InstrLDY() { YR = _NZ(rdbus(mOpAddr)); }
 
 void m6502::InstrLSR()
 {
-    if (mOpAC)
-        AC = _NZC(AC >> 1);
-    else
-        wtbus(mOpAddr, _NZC(rdbus(mOpAddr) >> 1));
+    ubyte value = _InstrReadAccMaybe();
+    _InstrWriteAccMaybe(_NZC(value >> 1));
+    SSR.C = (value & 0b01) ? 1 : 0;
 }
 
 void m6502::InstrNOP() {   }
@@ -239,50 +253,38 @@ void m6502::InstrPLP()
     SSR = P;
 }
 
+
 void m6502::InstrROL()
 {
-    ubyte bit1 = (1<<0);
-    ubyte bit7 = (1<<7);
+    ubyte C   = (SSR.C << 0);
+    ubyte val = _InstrReadAccMaybe();
+    ubyte res = (val << 1) | C;
+    _InstrWriteAccMaybe(res);
 
-    if (mOpAC)
-    {
-        ubyte C = (SSR.C) ? bit1 : 0;
-        SSR.C = (AC & bit7) ? 1 : 0;
-        AC = _NZC((AC<<1) & C);
-    }
-    else
-    {
-        uint16_t val = rdbus(mOpAddr);
-        ubyte C = (SSR.C) ? bit1 : 0;
-        SSR.C = (val & bit7) ? 1 : 0;
-        val = _NZC((val<<1) & C);
-    }
+    SSR.N = (res & (1<<7)) ? 1 : 0;
+    SSR.Z = (res == 0) ? 1 : 0;
+    SSR.C = (val & (1<<7)) ? 1 : 0;
 }
 
 void m6502::InstrROR()
 {
-    ubyte bit1 = (1<<0);
-    ubyte bit7 = (1<<7);
+    ubyte C   = (SSR.C << 7);
+    ubyte val = _InstrReadAccMaybe();
+    ubyte res = (val >> 1) | C;
+    _InstrWriteAccMaybe(res);
 
-    if (mOpAC)
-    {
-        ubyte C = (SSR.C) ? bit7 : 0;
-        SSR.C = (AC & bit1) ? 1 : 0;
-        AC = _NZC((AC>>1) & C);
-    }
-    else
-    {
-        uint16_t val = rdbus(mOpAddr);
-        ubyte C = (SSR.C) ? bit7 : 0;
-        SSR.C = (val & bit1) ? 1 : 0;
-        wtbus(mOpAddr, _NZC((val>>1) & C));
-    }
+    SSR.N = (res & (1<<7)) ? 1 : 0;
+    SSR.Z = (res == 0) ? 1 : 0;
+    SSR.C = (val & (1<<0)) ? 1 : 0;
 }
 
 void m6502::InstrRTI()
 {
-    SSR.byte = pop08();
-    SSR.B = 0;
+    auto P = SSR;
+    P.byte = pop08();
+    P.B = SSR.B;
+    SSR = P;
+    // SSR.B = 0;
     PC = pop16();
 }
 

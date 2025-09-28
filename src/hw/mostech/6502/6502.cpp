@@ -84,6 +84,7 @@ void m6502::tick()
 
     if (mWaiting)
     {
+        mClock += 12;
         return;
     }
 
@@ -119,28 +120,25 @@ void m6502::reset()
 
 void m6502::push08( uint8_t byte )
 {
-    SP -= 1;
-    wtbus(0x0100 + SP, byte);
+    wtbus(0x0100 + (--SP), byte);
 }
 
 void m6502::push16( uint16_t word )
 {
-    push08((uint8_t)(word >> 8));      // hi
-    push08((uint8_t)(word & 0x00FF));  // lo
+    push08(ubyte(word >> 8));      // hi
+    push08(ubyte(word & 0x00FF));  // lo
 }
 
 uint8_t m6502::pop08()
 {
-    ubyte data = rdbus(0x0100 + SP);
-    SP += 1;
-    return data;
+    return rdbus(0x0100 + (SP++));
 }
 
 uint16_t m6502::pop16()
 {
     ubyte lo = pop08();
     ubyte hi = pop08();
-    return ((uword)hi << 8) | (uword)lo;
+    return (uword(hi << 8)) | uword(lo);
 }
 
 

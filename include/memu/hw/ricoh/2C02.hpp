@@ -23,6 +23,7 @@ private:
     void _drawPattern( int dstx, int dsty, ubyte bgTile, ubyte row, ubyte col );
     void _drawNameTableRow( ubyte row );
     void _drawNameTableCell( ubyte row, ubyte col );
+    void _single_pixel( ubyte x, ubyte y );
     void _entire_tile( int x0, int y0, ubyte tileIdx, ubyte palIdx );
     void _entire_frame();
 
@@ -31,8 +32,8 @@ protected:
 public:
     EmuWindow *mGameWin;
 
-    int mCycle;
     int mScanLine;
+    int mCycle;
     int mPalNo = 0;
 
     ubyte *ioLineCLK;
@@ -48,8 +49,9 @@ public:
     virtual void tick() override;
     virtual void reset() override;
 
+    void flush();
     void loadPalette(const std::string&);
-    void preRenderChrTile( EmuWindow *fb, int x0, int y0, uword tileIdx, uword palIdx );
+    void preRenderChrTile( EmuWindow *fb, int x0, int y0, uword tsel, uword tidx, uword pidx );
     void preRenderChrRom( EmuWindow *fb );
 
 };

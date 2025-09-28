@@ -19,6 +19,7 @@ static void NesEmu_PlayerCtl( SDL_Event *e );
 static EmuIO *emuio;
 static EmuImageFont *font;
 static NesEmu::System *nes;
+static EmuWindow *iwin = nullptr;
 
 #define VA_ARGS(...) , ##__VA_ARGS__
 
@@ -29,15 +30,69 @@ int main( int argc, char **argv )
 
     emuio = new EmuIO();
     font  = new EmuImageFont("font/SpaceMonoBold-w10h15f12.bmp");
-    nes   = new NesEmu::System(emuio, memu::ConfigParser("profile/debug.conf"));
+    nes   = new NesEmu::System(emuio);
 
     // NesTest::compare("nestest-data.log", nes->mCPU);
     // return 0;
 
     auto *gwin = nes->mGameWin;
-    auto *cwin = nes->mChrWin;
-    auto *iwin = emuio->makeWin("Debug", 256, 256, 2, 1024);
-          iwin->setScaleMode(SDL_SCALEMODE_LINEAR);
+
+    if (0) // (std::string(nes->mConf["debug"]["ShowChrRom"]) == "1")
+    {
+        auto *cwin = emuio->makeWin("CHR-ROM", 128, 256, 4, 1024);
+        cwin->mOnUpdate = [](EmuWindow *W) {
+            nes->mPPU.preRenderChrRom(W);
+        };
+    }
+
+    if (0) // (std::string(nes->mConf["debug"]["ShowRegs"]) == "1")
+    {
+        iwin = emuio->makeWin("Debug", 256, 256, 2, 1024);
+        iwin->setScaleMode(SDL_SCALEMODE_LINEAR);
+        iwin->mOnUpdate = [](EmuWindow *W) {
+            #define wprintf(Fmt, ...) W->print(font, Fmt VA_ARGS(__VA_ARGS__));
+            W->setBounds(0, 0, 128, 256);
+            wprintf("CPU\n");
+            wprintf("time  %lu\n", nes->mCPU.clockTime());
+            wprintf("PC    %04X\n", nes->mCPU.PC);
+            wprintf("OP    %02X\n", nes->mCPU.mCurrOp);
+            wprintf("AC    %02X\n", nes->mCPU.AC);
+            wprintf("XR    %02X\n", nes->mCPU.XR);
+            wprintf("YR    %02X\n", nes->mCPU.YR);
+            wprintf("SP    %02X\n", nes->mCPU.SP);
+            wprintf("accum %d\n", nes->mCycleAccum);
+            wprintf("wait  %u\n", nes->mCPU.mWaiting);
+
+            wprintf("SSR   NVBUDIZC\n");
+            wprintf("      ");
+            for (int i=7; i>=0; i--)
+                wprintf("%u", (nes->mCPU.SSR.byte & (1<<i)) ? 1 : 0);
+            wprintf("\n");
+
+            wprintf("CTL0  RLDUSOAB\n");
+            wprintf("      ");
+            ubyte ctl0 = *(ubyte*)(nes->mPlayerCtl);
+            for (int i=7; i>=0; i--)
+                wprintf("%u", bool(ctl0 & (1<<i)));
+            wprintf("\n");
+
+            W->setBounds(128, 0, 128, 256);
+            wprintf("PPU\n");
+            wprintf("time  %lu\n", nes->mPPU.clockTime());
+            wprintf("ctrl  %02X\n", nes->mPPU.ppuctl);
+            wprintf("mask  %02X\n", nes->mPPU.ppumask);
+
+            auto stat = nes->mPPU.ppustat;
+            wprintf("stat  VHO00000\n");
+            wprintf("      %u%u%u00000\n", stat.VBlank, stat.SpriteHit, stat.SpriteOverflow);
+            wprintf("addr  %04X\n", nes->mPPU.ppuaddr);
+            wprintf("data  %02X\n", nes->mPPU.ppudata);
+            wprintf("line  %d\n", nes->mPPU.mScanLine);
+            wprintf("cycle %d\n", nes->mPPU.mCycle);
+            #undef wprintf
+        };
+    }
+
 
     while (emuio->running())
     {
@@ -58,87 +113,10 @@ int main( int argc, char **argv )
                 SDL_JoystickID jid = e.gdevice.which;
                 SDL_Gamepad *pad = SDL_OpenGamepad(jid);
             }
-
             NesEmu_PlayerCtl(&e);
             NesEmu_HandleEvent(&e);
         }
         SDL_PumpEvents();
-
-    
-        iwin->mOnUpdate = [](EmuWindow *W) {
-            #define wprintf(Fmt, ...) W->print(font, Fmt VA_ARGS(__VA_ARGS__));
-
-            W->setBounds(0, 0, 128, 256);
-            wprintf("CPU\n");
-            wprintf("time  %lu\n", nes->mCPU.clockTime());
-            wprintf("PC    %04X\n", nes->mCPU.PC);
-            wprintf("AC    %02X\n", nes->mCPU.AC);
-            wprintf("XR    %02X\n", nes->mCPU.XR);
-            wprintf("YR    %02X\n", nes->mCPU.YR);
-            wprintf("accum %d\n", nes->mCycleAccum);
-            wprintf("wait  %u\n", nes->mCPU.mWaiting);
-
-            wprintf("SSR   NVBUDIZC\n");
-            wprintf("      ");
-            for (int i=7; i>=0; i--)
-                wprintf("%u", (nes->mCPU.SSR.byte & (1<<i)) ? 1 : 0);
-            wprintf("\n");
-
-            W->setBounds(128, 0, 128, 256);
-            wprintf("PPU\n");
-            wprintf("time  %lu\n", nes->mPPU.clockTime());
-            wprintf("ctrl  %02X\n", nes->mPPU.ppuctl);
-            wprintf("mask  %02X\n", nes->mPPU.ppumask);
-
-            auto stat = nes->mPPU.ppustat;
-            wprintf("stat  VHO00000\n");
-            wprintf("      %u%u%u00000\n", stat.VBlank, stat.SpriteHit, stat.SpriteOverflow);
-            wprintf("addr  %04X\n", nes->mPPU.ppuaddr);
-            wprintf("data  %02X\n", nes->mPPU.ppudata);
-            wprintf("line  %d\n", nes->mPPU.mScanLine);
-            wprintf("cycle %d\n", nes->mPPU.mCycle);
-            // gwin->print(font, "PC   %04X\n", nes->mCPU.PC);
-            // gwin->print(font, "AC   %02X\n", nes->mCPU.AC);
-            // gwin->print(font, "XR   %02X\n", nes->mCPU.XR);
-            // gwin->print(font, "YR   %02X\n", nes->mCPU.YR);
-
-            // uword SP = nes->mCPU.SP;
-            // uword count = 0;
-
-            // wprintf("SP   ");
-            // SP = nes->mCPU.SP;
-            // count = 0;
-            // while (SP <= 0xFF && count++ < 10)
-            //     wprintf("%02X ", SP++);
-            // wprintf("\n");
-
-            // wprintf("     ");
-            // SP  = nes->mCPU.SP;
-            // count = 0;
-            // while (SP <= 0xFF && count++ < 10)
-            //     wprintf("%02X ", nes->mCPU.rdbus(SP++));
-            // wprintf("\n");
-
-            // wprintf("SSR  N V B U D I Z C\n");
-            // wprintf("     ");
-            // for (int i=7; i>=0; i--)
-            //     wprintf("%u ", (nes->mCPU.SSR.byte & (1<<i)) ? 1 : 0);
-            // wprintf("\n");
-
-            // gwin->setBounds(512, 32, 1024, 512);
-            // wprintf("PPUSTAT %02X\n", nes->mPPU.ppustat.byte);
-            // wprintf("PPUADDR %04X\n", nes->mPPU.ppuaddr);
-            // wprintf("PPUDATA %02X\n", nes->mPPU.ppudata);
-
-            #undef wprintf
-        };
-
-        // static int wooo = 0;
-        // if (wooo++ > 32*1024)
-        // {
-        //     wooo = 0;
-        //     gwin->flush();
-        // }
 
         emuio->update();
     }
@@ -231,7 +209,7 @@ static void NesEmu_PlayerCtl( SDL_Event *e )
         default: break;
         case SDL_GAMEPAD_BUTTON_SOUTH:      ctl.a      = down; break;
         case SDL_GAMEPAD_BUTTON_EAST:       ctl.b      = down; break;
-        case SDL_GAMEPAD_BUTTON_GUIDE:      ctl.sel    = down; break;
+        case SDL_GAMEPAD_BUTTON_BACK:       ctl.sel    = down; break;
         case SDL_GAMEPAD_BUTTON_START:      ctl.start  = down; break;
         case SDL_GAMEPAD_BUTTON_DPAD_UP:    ctl.up     = down; break;
         case SDL_GAMEPAD_BUTTON_DPAD_DOWN:  ctl.down   = down; break;

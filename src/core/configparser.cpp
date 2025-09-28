@@ -82,7 +82,7 @@ std::string ConfigParser::_readLabel()
     {
         if (ch=='=')
             break;
-        if (!isalnum(ch))
+        if (!isalnum(ch) && ch!='_' && ch!='-' && ch!='.')
             break;
         str.push_back(ch);
     }
@@ -119,12 +119,24 @@ ConfigParser::ConfigParser( const char *path )
     ccol  = 1;
 
     std::string section = "GLOBAL";
+    bool is_comment = false;
 
     while (char ch = peek())
     {
         if (ch=='\n')
         {
+            is_comment = false;
             advance();
+        }
+
+        else if (is_comment)
+        {
+            advance();
+        }
+
+        else if (match('#'))
+        {
+            is_comment = true;
         }
 
         else if (match('['))

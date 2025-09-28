@@ -63,13 +63,21 @@ public:
         ppustat_t ppustat;
         ubyte oamaddr; // OAM read/write address
         ubyte oamdata; // OAM read/write data
-        ubyte SCROLL;  // 
+        ubyte ppuscroll;  // 
         WORD_LOHI(ppuaddr);
         ubyte ppudata; // VRAM read/write data
     };
 
 
     BaseHw()
+    :   ppuctl{0},
+        ppumask{0},
+        ppustat{0},
+        oamaddr{0},
+        oamdata{0},
+        ppuscroll{0},
+        ppuaddr{0x2000},
+        ppudata{0}
     {
         // assert((ioCLK && ioINT));
     }

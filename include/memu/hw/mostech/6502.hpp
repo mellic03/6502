@@ -77,6 +77,8 @@ private:
     void _IntPush(ubyte B, ubyte U=0);
     void _IntJump(uword);
     void _InstrADC(ubyte);
+    ubyte _InstrReadAccMaybe();
+    void _InstrWriteAccMaybe(ubyte);
 
 
     void InstrUnimp();

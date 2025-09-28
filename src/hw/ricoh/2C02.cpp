@@ -16,8 +16,8 @@ Ricoh2C02::Ricoh2C02( AddrSpace &bus, EmuWindow *gamewin )
 :   HwModule(bus),
     BaseHw(),
     mGameWin(gamewin),
-    mCycle(0),
-    mScanLine(0)
+    mScanLine(0),
+    mCycle(0)
 {
     this->reset();
 
@@ -37,6 +37,14 @@ void Ricoh2C02::tick()
     // if (memu::ioRead(ioLineRES) == 0)
     // {
     //     this->reset();
+    // }
+
+    // if (0<=mScanLine && mScanLine<239)
+    // {
+    //     if (0<=mCycle && mCycle<256)
+    //     {
+    //         _single_pixel(ubyte(mCycle), ubyte(mScanLine));
+    //     }
     // }
 
     if (mScanLine==241 && mCycle==1)
@@ -69,72 +77,9 @@ void Ricoh2C02::tick()
 }
 
 
-void Ricoh2C02::preRenderChrTile( EmuWindow *fb, int x0, int y0, uword tidx, uword palIdx )
+void Ricoh2C02::preRenderChrTile( EmuWindow *fb, int x0, int y0, uword tsel, uword tidx, uword pidx )
 {
-    ubyte bgSel = (ppuctl.BgTileSel) ? 1 : 0;
-
-    for (int y=0; y<8; y++)
-    {
-        uword base = 0x1000*bgSel + 16*tidx;
-        ubyte low  = rdbus(base + y+0);
-        ubyte high = rdbus(base + y+8);
-
-        for (int x=0; x<8; x++)
-        {
-            ubyte bit = 7 - (x % 8);
-            ubyte lsb = (low  >> bit) & 0x01;
-            ubyte msb = (high >> bit) & 0x01;
-            ubyte pxl = msb + lsb;
-            // ubyte off = mPaletteCtl[4*palIdx + pxl] & 0x3F;
-            // mWin->pixel(x, y, &mPalette[3*off]);
-
-            ubyte val = (255/3) * pxl;
-            fb->frameBuffer()->pixel(x0+x, y0+y, val);
-
-            // ubyte val = 4 * (8*y + x);
-            // ubyte val = 4 * (x*y);
-            // mWin->pixel(x0+x, y0+y, 32*x, 32*y, 255);
-        }
-    }
-}
-
-
-void Ricoh2C02::preRenderChrRom( EmuWindow *fb )
-{
-    // auto *ntab = (NTable*)(&mVRAM[0x400*ppuctl.NameTabSel]);
-    uword base = 0x400*ppuctl.NameTabSel;
-
-    for (uword row=0; row<32; row++)
-    {
-        for (uword col=0; col<16; col++)
-        {
-            int idx = 16*row + col;
-            preRenderChrTile(fb, 8*col, 8*row, idx, 0);
-        }
-    }
-}
-
-
-
-union PtrnAddr
-{
-    uword value;
-    struct {
-        uword y      :3;
-        uword plane  :1;
-        uword idx_lo :4;
-        uword idx_hi :4;
-        uword sel    :1;
-        uword zero   :3;
-    } __attribute__((packed));
-};
-
-
-
-void Ricoh2C02::_entire_tile( int x0, int y0, ubyte tidx, ubyte pidx )
-{
-    uword bgsel = (ppuctl.BgTileSel) ? 1 : 0;
-    uword base  = 0x1000*bgsel + 16*tidx;
+    uword base = 0x1000*tsel + 16*tidx;
 
     for (ubyte y=0; y<8; y++)
     {
@@ -142,15 +87,97 @@ void Ricoh2C02::_entire_tile( int x0, int y0, ubyte tidx, ubyte pidx )
         {
             ubyte lsb  = rdbus(base + y+0);
             ubyte msb  = rdbus(base + y+8);
-
             ubyte lo   = (lsb >> (7-x)) & 0x01;
             ubyte hi   = (msb >> (7-x)) & 0x01;
             ubyte pxl  = (hi << 1) | lo;
-            ubyte off  = mPaletteCtl[4*pidx + pxl] & 0x3F;
-    
-            mGameWin->frameBuffer()->pixel(x0+x, y0+y, &mPalette[3*off]);
-            // mGameWin->frameBuffer()->pixel(x0+x, y0+y, 64*pxl);
-            // mGameWin->frameBuffer()->pixel(x0+x, y0+y, tidx);
+            fb->frameBuffer()->pixel(x0+x, y0+y, 64*pxl);
+        }
+    }
+}
+
+void Ricoh2C02::preRenderChrRom( EmuWindow *fb )
+{
+    for (uword col=0; col<16; col++)
+    {
+        for (uword row=0; row<16; row++)
+        {
+            preRenderChrTile(fb, 8*col, 8*row + 0*128, 0, 16*row + col, 0);
+            preRenderChrTile(fb, 8*col, 8*row + 1*128, 1, 16*row + col, 0);
+        }
+    }
+}
+
+
+
+// union PtrnAddr
+// {
+//     uword value;
+//     struct {
+//         uword y      :3;
+//         uword plane  :1;
+//         uword idx_lo :4;
+//         uword idx_hi :4;
+//         uword sel    :1;
+//         uword zero   :3;
+//     } __attribute__((packed));
+// };
+
+
+struct AttrAddr
+{
+    ubyte coarse_x: 3;
+    ubyte coarse_y: 3;
+    ubyte attr_off: 4;
+    ubyte ntab_sel: 2;
+    ubyte rest[4];
+};
+
+void Ricoh2C02::_single_pixel( ubyte x, ubyte y )
+{
+    uword ntab = 0x2000 + 0x0400*ppuctl.NameTabSel;
+    ubyte tidx = rdbus(ntab + 32*(y/8) + x/8);
+
+    uword ptab = 0x1000*ppuctl.BgTileSel + 16*tidx;
+    ubyte lsb  = rdbus(ptab + (y%8)+0);
+    ubyte msb  = rdbus(ptab + (y%8)+8);
+
+    ubyte lo   = (lsb >> (7 - (x%8))) & 0x01;
+    ubyte hi   = (msb >> (7 - (x%8))) & 0x01;
+    ubyte pxl  = (hi << 1) | lo;
+
+    ubyte attr = rdbus(ntab + 960 + 8*(y/32) + x/32);
+    ubyte shft = 4*((y%32) / 16) + 2*((x%32) / 16);
+    ubyte pidx = (attr >> shft) & 0x03;
+
+    ubyte off = 0;
+    if (pxl) off = rdbus(0x3F00 + 4*pidx + pxl) & 0x3F;
+    else     off = rdbus(0x3F00) & 0x3F; // universal background
+
+    mGameWin->frameBuffer()->pixel(x, y, &mPalette[3*off]);
+}
+
+
+void Ricoh2C02::_entire_tile( int x0, int y0, ubyte tidx, ubyte pidx )
+{
+    uword ptab = 0x1000*ppuctl.BgTileSel + 16*tidx;
+
+    for (ubyte i=0; i<8; i++)
+    {
+        ubyte lsb = rdbus(ptab + i+0);
+        ubyte msb = rdbus(ptab + i+8);
+
+        for (ubyte j=0; j<8; j++)
+        {
+            ubyte lo  = (lsb & 128) >> 7;
+            ubyte hi  = (msb & 128) >> 7;
+            ubyte pxl = (hi << 1) | lo;
+            lsb<<=1; msb<<=1;
+
+            ubyte off = 0;
+            if (pxl) off = rdbus(0x3F00 + 4*pidx + pxl) & 0x3F;
+            else     off = rdbus(0x3F00) & 0x3F; // universal background
+
+            mGameWin->frameBuffer()->pixel(x0+j, y0+i, &mPalette[3*off]);
         }
     }
 }
@@ -158,16 +185,17 @@ void Ricoh2C02::_entire_tile( int x0, int y0, ubyte tidx, ubyte pidx )
 
 void Ricoh2C02::_entire_frame()
 {
-    uword base = 0x2000 + 0x400*ppuctl.NameTabSel;
+    uword ntab = 0x2000 + 0x0400*ppuctl.NameTabSel;
 
     for (uword row=0; row<30; row++)
     {
         for (uword col=0; col<32; col++)
         {
-            ubyte tidx = rdbus(base + 32*row + col);
-            ubyte palIdx = rdbus(base + 960 + 8*(row/4) + col/4);
-            _entire_tile(8*col, 8*row, tidx, palIdx);
-            // mGameWin->frameBuffer()->pixel(8*col, 8*row, tidx);
+            ubyte tidx = rdbus(ntab + 32*row + col);
+            ubyte attr = rdbus(ntab + 960 + 8*((8*row)/32) + (8*col)/32);
+            ubyte shft = 4*(((8*row)%32) / 16) + 2*(((8*col)%32) / 16);
+            ubyte pidx = (attr >> shft) & 0x03;
+            _entire_tile(8*col, 8*row, tidx, pidx);
         }
     }
 }
@@ -175,18 +203,28 @@ void Ricoh2C02::_entire_frame()
 
 void Ricoh2C02::reset()
 {
-    ppuctl  = {0};
-    ppumask = {0};
-    ppustat = {0};
-    oamaddr = 0;
-    oamdata = 0;
-    SCROLL  = 0;
-    ppuaddr = 0;
-    ppudata = 0;
-
     mClock    = 0;
-    mCycle    = 0;
-    mScanLine = 0;
+
+    ppuctl    = {0};
+    ppumask   = {0};
+    ppustat   = {0};
+    oamaddr   = 0;
+    oamdata   = 0;
+    ppuscroll = 0;
+    ppuaddr   = 0;
+    ppudata   = 0;
+
+    mScanLine = -1;
+    mCycle    =  0;
+}
+
+
+void Ricoh2C02::flush()
+{
+    while (mScanLine != -1 && mCycle != 0)
+    {
+        this->tick();
+    }
 }
 
 
