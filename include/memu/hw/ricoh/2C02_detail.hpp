@@ -61,11 +61,12 @@ public:
         ppuctl_t  ppuctl;
         ppumask_t ppumask;
         ppustat_t ppustat;
-        ubyte oamaddr; // OAM read/write address
-        ubyte oamdata; // OAM read/write data
-        ubyte ppuscroll;  // 
+        ubyte oamaddr;
+        ubyte oamdata;
+        ubyte ppuscroll;
         WORD_LOHI(ppuaddr);
         ubyte ppudata; // VRAM read/write data
+        ubyte oamdma;
     };
 
 
@@ -77,7 +78,8 @@ public:
         oamdata{0},
         ppuscroll{0},
         ppuaddr{0x2000},
-        ppudata{0}
+        ppudata{0},
+        oamdma{0}
     {
         // assert((ioCLK && ioINT));
     }

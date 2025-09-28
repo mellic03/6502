@@ -90,10 +90,13 @@ void NesEmu::System::tick()
     }
 
     int clocks = mCPU.clockTime();
-    mCPU.tick();
+    for (int i=0; i<4; i++)
+    {
+        mCPU.tick();
+    }
     mCycleAccum += 3 * (mCPU.clockTime() - clocks);
 
-    if (mCPU.mWaiting || mCycleAccum >= 12)
+    if (mCPU.mWaiting || mCycleAccum >= 64)
     {
         cycleAccumFlush();
     }

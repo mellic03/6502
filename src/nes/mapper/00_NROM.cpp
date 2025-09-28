@@ -190,6 +190,11 @@ void Mapper000_NROM::CpuAccess::write(addr_t addr, ubyte data)
         write_ppu(addr, data);
     }
 
+    if (0x4014<=addr && addr<=0x4014)
+    {
+        write_ppu(addr, data);
+    }
+
     if (0x4016<=addr && addr<=0x4016) // controller strobe
     {
         ubyte *mmio = cpu.mMMIO;
@@ -229,7 +234,7 @@ ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
     auto  &ppuctl  = ppu.ppuctl;
     auto  &ppumask = ppu.ppumask;
     auto  &ppustat = ppu.ppustat;
-    ubyte &oamaddr = ppu.oamaddr;
+    auto  &oamaddr = ppu.oamaddr;
     ubyte &oamdata = ppu.oamdata;
     uword ppuaddr = ppu.ppuaddr;
     ubyte ppudata = ppu.ppudata;
@@ -249,8 +254,16 @@ ubyte Mapper000_NROM::CpuAccess::read_ppu(addr_t addr)
             break;
 
         case 0x2003: // REG_OAMADDR
+            break;
+
         case 0x2004: // REG_OAMDATA
+            oamdata = ppu.rdbus(oamaddr);
+            data = oamdata;
+            break;
+
         case 0x2005: // REG_PPUSCROLL
+            break;
+
         case 0x2006: // REG_PPUADDR
             break;
 
@@ -285,43 +298,49 @@ void Mapper000_NROM::CpuAccess::write_ppu(addr_t addr, ubyte data)
     auto &ppuaddr = ppu.ppuaddr;
     auto &ppudata = ppu.ppudata;
 
+    if (addr == 0x4014)
+    {
+        uword base = 256*uword(data);
+
+        for (uword i=0; i<256; i++)
+        {
+            // printf("OAM[0x%02X] == RAM[0x%04X] == 0x%02X\n", oamaddr, base+i, cpu.rdbus(base+i));
+            ppu.mOAM[oamaddr++] = cpu.rdbus(base+i);
+        }
+        return;
+    }
+
     switch (0x2000 + (addr % 8))
     {
         case 0x2000: // REG_PPUCTRL
-            // printf("REG_PPUCTRL write %02X\n", data);
-            ppu.ppuctl = { data };
+            ppuctl = { data };
             break;
             
         case 0x2001: // REG_PPUMASK
-            // printf("REG_PPUMASK write %02X\n", data);
-            ppu.ppumask = { data };
+            ppumask = { data };
             break;
 
         case 0x2002: // REG_PPUSTATUS
             break;
 
         case 0x2003: // REG_OAMADDR
+            oamaddr = data;
             break;
 
         case 0x2004: // REG_OAMDATA
+            ppu.mOAM[oamaddr++] = data;
             break;
 
         case 0x2005: // REG_PPUSCROLL
             break;
 
         case 0x2006: // REG_PPUADDR
-            // printf("REG_PPUADDR write %02X\n", data);
             if ( mAddrLatch) ppu.ppuaddr_hi = data;
             if (!mAddrLatch) ppu.ppuaddr_lo = data;
             mAddrLatch = !mAddrLatch;
-            // if (mAddrLatch) { ppuaddr = (ppuaddr & 0x00FF) | (uword(data) << 8); }
-            // else            { ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); }
-            // mAddrLatch = !mAddrLatch;
             break;
 
         case 0x2007: // REG_PPUDATA
-            // printf("REG_PPUDATA write %04X %02X\n", ppuaddr, data);
-            // printf("*%04X: %02X\n", ppuaddr, data);
             ppu.wtbus(ppuaddr, data);
             ppuaddr += (ppuctl.Increment) ? 32 : 1;
             ppuaddr &= 0x3FFF;

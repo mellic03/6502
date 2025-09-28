@@ -198,6 +198,47 @@ void Ricoh2C02::_entire_frame()
             _entire_tile(8*col, 8*row, tidx, pidx);
         }
     }
+
+
+    for (ubyte i=0; i<64; i++)
+    {
+        auto *S = (OamSprite*)(mOAM + 4*i);
+
+        if (S->ymin==0 && S->tile==0 && S->attr==0 && S->xmin==0)
+        {
+            break;
+        }
+
+        uword bank = ppuctl.SpriteTileSel; // S->tile & 0b0000'0001;
+        uword tidx = S->tile;
+        uword pidx = (S->palette);
+        ubyte x0 = S->xmin;
+        ubyte y0 = S->ymin+1;
+
+        for (ubyte i=0; i<8; i++)
+        {
+            ubyte lsb = rdbus(0x1000*bank + 16*tidx + i+0);
+            ubyte msb = rdbus(0x1000*bank + 16*tidx + i+8);
+
+            ubyte lo=0, hi=0, pxl=0;
+
+            for (ubyte j=0; j<8; j++)
+            {
+                ubyte lo  = (lsb & 128) >> 7;
+                ubyte hi  = (msb & 128) >> 7;
+                ubyte pxl = (hi << 1) | lo;
+                lsb<<=1; msb<<=1;
+
+                if (pxl > 0)
+                {
+                    ubyte off = rdbus(0x3F00 + 4 + 4*pidx + pxl) & 0x3F;
+
+                    ubyte x = (S->hflip) ? x0+7-j : x0+j;
+                    mGameWin->frameBuffer()->pixel(x, y0+i, &mPalette[3*off]);
+                }
+            }
+        }
+    }
 }
 
 

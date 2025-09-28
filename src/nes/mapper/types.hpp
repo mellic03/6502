@@ -44,12 +44,13 @@ private:
     {
     public:
         CpuAccess(System &n, Mapper000_NROM &m)
-        :   mAddrLatch(true), nes(n), cpu(n.mCPU), ppu(n.mPPU), nrom(m) {  }
+        :   mAddrLatch(true), mOamLatch(true), nes(n), cpu(n.mCPU), ppu(n.mPPU), nrom(m) {  }
         virtual ubyte read(addr_t) final;
         virtual void write(addr_t, ubyte) final;
 
     private:
         bool mAddrLatch;
+        bool mOamLatch;
         NesEmu::System &nes;
         NesCPU &cpu;
         NesPPU &ppu;
