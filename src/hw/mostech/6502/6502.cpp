@@ -120,7 +120,7 @@ void m6502::reset()
 
 void m6502::push08( uint8_t byte )
 {
-    wtbus(0x0100 + (--SP), byte);
+    wtbus(0x0100 + (SP--), byte);
 }
 
 void m6502::push16( uint16_t word )
@@ -131,7 +131,7 @@ void m6502::push16( uint16_t word )
 
 uint8_t m6502::pop08()
 {
-    return rdbus(0x0100 + (SP++));
+    return rdbus(0x0100 + (++SP));
 }
 
 uint16_t m6502::pop16()

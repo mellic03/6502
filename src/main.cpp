@@ -37,7 +37,7 @@ int main( int argc, char **argv )
 
     auto *gwin = nes->mGameWin;
 
-    if (0) // (std::string(nes->mConf["debug"]["ShowChrRom"]) == "1")
+    if (std::string(nes->mConf["debug"]["ShowChrRom"]) == "1")
     {
         auto *cwin = emuio->makeWin("CHR-ROM", 128, 256, 4, 1024);
         cwin->mOnUpdate = [](EmuWindow *W) {
@@ -45,7 +45,7 @@ int main( int argc, char **argv )
         };
     }
 
-    if (0) // (std::string(nes->mConf["debug"]["ShowRegs"]) == "1")
+    if (std::string(nes->mConf["debug"]["ShowRegs"]) == "1")
     {
         iwin = emuio->makeWin("Debug", 256, 256, 2, 1024);
         iwin->setScaleMode(SDL_SCALEMODE_LINEAR);
