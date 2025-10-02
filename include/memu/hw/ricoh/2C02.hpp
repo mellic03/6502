@@ -53,6 +53,7 @@ public:
 
     int mScanLine;
     int mCycle;
+    int mMirrorMode = 0;
     int mPalNo = 0;
 
     ubyte *ioLineCLK;
@@ -64,6 +65,11 @@ public:
     uint8_t mOAM[64*4]; // 64 four-byte sprites
     uint8_t mPalette[192];
     uint8_t mPaletteCtl[32];
+
+    static constexpr uword mNameOffsets[2][4] = {
+        { 0x0000, 0x0400, 0x0800, 0x0C00 },
+        { 0x0000, 0x0800, 0x0400, 0x0C00 }
+    };
 
     Ricoh2C02(AddrSpace&, EmuWindow *gamewin);
     virtual void tick() override;

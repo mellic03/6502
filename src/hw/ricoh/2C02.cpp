@@ -21,13 +21,13 @@ Ricoh2C02::Ricoh2C02( AddrSpace &bus, EmuWindow *gamewin )
 {
     this->reset();
 
-    static constexpr ubyte blue   [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
-    static constexpr ubyte pink   [] = { 0x11, 246, 108, 92, 187, 42, 210, 95, 168, 78, 142, 98, 129, 239, 103, 87, 172, 13, 30, 101, 140, 87, 215, 181, 232, 143, 132, 245, 39, 10, 61, 155 };
-    static constexpr ubyte purple [] = { 0x11, 227, 188, 126, 51, 108, 242, 50, 62, 34, 86, 167, 40, 63, 8, 141, 51, 132, 202, 219, 88, 130, 97, 206, 73, 196, 175, 197, 55, 172, 109, 187 };
-    static constexpr ubyte luigi  [] = { 0x11, 89, 54, 254, 96, 12, 40, 67, 229, 115, 37, 146, 57, 101, 190, 224, 85, 64, 203, 98, 106, 182, 27, 196, 254, 231, 87, 157, 17, 71, 189, 134 };
-    static constexpr ubyte ginger [] = { 0x11, 16, 22, 214, 245, 224, 70, 255, 64, 116, 122, 27, 99, 72, 85, 139, 182, 112, 82, 127, 92, 88, 47, 23, 185, 17, 132, 75, 47, 215, 16, 147 };
-
-    memcpy(mPaletteCtl, blue, sizeof(mPaletteCtl));
+    // static constexpr ubyte blue   [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
+    // static constexpr ubyte pink   [] = { 0x11, 246, 108, 92, 187, 42, 210, 95, 168, 78, 142, 98, 129, 239, 103, 87, 172, 13, 30, 101, 140, 87, 215, 181, 232, 143, 132, 245, 39, 10, 61, 155 };
+    // static constexpr ubyte purple [] = { 0x11, 227, 188, 126, 51, 108, 242, 50, 62, 34, 86, 167, 40, 63, 8, 141, 51, 132, 202, 219, 88, 130, 97, 206, 73, 196, 175, 197, 55, 172, 109, 187 };
+    // static constexpr ubyte luigi  [] = { 0x11, 89, 54, 254, 96, 12, 40, 67, 229, 115, 37, 146, 57, 101, 190, 224, 85, 64, 203, 98, 106, 182, 27, 196, 254, 231, 87, 157, 17, 71, 189, 134 };
+    // static constexpr ubyte ginger [] = { 0x11, 16, 22, 214, 245, 224, 70, 255, 64, 116, 122, 27, 99, 72, 85, 139, 182, 112, 82, 127, 92, 88, 47, 23, 185, 17, 132, 75, 47, 215, 16, 147 };
+    // memcpy(mPaletteCtl, blue, sizeof(mPaletteCtl));
+    memset(mPaletteCtl, 0, sizeof(mPaletteCtl));
 }
 
 
@@ -50,7 +50,6 @@ void Ricoh2C02::tick()
     if (mScanLine==241 && mCycle==1)
     {
         ppustat.VBlank = 1;
-        // printf("VBLANK\n");
 
         if (ppuctl.NMIEnabled)
         {
@@ -108,33 +107,9 @@ void Ricoh2C02::preRenderChrRom( EmuWindow *fb )
 }
 
 
-
-// union PtrnAddr
-// {
-//     uword value;
-//     struct {
-//         uword y      :3;
-//         uword plane  :1;
-//         uword idx_lo :4;
-//         uword idx_hi :4;
-//         uword sel    :1;
-//         uword zero   :3;
-//     } __attribute__((packed));
-// };
-
-
-struct AttrAddr
-{
-    ubyte coarse_x: 3;
-    ubyte coarse_y: 3;
-    ubyte attr_off: 4;
-    ubyte ntab_sel: 2;
-    ubyte rest[4];
-};
-
 void Ricoh2C02::_single_pixel( ubyte x, ubyte y )
 {
-    uword ntab = 0x2000 + 0x0400*ppuctl.NameTabSel;
+    uword ntab = 0x2000 + mNameOffsets[mMirrorMode][ppuctl.NameTabSel];
     ubyte tidx = rdbus(ntab + 32*(y/8) + x/8);
 
     uword ptab = 0x1000*ppuctl.BgTileSel + 16*tidx;
@@ -185,7 +160,7 @@ void Ricoh2C02::_entire_tile( int x0, int y0, ubyte tidx, ubyte pidx )
 
 void Ricoh2C02::_entire_frame()
 {
-    uword ntab = 0x2000 + 0x0400*ppuctl.NameTabSel;
+    uword ntab = 0x2000 + mNameOffsets[mMirrorMode][ppuctl.NameTabSel];
 
     for (uword row=0; row<30; row++)
     {
@@ -198,7 +173,6 @@ void Ricoh2C02::_entire_frame()
             _entire_tile(8*col, 8*row, tidx, pidx);
         }
     }
-
 
     for (ubyte i=0; i<64; i++)
     {
@@ -275,48 +249,3 @@ void Ricoh2C02::loadPalette( const std::string &path )
     LogAsrt(res==sizeof(mPalette), "Error loading .pal file \"%s\"\n", path.c_str());
 }
 
-
-
-// uint8_t Ricoh2C02::read2002()
-// {
-//     // printf("[read2002] vblank cleared\n");
-//     uint8_t res = ppustat.byte;
-//     ppustat.VBlank = 0;
-//     ppuAddrLatch = true;
-//     return res;
-// }
-
-// uint8_t Ricoh2C02::read2007()
-// {
-//     ubyte res = ppudata;
-
-//     ppudata = rdbus(ppuaddr);
-//     if (ppuaddr >= 0x3F00)
-//         res = ppudata;
-//     ppuaddr += (ppuctl.Increment) ? 32 : 1;
-//     ppuaddr &= 0x3FFF;
-
-//     return res;
-// }
-
-// void Ricoh2C02::write2005( uint8_t data )
-// {
-
-// }
-
-// void Ricoh2C02::write2006( uint8_t data )
-// {
-//     switch (ppuAddrLatch)
-//     {
-//         case true:  ppuaddr = (ppuaddr & 0x00FF) | (uword(data) << 8); break;
-//         case false: ppuaddr = (ppuaddr & 0xFF00) | (uword(data) << 0); break;
-//     }
-//     ppuAddrLatch = !ppuAddrLatch;
-// }
-
-// void Ricoh2C02::write2007( uint8_t data )
-// {
-//     wtbus(ppuaddr, data);
-//     ppuaddr += (ppuctl.Increment) ? 32 : 1;
-//     ppuaddr &= 0x3FFF;
-// }

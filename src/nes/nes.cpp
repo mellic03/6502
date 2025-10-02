@@ -27,7 +27,6 @@
     | 8000 - FFFF   | 8000 | Usually cartridge ROM and mapper registers.            |
     |-------------------------------------------------------------------------------|
 */
-
 NesEmu::System::System( EmuIO *io )
 :   mConf("nes.conf"),
     mGameWin(io->makeWin("NesEmu", 256, 240, 4, 0)),
@@ -59,14 +58,11 @@ NesEmu::System::System( EmuIO *io )
 }
 
 
-
 void NesEmu::System::loadGamePak( GamePak *gpak )
 {
     Mapper::MapGamePak(*this, gpak);
 
     mPPU.loadPalette(mConf["video"]["palette"]);
-    // mPPU.preRenderChrRom(mChrWin);
-    // mChrWin->flush();
     mCPU.reset();
 
     if (mConf["boot"]["jump"])
@@ -76,7 +72,6 @@ void NesEmu::System::loadGamePak( GamePak *gpak )
 
     printf("PC: %04X\n", mCPU.PC);
 }
-
 
 
 void NesEmu::System::tick()
@@ -90,7 +85,7 @@ void NesEmu::System::tick()
     }
 
     int clocks = mCPU.clockTime();
-    for (int i=0; i<4; i++)
+    for (int i=0; i<8; i++)
     {
         mCPU.tick();
     }
@@ -100,7 +95,6 @@ void NesEmu::System::tick()
     {
         cycleAccumFlush();
     }
-
 }
 
 
@@ -158,7 +152,6 @@ void NesTest::compare( const std::string &path, NesCPU &cpu )
             printf("Invalid opcode (0x%02X)\n", cpu.mCurrOp);
             break;
         }
-
 
         printf("%04d   ADDR OP AC XR YR NVBUDIZC SP \n", i+1);
         printf("ideal  ");

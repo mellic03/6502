@@ -29,8 +29,7 @@ class NesEmu::Mapper000_NROM: public NesEmu::Mapper
 private:
     iNES_File *mFile;
 
-    struct PakBank
-    {
+    struct PakBank {
         uint8_t *base;
         int32_t  size;
     };
@@ -38,7 +37,6 @@ private:
     PakBank mPrgRam;
     PakBank mPrgRom;
     PakBank mChrRom;
-
 
     class CpuAccess: public memu::iPageHandler
     {
@@ -81,13 +79,29 @@ public:
 class NesEmu::Mapper001_MMC1: public NesEmu::Mapper
 {
 public:
-    Mapper001_MMC1(NesEmu::System&, GamePak*) {  };
+    Mapper001_MMC1(NesEmu::System&, GamePak*);
 };
 
 
 
 class NesEmu::Mapper002_UxROM: public NesEmu::Mapper
 {
+private:
+    std::pair<ubyte*, size_t> mPrgRom0;
+    std::pair<ubyte*, size_t> mPrgRom1;
+    std::pair<ubyte*, size_t> mChrRom;
+
+    class CpuAccess: public memu::iPageHandler
+    {
+    private:
+        NesEmu::System &nes;
+        Mapper002_UxROM &uxrom;
+    public:
+        CpuAccess(System &n, Mapper002_UxROM &m): nes(n), uxrom(m) {  }
+        virtual ubyte read(addr_t) final;
+        virtual void write(addr_t, ubyte) final;
+    };
+
 public:
     Mapper002_UxROM(NesEmu::System&, GamePak*) {  };
 };

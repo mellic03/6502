@@ -10,18 +10,12 @@
 #include <memu/nes/mapper.hpp>
 #include <memu/nes/nes.hpp>
 
-
-
 static void NesEmu_HandleEvent( SDL_Event *e );
 static void NesEmu_PlayerCtl( SDL_Event *e );
-
 
 static EmuIO *emuio;
 static EmuImageFont *font;
 static NesEmu::System *nes;
-static EmuWindow *iwin = nullptr;
-
-#define VA_ARGS(...) , ##__VA_ARGS__
 
 
 int main( int argc, char **argv )
@@ -47,10 +41,11 @@ int main( int argc, char **argv )
 
     if (std::string(nes->mConf["debug"]["ShowRegs"]) == "1")
     {
-        iwin = emuio->makeWin("Debug", 256, 256, 2, 1024);
+        auto *iwin = emuio->makeWin("Debug", 256, 256, 2, 1024);
         iwin->setScaleMode(SDL_SCALEMODE_LINEAR);
         iwin->mOnUpdate = [](EmuWindow *W) {
-            #define wprintf(Fmt, ...) W->print(font, Fmt VA_ARGS(__VA_ARGS__));
+            #define wprintf_va_args(...) , ##__VA_ARGS__
+            #define wprintf(Fmt, ...) W->print(font, Fmt wprintf_va_args(__VA_ARGS__));
             W->setBounds(0, 0, 128, 256);
             wprintf("CPU\n");
             wprintf("time  %lu\n", nes->mCPU.clockTime());
@@ -89,10 +84,10 @@ int main( int argc, char **argv )
             wprintf("data  %02X\n", nes->mPPU.ppudata);
             wprintf("line  %d\n", nes->mPPU.mScanLine);
             wprintf("cycle %d\n", nes->mPPU.mCycle);
+            #undef wprintf_va_args
             #undef wprintf
         };
     }
-
 
     while (emuio->running())
     {
@@ -150,10 +145,10 @@ static void NesEmu_HandleEvent( SDL_Event *e )
             emuio->quit();
             break;
 
-        case SDLK_SPACE:
-            printf("Key SPACE --> WAI\tI:%u B%u\n", nes->mCPU.SSR.I, nes->mCPU.SSR.B);
-            nes->mCPU.wait();
-            break;
+        // case SDLK_SPACE:
+        //     printf("Key SPACE --> WAI\tI:%u B%u\n", nes->mCPU.SSR.I, nes->mCPU.SSR.B);
+        //     nes->mCPU.wait();
+        //     break;
 
         case SDLK_I:
             printf("Key I --> IRQ\n");
@@ -192,35 +187,57 @@ static void NesEmu_HandleEvent( SDL_Event *e )
 
 static void NesEmu_PlayerCtl( SDL_Event *e )
 {
-    switch (e->type)
     {
-        case SDL_EVENT_GAMEPAD_BUTTON_UP:
-        case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-            break;
-        default:
-            return;
+        switch (e->type)
+        {
+            case SDL_EVENT_KEY_UP:
+            case SDL_EVENT_KEY_DOWN:
+                break;
+            default:
+                return;
+        }
+
+        auto &ctl = nes->mPlayerCtl[0];
+        bool down = e->key.down;
+
+        switch (e->key.key)
+        {
+            default: break;
+            case SDLK_Z:     ctl.a     = down; break;
+            case SDLK_X:     ctl.b     = down; break;
+            case SDLK_TAB:   ctl.sel   = down; break;
+            case SDLK_SPACE: ctl.start = down; break;
+            case SDLK_UP:    ctl.up    = down; break;
+            case SDLK_DOWN:  ctl.down  = down; break;
+            case SDLK_LEFT:  ctl.left  = down; break;
+            case SDLK_RIGHT: ctl.right = down; break;
+        }
     }
 
-    auto &ctl = nes->mPlayerCtl[0];
-    bool down = e->gbutton.down;
-
-    switch (e->gbutton.button)
     {
-        default: break;
-        case SDL_GAMEPAD_BUTTON_SOUTH:      ctl.a      = down; break;
-        case SDL_GAMEPAD_BUTTON_EAST:       ctl.b      = down; break;
-        case SDL_GAMEPAD_BUTTON_BACK:       ctl.sel    = down; break;
-        case SDL_GAMEPAD_BUTTON_START:      ctl.start  = down; break;
-        case SDL_GAMEPAD_BUTTON_DPAD_UP:    ctl.up     = down; break;
-        case SDL_GAMEPAD_BUTTON_DPAD_DOWN:  ctl.down   = down; break;
-        case SDL_GAMEPAD_BUTTON_DPAD_LEFT:  ctl.left   = down; break;
-        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: ctl.right  = down; break;
+        switch (e->type)
+        {
+            case SDL_EVENT_GAMEPAD_BUTTON_UP:
+            case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+                break;
+            default:
+                return;
+        }
+
+        auto &ctl = nes->mPlayerCtl[0];
+        bool down = e->gbutton.down;
+
+        switch (e->gbutton.button)
+        {
+            default: break;
+            case SDL_GAMEPAD_BUTTON_SOUTH:      ctl.a     = down; break;
+            case SDL_GAMEPAD_BUTTON_EAST:       ctl.b     = down; break;
+            case SDL_GAMEPAD_BUTTON_BACK:       ctl.sel   = down; break;
+            case SDL_GAMEPAD_BUTTON_START:      ctl.start = down; break;
+            case SDL_GAMEPAD_BUTTON_DPAD_UP:    ctl.up    = down; break;
+            case SDL_GAMEPAD_BUTTON_DPAD_DOWN:  ctl.down  = down; break;
+            case SDL_GAMEPAD_BUTTON_DPAD_LEFT:  ctl.left  = down; break;
+            case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: ctl.right = down; break;
+        }
     }
-}
-
-
-
-static void SDL_AppQuit( void *appstate, SDL_AppResult result )
-{
-
 }

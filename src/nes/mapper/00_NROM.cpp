@@ -105,7 +105,6 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
     // CPU Mapping
     {
         nes.mBusCPU.mapRange(0x0000, 0xFFFF, new CpuAccess(nes, *this));
-
         // auto &bus = nes.mBusCPU;
 
         // // CPU --> PRG RAM
@@ -118,6 +117,7 @@ Mapper000_NROM::Mapper000_NROM( NesEmu::System &nes, GamePak *gpak )
     // PPU Mapping
     {
         nes.mBusPPU.mapRange(0x0000, 0x3FFF, new PpuAccess(nes, *this));
+        nes.mPPU.mMirrorMode = (fh->MirroringMode == 0) ? 0 : 1;
 
         // auto &bus = nes.mBusPPU;
 
