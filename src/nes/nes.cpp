@@ -29,7 +29,7 @@
 */
 NesEmu::System::System( EmuIO *io )
 :   mConf("nes.conf"),
-    mGameWin(io->makeWin("NesEmu", 256, 240, 4, 0)),
+    mGameWin(io->makeWin("NesEmu", 256, 240, 3, 0)),
     // mChrWin(io->makeWin("CHR-ROM", 128, 256, 4, 0)),
     mCPU(mBusCPU),
     mPPU(mBusPPU, mGameWin),
@@ -126,7 +126,6 @@ void print_row( NesTest::Row &row )
     //     printf("%04u ", row.col[i]);
     // printf("\n");
 }
-
 
 
 void NesTest::compare( const std::string &path, NesCPU &cpu )

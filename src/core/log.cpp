@@ -39,7 +39,6 @@ void memu::log::Warn( const char *msg, ... )
 // void memu::log::Asrt( bool cond, const char *msg, ... )
 // {
 //     // LAZY_AF(cond ? "Asrt PASS" : "Asrt FAIL", msg);
-
 //     if (!cond)
 //     {
 //         LAZY_AF("Asrt FAIL", msg);
@@ -90,7 +89,6 @@ syslog::_print( const char *fmt, ... )
 }
 
 
-
 void
 syslog::vprint( const char *fmt, va_list vlist )
 {
@@ -117,6 +115,7 @@ syslog::println( const char *fmt, ... )
     va_end(vlist);
     printf("\n");
 }
+
 
 void
 syslog::operator()( const char *fmt, ... )

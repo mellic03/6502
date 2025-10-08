@@ -11,7 +11,6 @@
 using namespace memu;
 
 
-
 Ricoh2C02::Ricoh2C02( AddrSpace &bus, EmuWindow *gamewin )
 :   HwModule(bus),
     BaseHw(),
@@ -20,16 +19,8 @@ Ricoh2C02::Ricoh2C02( AddrSpace &bus, EmuWindow *gamewin )
     mCycle(0)
 {
     this->reset();
-
-    // static constexpr ubyte blue   [] = { 0x11, 32, 0x36, 203, 79, 33, 128, 219, 80, 179, 4, 36, 25, 35, 183, 220, 46, 160, 80, 142, 25, 43, 6, 107, 214, 14, 247, 240, 149, 61, 225, 176 };
-    // static constexpr ubyte pink   [] = { 0x11, 246, 108, 92, 187, 42, 210, 95, 168, 78, 142, 98, 129, 239, 103, 87, 172, 13, 30, 101, 140, 87, 215, 181, 232, 143, 132, 245, 39, 10, 61, 155 };
-    // static constexpr ubyte purple [] = { 0x11, 227, 188, 126, 51, 108, 242, 50, 62, 34, 86, 167, 40, 63, 8, 141, 51, 132, 202, 219, 88, 130, 97, 206, 73, 196, 175, 197, 55, 172, 109, 187 };
-    // static constexpr ubyte luigi  [] = { 0x11, 89, 54, 254, 96, 12, 40, 67, 229, 115, 37, 146, 57, 101, 190, 224, 85, 64, 203, 98, 106, 182, 27, 196, 254, 231, 87, 157, 17, 71, 189, 134 };
-    // static constexpr ubyte ginger [] = { 0x11, 16, 22, 214, 245, 224, 70, 255, 64, 116, 122, 27, 99, 72, 85, 139, 182, 112, 82, 127, 92, 88, 47, 23, 185, 17, 132, 75, 47, 215, 16, 147 };
-    // memcpy(mPaletteCtl, blue, sizeof(mPaletteCtl));
     memset(mPaletteCtl, 0, sizeof(mPaletteCtl));
 }
-
 
 
 void Ricoh2C02::tick()
@@ -76,7 +67,8 @@ void Ricoh2C02::tick()
 }
 
 
-void Ricoh2C02::preRenderChrTile( EmuWindow *fb, int x0, int y0, uword tsel, uword tidx, uword pidx )
+void Ricoh2C02::preRenderChrTile( EmuWindow *fb, int x0, int y0,
+                                  uword tsel, uword tidx, uword pidx )
 {
     uword base = 0x1000*tsel + 16*tidx;
 
@@ -84,15 +76,16 @@ void Ricoh2C02::preRenderChrTile( EmuWindow *fb, int x0, int y0, uword tsel, uwo
     {
         for (ubyte x=0; x<8; x++)
         {
-            ubyte lsb  = rdbus(base + y+0);
-            ubyte msb  = rdbus(base + y+8);
-            ubyte lo   = (lsb >> (7-x)) & 0x01;
-            ubyte hi   = (msb >> (7-x)) & 0x01;
-            ubyte pxl  = (hi << 1) | lo;
+            ubyte lsb = rdbus(base + y+0);
+            ubyte msb = rdbus(base + y+8);
+            ubyte lo  = (lsb >> (7-x)) & 0x01;
+            ubyte hi  = (msb >> (7-x)) & 0x01;
+            ubyte pxl = (hi << 1) | lo;
             fb->frameBuffer()->pixel(x0+x, y0+y, 64*pxl);
         }
     }
 }
+
 
 void Ricoh2C02::preRenderChrRom( EmuWindow *fb )
 {
@@ -183,7 +176,7 @@ void Ricoh2C02::_entire_frame()
             break;
         }
 
-        uword bank = ppuctl.SpriteTileSel; // S->tile & 0b0000'0001;
+        uword bank = ppuctl.SpriteTileSel; // S->tile & 0000'0001;
         uword tidx = S->tile;
         uword pidx = (S->palette);
         ubyte x0 = S->xmin;
@@ -206,7 +199,6 @@ void Ricoh2C02::_entire_frame()
                 if (pxl > 0)
                 {
                     ubyte off = rdbus(0x3F00 + 4 + 4*pidx + pxl) & 0x3F;
-
                     ubyte x = (S->hflip) ? x0+7-j : x0+j;
                     mGameWin->frameBuffer()->pixel(x, y0+i, &mPalette[3*off]);
                 }

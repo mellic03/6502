@@ -128,8 +128,6 @@ void EmuFramebuffer::pixel( int x, int y, ubyte r, ubyte g, ubyte b )
 
 
 
-// :   EmuFramebuffer(SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGB24)),
-
 EmuWindow::EmuWindow( const char *title, int w, int h, int scale, size_t rate )
 :   mWin     (SDL_CreateWindow(title, scale*w, scale*h, 0)),
     mWinBuf  (SDL_GetWindowSurface(mWin)),
@@ -181,7 +179,6 @@ void EmuWindow::glyph( EmuImageFont *f, char c, int x, int y )
     mGlyphs.push_back({f, c, x, y});
 }
 
-
 void EmuWindow::str( EmuImageFont *f, const char *str, int x, int y )
 {
     ivec2 sp = f->getGlyphExtents();
@@ -218,7 +215,6 @@ void EmuWindow::setBounds( int x, int y, int w, int h )
     mGlyphMargin = { x, x+w, y, y+h };
     mGlyphPos    = { x, y };
 }
-
 
 void EmuWindow::print( EmuImageFont *f, const char *fmt, ... )
 {
@@ -271,7 +267,6 @@ EmuIO::EmuIO()
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
 }
 
-
 EmuWindow *EmuIO::makeWin( const char *title, int w, int h, int scale, size_t rate )
 {
     printf("makeWin\n");
@@ -317,8 +312,4 @@ void EmuIO::update()
     // for (auto *win: mWinAuto)
     //     win->_flush();
 }
-
-
-
-
 
